@@ -45,7 +45,8 @@ class IsotopeSpecification:
         if self.count == 0:
             return ""
 
-        sign = "+" if self.count > 0 else ""
+        # Explicit sign: '+' for positive, '-' for negative (no sign for zero handled above)
+        sign = "+" if self.count > 0 else "-"
         count_str = "" if abs(self.count) == 1 else str(abs(self.count))
 
         if self.is_average is True:
