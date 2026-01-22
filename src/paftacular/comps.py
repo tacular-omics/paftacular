@@ -106,7 +106,7 @@ class CompositionProvider(ABC):
         return m
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class MassError(Serializable):
     """Represents mass error with value and unit"""
 
@@ -122,7 +122,7 @@ class MassError(Serializable):
             raise ValueError(f"Unknown mass error unit: {self.unit}")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     """Represents isotope information"""
 
@@ -182,8 +182,34 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         comp[mono_info] = -self.count
         return comp
 
+    def as_dict(self) -> dict:
+        """Convert isotope specification to dictionary representation"""
+        try:
+            _monoisotopic_mass = round(self.monoisotopic_mass, 5)
+        except ValueError:
+            _monoisotopic_mass = None
 
-@dataclass(frozen=True)
+        try:
+            _average_mass = round(self.average_mass, 5)
+        except ValueError:
+            _average_mass = None
+
+        try:
+            _dict_composition = self.dict_composition
+        except ValueError:
+            _dict_composition = None
+
+        return {
+            "count": self.count,
+            "element": self.element,
+            "is_average": self.is_average,
+            "monoisotopic_mass": _monoisotopic_mass,
+            "average_mass": _average_mass,
+            "composition": _dict_composition,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class PeptideIon(Serializable, CompositionProvider, MassProvider):
     """Represents a primary peptide fragment ion"""
 
@@ -215,7 +241,7 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
         return result
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class InternalFragment(Serializable, CompositionProvider, MassProvider):
     """Represents an internal fragment ion with optional backbone cleavage specification"""
 
@@ -255,7 +281,7 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         return comp
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     """Represents an immonium ion"""
 
@@ -290,7 +316,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         return comp
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ReferenceIon(Serializable, CompositionProvider, MassProvider):
     """Represents a reference ion"""
 
@@ -315,7 +341,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
         return f"r[{self.name}]"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class NamedCompound(Serializable, CompositionProvider, MassProvider):
     """
     Represents a named compound.
@@ -336,7 +362,7 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
         return f"_{{{self.name}}}"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ChemicalFormula(Serializable, CompositionProvider, MassProvider):
     """
     Represents a chemical formula
@@ -367,7 +393,7 @@ class ChemicalFormula(Serializable, CompositionProvider, MassProvider):
         return f"f{{{self.formula}}}"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class SMILESCompound(Serializable, CompositionProvider, MassProvider):
     """
     Represents a SMILES string
@@ -414,7 +440,7 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
         return f"+{self.proforma_formula}"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class UnknownIon(Serializable, CompositionProvider, MassProvider):
     """Represents an unknown/unannotated ion"""
 
@@ -433,7 +459,7 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
         return "?"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PrecursorIon(Serializable, CompositionProvider, MassProvider):
     """Represents a precursor ion"""
 
@@ -455,7 +481,6 @@ class PrecursorIon(Serializable, CompositionProvider, MassProvider):
 class ScalableComposition(CompositionProvider):
     """Mixin for compositions that scale by count and sign"""
 
-    sign: int
     count: int
 
     @property
@@ -467,13 +492,13 @@ class ScalableComposition(CompositionProvider):
     @property
     def composition(self) -> Counter[ElementInfo]:
         """Get scaled composition"""
-        return Counter({elem: count * self.count * self.sign for elem, count in self._single_composition.items()})
+        return Counter({elem: count * self.count for elem, count in self._single_composition.items()})
 
     @property
     def _sign_prefix(self) -> str:
         """Get sign prefix for serialization"""
-        sign_str = "+" if self.sign > 0 else "-"
-        count_str = "" if self.count == 1 else str(self.count)
+        sign_str = "+" if self.count > 0 else "-"
+        count_str = "" if abs(self.count) == 1 else str(abs(self.count))
         return f"{sign_str}{count_str}"
 
 
@@ -485,35 +510,34 @@ class NeutralLoss(
 ):
     """Represents a neutral loss or gain"""
 
-    sign: int  # 1 for gain (+), -1 for loss (-)
-    count: int = 1  # Number of times this loss occurs
-    _formula: str | None = None  # e.g., "H2O", "NH3"
-    _mass: float | None = None  # e.g., 17.03 for direct mass specification
-    _reference: str | None = None  # e.g., "Phospho", "iTRAQ115" (without brackets)
+    count: int
+    base_formula: str | None = None  # e.g., "H2O", "NH3"
+    base_mass: float | None = None  # e.g., 17.03 for direct mass specification
+    base_reference: str | None = None  # e.g., "Phospho", "iTRAQ115" (without brackets)
 
     def __post_init__(self):
         """Validate that exactly one of formula/mass/reference is set"""
-        set_count = sum([self._formula is not None, self._mass is not None, self._reference is not None])
+        set_count = sum([self.base_formula is not None, self.base_mass is not None, self.base_reference is not None])
         if set_count != 1:
             raise ValueError("Exactly one of formula, mass, or reference must be set")
 
     @property
     def reference(self) -> RefMolInfo | str | None:
-        if self._reference is None:
+        if self.base_reference is None:
             return None
         try:
-            val = REFMOL_LOOKUP[self._reference]
+            val = REFMOL_LOOKUP[self.base_reference]
             return val
         except KeyError:
-            return self._reference
+            return self.base_reference
 
     @property
     def loss_type(self) -> Literal["mass", "formula", "reference"]:
-        if self._mass is not None:
+        if self.base_mass is not None:
             return "mass"
-        elif self._formula is not None:
+        elif self.base_formula is not None:
             return "formula"
-        elif self._reference is not None:
+        elif self.base_reference is not None:
             return "reference"
         else:
             raise ValueError("Invalid NeutralLoss state")
@@ -522,19 +546,19 @@ class NeutralLoss(
     def _single_composition(self) -> Counter[ElementInfo]:
         match self.loss_type:
             case "formula":
-                if self._formula is None:  # This shouldn't happen given __post_init__
+                if self.base_formula is None:  # This shouldn't happen given __post_init__
                     raise RuntimeError("Invalid state: formula is None")
-                return formula_to_composition(self._formula)
+                return formula_to_composition(self.base_formula)
             case "reference":
                 refmol = self.reference
                 if not isinstance(refmol, RefMolInfo):
                     raise ValueError(
-                        f"Unknown reference molecule '{self._reference}'. Check that it exists in REFMOL_LOOKUP."
+                        f"Unknown reference molecule '{self.base_reference}'. Check that it exists in REFMOL_LOOKUP."
                     )
                 return refmol.composition
             case "mass":
                 raise ValueError(
-                    f"Cannot calculate composition for mass-based loss ({self._mass} Da). "
+                    f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). "
                     f"Use a formula or reference instead."
                 )
 
@@ -547,9 +571,9 @@ class NeutralLoss(
         """Get formula for a single instance of the loss (without count/sign)"""
         match self.loss_type:
             case "formula":
-                if self._formula is None:
+                if self.base_formula is None:
                     raise RuntimeError("Formula is None for formula-based loss")
-                return self._formula
+                return self.base_formula
             case "reference":
                 refmol: RefMolInfo | str | None = self.reference
                 if isinstance(refmol, RefMolInfo):
@@ -559,7 +583,7 @@ class NeutralLoss(
                         f"Cannot get formula for unknown reference molecule '{refmol}' of type: {type(refmol)}"
                     )
             case "mass":
-                raise ValueError(f"Cannot get formula for mass-based loss: {self._mass}")
+                raise ValueError(f"Cannot get formula for mass-based loss: {self.base_mass}")
             case _:
                 raise ValueError(f"Invalid loss_type: {self.loss_type}")
 
@@ -571,9 +595,9 @@ class NeutralLoss(
     def _mass_single(self, monoisotopic: bool = True) -> float:
         match self.loss_type:
             case "mass":
-                if self._mass is None:
+                if self.base_mass is None:
                     raise RuntimeError("Mass is None for mass-based loss")
-                return self._mass
+                return self.base_mass
             case "formula":
                 comp: Counter[ElementInfo] = self._single_composition
                 if comp is None:
@@ -590,7 +614,7 @@ class NeutralLoss(
 
     def mass(self, monoisotopic: bool = True) -> float:
         single_mass: float = self._mass_single(monoisotopic)
-        return single_mass * self.count * self.sign
+        return single_mass * self.count
 
     def serialize(
         self, loss_type: Literal["mass", "formula", "reference"] | None = None, monoisotopic: bool = True
@@ -606,41 +630,103 @@ class NeutralLoss(
                 formula = self.formula
                 return f"{formula}"
             case "reference":
-                if self._reference is not None:
-                    ref_name = self._reference
+                if self.base_reference is not None:
+                    ref_name = self.base_reference
                     return f"{self._sign_prefix}[{ref_name}]"
                 else:
                     raise ValueError("Cannot serialize reference: reference name is undefined")
 
         raise ValueError("Invalid loss_type for serialization")
 
+    def as_dict(self) -> dict:
+        """Convert the neutral loss to a dictionary representation"""
+        try:
+            _monoisotopic_mass = round(self.monoisotopic_mass, 5)
+        except ValueError:
+            _monoisotopic_mass = None
+
+        try:
+            _average_mass = round(self.average_mass, 5)
+        except ValueError:
+            _average_mass = None
+
+        try:
+            _formula = self.formula
+        except ValueError:
+            _formula = None
+
+        try:
+            _dict_composition = self.dict_composition
+        except ValueError:
+            _dict_composition = None
+
+        return {
+            "count": self.count,
+            "base_formula": self.base_formula,
+            "base_mass": self.base_mass,
+            "base_reference": self.base_reference,
+            "monoisotopic_mass": _monoisotopic_mass,
+            "average_mass": _average_mass,
+            "composition": _dict_composition,
+            "formula": _formula,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class Adduct(Serializable, ScalableComposition, MassProvider):
-    sign: int
-    count: int = 1
-    _formula: str = ""
+    count: int
+    base_formula: str
 
     def __post_init__(self):
         """Validate adduct"""
-        if self.sign not in (-1, 1):
-            raise ValueError(f"Sign must be 1 or -1, got {self.sign}")
-        if self.count < 1:
-            raise ValueError(f"Count must be >= 1, got {self.count}")
-        if not self._formula:
+        if self.count == 0:
+            raise ValueError(f"Count must be non-zero, got {self.count}")
+        if not self.base_formula:
             raise ValueError("Formula cannot be empty")
 
     @property
     def _single_composition(self) -> Counter[ElementInfo]:
-        return formula_to_composition(self._formula)  # Use helper!
+        return formula_to_composition(self.base_formula)  # Use helper!
 
     @property
     def formula(self) -> str:
-        return f"{self._sign_prefix}{self._formula}"
+        return f"{self._sign_prefix}{self.base_formula}"
 
     @property
     def proforma_formula(self) -> str:
         return composition_to_proforma_formula_string(self._single_composition)  # Use helper!
 
     def serialize(self) -> str:
-        return f"{self._sign_prefix}{self._formula}"
+        return f"{self._sign_prefix}{self.base_formula}"
+
+    def as_dict(self) -> dict:
+        """Convert the adduct to a dictionary representation"""
+
+        try:
+            _monoisotopic_mass = round(self.monoisotopic_mass, 5)
+        except ValueError:
+            _monoisotopic_mass = None
+
+        try:
+            _average_mass = round(self.average_mass, 5)
+        except ValueError:
+            _average_mass = None
+
+        try:
+            _formula = self.formula
+        except ValueError:
+            _formula = None
+
+        try:
+            _dict_composition = self.dict_composition
+        except ValueError:
+            _dict_composition = None
+
+        return {
+            "count": self.count,
+            "base_formula": self.base_formula,
+            "monoisotopic_mass": _monoisotopic_mass,
+            "average_mass": _average_mass,
+            "composition": _dict_composition,
+            "formula": _formula,
+        }

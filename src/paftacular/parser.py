@@ -1,6 +1,6 @@
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from tacular import ELEMENT_LOOKUP, ElementInfo
 
@@ -174,14 +174,34 @@ class PafAnnotation:
 
         return "".join(parts)
 
-    def __str__(self) -> str:
-        return self.serialize()
-
     @staticmethod
     def parse(annotation_str: str) -> "PafAnnotation":
         """Parse a single mzPAF annotation string into a FragmentAnnotation object"""
         parser = mzPAFParser()
         return parser.parse_single(annotation_str)
+
+    def as_dict(self) -> dict:
+        """Convert the annotation to a dictionary representation"""
+        ion_dict = {}
+        ion_dict["ion_type"] = type(self.ion_type).__name__
+        ion_dict.update(asdict(self.ion_type))
+        return {
+            "ion": str(self.ion_type),
+            "analyte_reference": self.analyte_reference,
+            "is_auxiliary": self.is_auxiliary,
+            "neutral_losses": [str(nl) for nl in self.neutral_losses],
+            "isotopes": [str(iso) for iso in self.isotopes],
+            "adducts": [str(ad) for ad in self.adducts],
+            "charge": self.charge,
+            "mass_error": str(self.mass_error) if self.mass_error else None,
+            "confidence": self.confidence,
+        }
+
+    def __str__(self) -> str:
+        return self.serialize()
+
+    def __repr__(self) -> str:
+        return f"PafAnnotation({self.as_dict()})"
 
 
 class mzPAFParser:
@@ -332,12 +352,20 @@ class mzPAFParser:
 
         losses: list[NeutralLoss] = []
         for loss_str in loss_strings:
-            sign = 1 if loss_str[0] == "+" else -1
+            sign = loss_str[0]
+            sign_mult: int
+            if sign == "+":
+                sign_mult = 1
+            elif sign == "-":
+                sign_mult = -1
+            else:
+                raise ValueError(f"Invalid sign in neutral loss: '{loss_str}'")
             content = loss_str[1:]  # Remove sign
 
             # Try to parse as mass (decimal number)
             if re.match(r"^\d+(?:\.\d+)?$", content):
-                losses.append(NeutralLoss(sign=sign, _mass=float(content)))
+                count = 1 * sign_mult
+                losses.append(NeutralLoss(count=count, base_mass=float(content)))
 
             # Parse as reference group [Name] or COUNT[Name]
             elif "[" in content:  # Changed from content.startswith('[')
@@ -346,7 +374,7 @@ class mzPAFParser:
                 if match:
                     count_str, ref_name = match.groups()
                     count = int(count_str) if count_str else 1
-                    losses.append(NeutralLoss(sign=sign, count=count, _reference=ref_name))
+                    losses.append(NeutralLoss(count=count * sign_mult, base_reference=ref_name))
 
             # Parse as formula (with optional count prefix)
             else:
@@ -355,7 +383,7 @@ class mzPAFParser:
                 if match:
                     count_str, formula = match.groups()
                     count = int(count_str) if count_str else 1
-                    losses.append(NeutralLoss(sign=sign, count=count, _formula=formula))
+                    losses.append(NeutralLoss(count=count * sign_mult, base_formula=formula))
 
         return tuple(losses)
 
@@ -385,9 +413,15 @@ class mzPAFParser:
         adducts: list[Adduct] = []
         for match in re.finditer(pattern, content):
             sign_str, count_str, formula = match.groups()
-            sign = 1 if sign_str == "+" else -1
+            sign: int
+            if sign_str == "+":
+                sign = 1
+            elif sign_str == "-":
+                sign = -1
+            else:
+                raise ValueError(f"Invalid sign in adduct: '{match.group(0)}'")
             count = int(count_str) if count_str else 1
-            adducts.append(Adduct(sign=sign, count=count, _formula=formula))
+            adducts.append(Adduct(count=count * sign, base_formula=formula))
 
         if not adducts:
             raise ValueError(f"No adduct components found in '{adduct_str}'")

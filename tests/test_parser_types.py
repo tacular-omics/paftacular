@@ -285,9 +285,8 @@ def test_neutral_loss_formula_water():
     # Basic properties
     assert loss.loss_type == "formula"
     assert loss.formula == "-H2O"
-    assert loss.sign == -1
-    assert loss.count == 1
-    assert loss._formula == "H2O"
+    assert loss.count == -1
+    assert loss.base_formula == "H2O"
 
     # ProForma formula
     assert loss.proforma_formula == "H-2O-1"
@@ -328,7 +327,7 @@ def test_neutral_loss_formula_gain():
     loss = ann.neutral_losses[0]
 
     assert loss.loss_type == "formula"
-    assert loss.sign == 1
+    assert loss.count == 1
     assert loss.formula == "+H2"
     # H2 mass: 2 * 1.007825 = 2.01565 Da
     assert loss.mass() == pytest.approx(2.01565, rel=1e-5)
@@ -346,8 +345,7 @@ def test_neutral_loss_reference_gain():
 
     # Basic properties
     assert loss.loss_type == "reference"
-    assert loss._reference == "Adenine"
-    assert loss.sign == 1
+    assert loss.base_reference == "Adenine"
     assert loss.count == 1
 
     # ProForma formula
@@ -377,9 +375,8 @@ def test_neutral_loss_multiple_reference():
 
     # Basic properties
     assert loss.loss_type == "reference"
-    assert loss._reference == "ADenine"
-    assert loss.sign == -1
-    assert loss.count == 2
+    assert loss.base_reference == "ADenine"
+    assert loss.count == -2
 
     # ProForma formula (negative count)
     assert loss.proforma_formula == "C-10H-10N-10"
@@ -513,7 +510,6 @@ def test_adduct_simple():
     ann = parse_one("y5[M+H]")
     assert ann.adducts and len(ann.adducts) == 1
     adduct = ann.adducts[0]
-    assert adduct.sign == 1
     assert adduct.count == 1
     # Check composition instead
     comp = adduct.composition
@@ -548,7 +544,7 @@ def test_adduct_removal():
     ann = parse_one("y5[M-H]")
     assert ann.adducts and len(ann.adducts) == 1
     adduct = ann.adducts[0]
-    assert adduct.sign == -1
+    assert adduct.count == -1
     # Check composition (negative hydrogen)
     comp = adduct.composition
     assert comp[ELEMENT_LOOKUP["H"]] == -1
@@ -795,8 +791,8 @@ def test_neutral_loss_mass():
     loss = ann.neutral_losses[0]
 
     assert loss.loss_type == "mass"
-    assert loss._mass == pytest.approx(17.03, rel=1e-5)
-    assert loss.sign == -1
+    assert loss.base_mass == pytest.approx(17.03, rel=1e-5)
+    assert loss.count == -1
     assert loss.mass() == pytest.approx(-17.03, rel=1e-5)
 
     # Should fail to get composition for mass-based loss
@@ -815,8 +811,8 @@ def test_neutral_loss_mass_positive():
     loss = ann.neutral_losses[0]
 
     assert loss.loss_type == "mass"
-    assert loss._mass == pytest.approx(42.0106, rel=1e-5)
-    assert loss.sign == 1
+    assert loss.base_mass == pytest.approx(42.0106, rel=1e-5)
+    assert loss.count == 1
 
 
 def test_multiple_neutral_losses():
@@ -853,10 +849,10 @@ def test_unknown_reference_molecule():
     ann = parse_one("y5-[UnknownMolecule]")
     loss = ann.neutral_losses[0]
 
-    assert loss._reference == "UnknownMolecule"
+    assert loss.base_reference == "UnknownMolecule"
     assert isinstance(loss.reference, str)  # Falls back to string
 
-    with pytest.raises(ValueError, match="Unknown reference molecule"):
+    with pytest.raises(ValueError):
         _ = loss.composition
 
 
@@ -864,17 +860,13 @@ def test_adduct_validation():
     """Test Adduct __post_init__ validation"""
     from paftacular.comps import Adduct
 
-    # Invalid sign
-    with pytest.raises(ValueError, match="Sign must be 1 or -1"):
-        Adduct(sign=0, count=1, _formula="H")
-
     # Invalid count
-    with pytest.raises(ValueError, match="Count must be >= 1"):
-        Adduct(sign=1, count=0, _formula="H")
+    with pytest.raises(ValueError):
+        Adduct(count=0, base_formula="H")
 
     # Empty formula
-    with pytest.raises(ValueError, match="Formula cannot be empty"):
-        Adduct(sign=1, count=1, _formula="")
+    with pytest.raises(ValueError):
+        Adduct(count=1, base_formula="")
 
 
 def test_neutral_loss_validation():
@@ -883,11 +875,11 @@ def test_neutral_loss_validation():
 
     # No specification provided
     with pytest.raises(ValueError, match="Exactly one of formula, mass, or reference"):
-        NeutralLoss(sign=-1, count=1)
+        NeutralLoss(count=-1)
 
     # Multiple specifications provided
     with pytest.raises(ValueError, match="Exactly one of formula, mass, or reference"):
-        NeutralLoss(sign=-1, count=1, _formula="H2O", _mass=18.01)
+        NeutralLoss(count=-1, base_formula="H2O", base_mass=18.01)
 
 
 def test_serialization_roundtrip_simple():

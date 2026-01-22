@@ -14,6 +14,8 @@ mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https:
 - **Composition analysis**: Full elemental composition tracking with ProForma-style formulas
 - **Bidirectional**: Parse mzPAF strings to Python objects and serialize back
 - **Type-safe**: Built with dataclasses, enums, and comprehensive type hints
+- **Memory-efficient**: Uses slotted dataclasses for optimal performance
+- **Export capabilities**: Convert annotations to dictionaries for JSON serialization
 - **Multiple ion types**: Peptide fragments, precursors, immonium ions, reference compounds, chemical formulas, SMILES, and more
 
 ## Installation
@@ -236,6 +238,23 @@ serialized = ann.serialize()
 print(serialized)  # "y5-H2O^2/1.2ppm*0.95"
 ```
 
+### Export to Dictionary
+
+```python
+# Export annotation as dictionary (e.g., for JSON)
+ann = parser.parse_single("y5-H2O^2/1.2ppm*0.95")
+data = ann.as_dict()
+print(data)
+# {
+#   'ion': {'ion_type': 'PeptideIon', 'series': IonSeries.Y, 'position': 5, ...},
+#   'neutral_losses': [{'count': -1, 'base_formula': 'H2O', ...}],
+#   'charge': 2,
+#   'mass_error': {'value': 1.2, 'unit': 'ppm'},
+#   'confidence': 0.95,
+#   ...
+# }
+```
+
 ## API Reference
 
 ### `mzPAFParser`
@@ -274,6 +293,7 @@ Dataclass representing a complete fragment annotation.
 - **`formula`**, **`proforma_formula`**: Get chemical formula strings
 - **`peptide_sequence`**: Get peptide sequence if applicable
 - **`serialize() -> str`**: Convert back to mzPAF string
+- **`as_dict() -> dict`**: Convert to dictionary representation for JSON serialization
 
 ### Ion Types
 

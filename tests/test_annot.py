@@ -133,7 +133,7 @@ class TestModifiers:
         """Test water loss"""
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
-            neutral_losses=(NeutralLoss(sign=-1, _formula="H2O"),),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
         assert annotation.serialize() == "b2-H2O"
 
@@ -141,7 +141,7 @@ class TestModifiers:
         """Test ammonia loss"""
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.Y, position=3),
-            neutral_losses=(NeutralLoss(sign=-1, _formula="NH3"),),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="NH3"),),
         )
         assert annotation.serialize() == "y3-NH3"
 
@@ -150,8 +150,8 @@ class TestModifiers:
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
             neutral_losses=(
-                NeutralLoss(sign=-1, _formula="H2O"),
-                NeutralLoss(sign=-1, _formula="NH3"),
+                NeutralLoss(count=-1, base_formula="H2O"),
+                NeutralLoss(count=-1, base_formula="NH3"),
             ),
         )
         assert annotation.serialize() == "b2-H2O-NH3"
@@ -160,7 +160,7 @@ class TestModifiers:
         """Test neutral gain (addition)"""
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
-            neutral_losses=(NeutralLoss(sign=1, _formula="H2O"),),
+            neutral_losses=(NeutralLoss(count=1, base_formula="H2O"),),
         )
         assert annotation.serialize() == "b2+H2O"
 
@@ -184,7 +184,7 @@ class TestModifiers:
         """Test single adduct"""
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
-            adducts=(Adduct(sign=1, count=1, _formula="Na"),),
+            adducts=(Adduct(count=1, base_formula="Na"),),
         )
         assert annotation.serialize() == "b2[M+Na]"
 
@@ -193,8 +193,8 @@ class TestModifiers:
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
             adducts=(
-                Adduct(sign=1, count=2, _formula="H"),
-                Adduct(sign=1, count=1, _formula="Na"),
+                Adduct(count=2, base_formula="H"),
+                Adduct(count=1, base_formula="Na"),
             ),
         )
         assert annotation.serialize() == "b2[M+2H+Na]"
@@ -246,9 +246,9 @@ class TestComplexAnnotations:
             ion_type=PeptideIon(series=IonSeries.B, position=2, sequence="PEP"),
             analyte_reference=1,
             is_auxiliary=True,
-            neutral_losses=(NeutralLoss(sign=-1, _formula="H2O"),),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
             isotopes=(IsotopeSpecification(count=1),),
-            adducts=(Adduct(sign=1, count=1, _formula="Na"),),
+            adducts=(Adduct(count=1, base_formula="Na"),),
             charge=2,
             mass_error=MassError(value=5.0, unit="ppm"),
             confidence=0.9,
@@ -279,7 +279,7 @@ class TestMassCalculations:
         base = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
         with_loss = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.B, position=2),
-            neutral_losses=(NeutralLoss(sign=-1, _formula="H2O"),),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
         # Mass should be reduced by water
         assert with_loss.monoisotopic_mass < base.monoisotopic_mass
@@ -322,7 +322,7 @@ class TestComposition:
         """Test composition with neutral loss"""
         annotation = PafAnnotation(
             ion_type=ChemicalFormula(formula="C6H12O6"),
-            neutral_losses=(NeutralLoss(sign=-1, _formula="H2O"),),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
         comp = annotation.composition
         # Composition should be affected by loss
@@ -352,14 +352,14 @@ class TestParsing:
         parser = mzPAFParser()
         annotation = parser.parse_single("b2-H2O")
         assert len(annotation.neutral_losses) == 1
-        assert annotation.neutral_losses[0].sign == -1
+        assert annotation.neutral_losses[0].count == -1
 
     def test_parse_with_adduct(self):
         """Test parsing with adduct"""
         parser = mzPAFParser()
         annotation = parser.parse_single("b2[M+Na]")
         assert len(annotation.adducts) == 1
-        assert annotation.adducts[0].sign == 1
+        assert annotation.adducts[0].count == 1
 
     def test_parse_with_charge(self):
         """Test parsing with charge"""
