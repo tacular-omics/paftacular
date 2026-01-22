@@ -29,6 +29,7 @@ dev-dependencies = [
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
+    "peptacular"
 ]
 
 [tool.ruff]
@@ -48,3 +49,4 @@ select = [
 
 [tool.uv.sources]
 tacular = { path = "../tacular", editable = true }
+peptacular = { path = "../peptacular", editable = true }

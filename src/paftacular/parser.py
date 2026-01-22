@@ -61,7 +61,7 @@ class PafAnnotation:
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
-    def mass(self, monoisotopic: bool = True) -> float:
+    def mass(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
         """Calculate the mass of the annotated ion including modifications"""
         base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
 
@@ -77,20 +77,21 @@ class PafAnnotation:
         if self.charge != 0 and len(self.adducts) == 0:
             base_mass += self.charge * 1.007276466812
 
+        if calculate_sequence is True and self.sequence is not None:
+            # Additional mass calculations based on sequence can be added here
+            import peptacular as pt
+
+            sequence_mass = pt.mass(self.sequence, monoisotopic=monoisotopic, ion_type="n")
+            base_mass += sequence_mass
+
         return base_mass
 
-    @property
-    def monoisotopic_mass(self) -> float:
-        """Get the monoisotopic mass of the annotated ion"""
-        return self.mass(monoisotopic=True)
+    def mz(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
+        """Calculate the m/z of the annotated ion"""
+        total_mass = self.mass(monoisotopic=monoisotopic, calculate_sequence=calculate_sequence)
+        return total_mass / self.charge
 
-    @property
-    def average_mass(self) -> float:
-        """Get the average mass of the annotated ion"""
-        return self.mass(monoisotopic=False)
-
-    @property
-    def composition(self) -> Counter[ElementInfo]:
+    def composition(self, calculate_sequence: bool = False) -> Counter[ElementInfo]:
         """Calculate the elemental composition of the annotated ion including modifications"""
         comp: Counter[ElementInfo] = Counter()
 
@@ -110,6 +111,13 @@ class PafAnnotation:
             proton = ELEMENT_LOOKUP["H"]
             comp[proton] += self.charge
 
+        if calculate_sequence is True and self.sequence is not None:
+            # Additional composition calculations based on sequence can be added here
+            import petacualr as pt
+
+            seq_comp = pt.comp(self.sequence)
+            comp.update(seq_comp)
+
         return comp
 
     @property
@@ -121,15 +129,13 @@ class PafAnnotation:
             return self.ion_type.sequence
         return None
 
-    @property
-    def formula(self) -> str:
+    def formula(self, calculate_sequence: bool = False) -> str:
         """Get the chemical formula string of the annotated ion"""
-        return composition_to_formula_string(self.composition)
+        return composition_to_formula_string(self.composition(calculate_sequence=calculate_sequence))
 
-    @property
-    def proforma_formula(self) -> str:
+    def proforma_formula(self, calculate_sequence: bool = False) -> str:
         """Get the ProForma-style chemical formula string of the annotated ion"""
-        return composition_to_proforma_formula_string(self.composition)
+        return composition_to_proforma_formula_string(self.composition(calculate_sequence=calculate_sequence))
 
     def serialize(self) -> str:
         """Serialize the annotation back to mzPAF string format"""
@@ -496,3 +502,16 @@ class mzPAFParser:
                 annotations.append(self.parse_single(part))
 
         return annotations
+
+
+MZ_PAF_PARSER = mzPAFParser()
+
+
+def parse(annotation_str: str) -> list[PafAnnotation]:
+    """Convenience function to parse mzPAF annotation string into list of PafAnnotation"""
+    return MZ_PAF_PARSER.parse(annotation_str)
+
+
+def parse_single(annotation_str: str) -> PafAnnotation:
+    """Convenience function to parse single mzPAF annotation string into PafAnnotation"""
+    return parse(annotation_str)[0]
