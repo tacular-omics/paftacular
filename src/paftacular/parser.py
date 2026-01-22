@@ -81,7 +81,12 @@ class PafAnnotation:
             # Additional mass calculations based on sequence can be added here
             import peptacular as pt
 
-            sequence_mass = pt.mass(self.sequence, monoisotopic=monoisotopic, ion_type="n")
+            annot = pt.parse(self.sequence)
+
+            if annot.has_charge:
+                raise ValueError("Sequence in annotation should not have charge for mass calculation")
+
+            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
             base_mass += sequence_mass
 
         return base_mass
@@ -113,12 +118,22 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional composition calculations based on sequence can be added here
-            import petacualr as pt
+            import peptacular as pt
 
-            seq_comp = pt.comp(self.sequence)
+            annot = pt.parse(self.sequence)
+
+            if annot.has_charge:
+                raise ValueError("Sequence in annotation should not have charge for mass calculation")
+
+            seq_comp = annot.comp()
             comp.update(seq_comp)
 
         return comp
+
+    def dict_composition(self, calculate_sequence: bool = False) -> dict[str, int]:
+        """Get the elemental composition as a dictionary of element symbols to counts"""
+        comp_counter = self.composition(calculate_sequence=calculate_sequence)
+        return {str(elem): count for elem, count in comp_counter.items()}
 
     @property
     def sequence(self) -> str | None:

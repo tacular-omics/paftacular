@@ -1,7 +1,7 @@
 import pytest
 from tacular import ELEMENT_LOOKUP
 
-from paftacular import PafAnnotation, mzPAFParser
+from paftacular import PafAnnotation, parse, parse_single
 from paftacular.comps import (
     ChemicalFormula,
     ImmoniumIon,
@@ -17,7 +17,7 @@ from paftacular.constants import AminoAcids, IonSeries
 
 
 def parse_one(s: str) -> PafAnnotation:
-    return mzPAFParser().parse_single(s)
+    return parse_single(s)
 
 
 # ============================================================================
@@ -755,7 +755,7 @@ def test_complex_annotation_neutral_loss_isotope():
 
 
 def test_multiple_annotations_parse():
-    anns = mzPAFParser().parse("y3, b2, p, IY")
+    anns = parse("y3, b2, p, IY")
     assert len(anns) == 4
 
     assert isinstance(anns[0].ion_type, PeptideIon)
@@ -771,7 +771,7 @@ def test_multiple_annotations_parse():
 
 
 def test_multiple_annotations_complex():
-    anns = mzPAFParser().parse("y5-H2O, b3+NH3, p^2")
+    anns = parse("y5-H2O, b3+NH3, p^2")
     assert len(anns) == 3
 
     # First annotation with neutral loss

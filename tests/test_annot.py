@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 from tacular import ELEMENT_LOOKUP
 
-from paftacular import PafAnnotation, mzPAFParser
+from paftacular import PafAnnotation, parse, parse_single
 from paftacular.comps import (
     Adduct,
     ChemicalFormula,
@@ -271,8 +271,7 @@ class TestMassCalculations:
         """Test basic mass calculation"""
         annotation = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
         # Should have some positive mass
-        assert annotation.monoisotopic_mass > 0
-        assert annotation.average_mass > 0
+        assert annotation.mass() > 0
 
     def test_mass_with_neutral_loss(self):
         """Test mass with neutral loss"""
@@ -282,7 +281,7 @@ class TestMassCalculations:
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
         # Mass should be reduced by water
-        assert with_loss.monoisotopic_mass < base.monoisotopic_mass
+        assert with_loss.mass() < base.mass()
 
     def test_mass_with_charge(self):
         """Test mass calculation includes protonation"""
@@ -291,7 +290,7 @@ class TestMassCalculations:
             charge=2,
         )
         # Should add 2 protons
-        assert annotation.monoisotopic_mass > 0
+        assert annotation.mass() > 0
 
 
 class TestComposition:
@@ -300,7 +299,7 @@ class TestComposition:
     def test_basic_composition(self):
         """Test basic composition calculation"""
         annotation = PafAnnotation(ion_type=ChemicalFormula(formula="C6H12O6"))
-        comp = annotation.composition
+        comp = annotation.composition()
         assert isinstance(comp, Counter)
         # Should contain C, H, O elements
         assert any(elem.symbol == "C" for elem in comp)
@@ -313,7 +312,7 @@ class TestComposition:
             ion_type=ChemicalFormula(formula="C6H12O6"),
             charge=2,
         )
-        comp = annotation.composition
+        comp = annotation.composition()
         # Should have protons added
         h_element = ELEMENT_LOOKUP["H"]
         assert h_element in comp
@@ -324,7 +323,7 @@ class TestComposition:
             ion_type=ChemicalFormula(formula="C6H12O6"),
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
-        comp = annotation.composition
+        comp = annotation.composition()
         # Composition should be affected by loss
         assert isinstance(comp, Counter)
 
@@ -334,43 +333,37 @@ class TestParsing:
 
     def test_parse_simple(self):
         """Test parsing simple annotation"""
-        parser = mzPAFParser()
-        annotation = parser.parse_single("b2")
+        annotation = parse_single("b2")
         assert annotation.ion_type.series == IonSeries.B
         assert annotation.ion_type.position == 2
 
     def test_parse_with_sequence(self):
         """Test parsing with sequence"""
-        parser = mzPAFParser()
-        annotation = parser.parse_single("y3{PEP}")
+        annotation = parse_single("y3{PEP}")
         assert annotation.ion_type.series == IonSeries.Y
         assert annotation.ion_type.position == 3
         assert annotation.ion_type.sequence == "PEP"
 
     def test_parse_with_neutral_loss(self):
         """Test parsing with neutral loss"""
-        parser = mzPAFParser()
-        annotation = parser.parse_single("b2-H2O")
+        annotation = parse_single("b2-H2O")
         assert len(annotation.neutral_losses) == 1
         assert annotation.neutral_losses[0].count == -1
 
     def test_parse_with_adduct(self):
         """Test parsing with adduct"""
-        parser = mzPAFParser()
-        annotation = parser.parse_single("b2[M+Na]")
+        annotation = parse_single("b2[M+Na]")
         assert len(annotation.adducts) == 1
         assert annotation.adducts[0].count == 1
 
     def test_parse_with_charge(self):
         """Test parsing with charge"""
-        parser = mzPAFParser()
-        annotation = parser.parse_single("b2^2")
+        annotation = parse_single("b2^2")
         assert annotation.charge == 2
 
     def test_parse_multiple_annotations(self):
         """Test parsing comma-separated annotations"""
-        parser = mzPAFParser()
-        annotations = parser.parse("b2, y3, a1")
+        annotations = parse("b2, y3, a1")
         assert len(annotations) == 3
         assert annotations[0].ion_type.series == IonSeries.B
         assert annotations[1].ion_type.series == IonSeries.Y
@@ -389,18 +382,16 @@ class TestParsing:
             "r[TMT126]",
             "f{C6H12O6}",
         ]
-        parser = mzPAFParser()
         for test_str in test_strings:
-            annotation = parser.parse_single(test_str)
+            annotation = parse_single(test_str)
             serialized = annotation.serialize()
-            re_parsed = parser.parse_single(serialized)
+            re_parsed = parse_single(serialized)
             assert annotation.ion_type == re_parsed.ion_type
 
     def test_invalid_annotation(self):
         """Test that invalid annotations raise errors"""
-        parser = mzPAFParser()
         with pytest.raises(ValueError, match="Invalid mzPAF annotation"):
-            parser.parse_single("invalid_annotation!")
+            parse_single("invalid_annotation!")
 
 
 class TestFormulaProperties:
@@ -409,14 +400,14 @@ class TestFormulaProperties:
     def test_formula_property(self):
         """Test formula property returns string"""
         annotation = PafAnnotation(ion_type=ChemicalFormula(formula="C6H12O6"))
-        formula = annotation.formula
+        formula = annotation.formula()
         assert isinstance(formula, str)
         assert len(formula) > 0
 
     def test_proforma_formula_property(self):
         """Test ProForma formula property"""
         annotation = PafAnnotation(ion_type=ChemicalFormula(formula="C6H12O6"))
-        formula = annotation.proforma_formula
+        formula = annotation.proforma_formula()
         assert isinstance(formula, str)
         assert len(formula) > 0
 
