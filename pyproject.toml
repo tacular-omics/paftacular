@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "mzpaf parser"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["tacular"]
 authors = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
@@ -25,6 +25,7 @@ packages = ["src/paftacular"]
 [tool.uv]
 package = true
 dev-dependencies = [
+    "pysmiles>=2.0.1",
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
@@ -44,3 +45,6 @@ select = [
     "UP",  # pyupgrade
 ]
 
+
+[tool.uv.sources]
+tacular = { path = "../tacular", editable = true }

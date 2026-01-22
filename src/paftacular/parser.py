@@ -1,7 +1,8 @@
 import re
+from collections import Counter
 from dataclasses import dataclass
 
-from paftacular.constants import AminoAcids, IonSeries
+from tacular import ELEMENT_LOOKUP, ElementInfo
 
 from .comps import (
     Adduct,
@@ -17,7 +18,10 @@ from .comps import (
     ReferenceIon,
     SMILESCompound,
     UnknownIon,
+    composition_to_formula_string,
+    composition_to_proforma_formula_string,
 )
+from .constants import AminoAcids, IonSeries
 
 # Type aliases for cleaner code
 IonType = (
@@ -56,6 +60,76 @@ class PafAnnotation:
             raise ValueError(f"Charge must be >= 1, got {self.charge}")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
+
+    def mass(self, monoisotopic: bool = True) -> float:
+        """Calculate the mass of the annotated ion including modifications"""
+        base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
+
+        # Apply neutral losses/gains
+        for loss in self.neutral_losses:
+            base_mass += loss.mass(monoisotopic=monoisotopic)
+
+        # Apply adducts
+        for adduct in self.adducts:
+            base_mass += adduct.mass(monoisotopic=monoisotopic)
+
+        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
+        if self.charge != 0 and len(self.adducts) == 0:
+            base_mass += self.charge * 1.007276466812
+
+        return base_mass
+
+    @property
+    def monoisotopic_mass(self) -> float:
+        """Get the monoisotopic mass of the annotated ion"""
+        return self.mass(monoisotopic=True)
+
+    @property
+    def average_mass(self) -> float:
+        """Get the average mass of the annotated ion"""
+        return self.mass(monoisotopic=False)
+
+    @property
+    def composition(self) -> Counter[ElementInfo]:
+        """Calculate the elemental composition of the annotated ion including modifications"""
+        comp: Counter[ElementInfo] = Counter()
+
+        # Base ion composition
+        comp.update(self.ion_type.composition)
+
+        # Apply neutral losses/gains
+        for loss in self.neutral_losses:
+            comp.update(loss.composition)
+
+        # Apply adducts
+        for adduct in self.adducts:
+            comp.update(adduct.composition)
+
+        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
+        if self.charge != 0 and len(self.adducts) == 0:
+            proton = ELEMENT_LOOKUP["H"]
+            comp[proton] += self.charge
+
+        return comp
+
+    @property
+    def sequence(self) -> str | None:
+        """Get the peptide sequence if applicable, else None"""
+        if isinstance(self.ion_type, PeptideIon):
+            return self.ion_type.sequence
+        elif isinstance(self.ion_type, InternalFragment):
+            return self.ion_type.sequence
+        return None
+
+    @property
+    def formula(self) -> str:
+        """Get the chemical formula string of the annotated ion"""
+        return composition_to_formula_string(self.composition)
+
+    @property
+    def proforma_formula(self) -> str:
+        """Get the ProForma-style chemical formula string of the annotated ion"""
+        return composition_to_proforma_formula_string(self.composition)
 
     def serialize(self) -> str:
         """Serialize the annotation back to mzPAF string format"""
@@ -313,7 +387,7 @@ class mzPAFParser:
             sign_str, count_str, formula = match.groups()
             sign = 1 if sign_str == "+" else -1
             count = int(count_str) if count_str else 1
-            adducts.append(Adduct(sign=sign, count=count, formula=formula))
+            adducts.append(Adduct(sign=sign, count=count, _formula=formula))
 
         if not adducts:
             raise ValueError(f"No adduct components found in '{adduct_str}'")
