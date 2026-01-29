@@ -24,22 +24,12 @@ from .comps import (
 from .constants import AminoAcids, IonSeries
 
 # Type aliases for cleaner code
-IonType = (
-    PeptideIon
-    | InternalFragment
-    | ImmoniumIon
-    | ReferenceIon
-    | NamedCompound
-    | ChemicalFormula
-    | SMILESCompound
-    | UnknownIon
-    | PrecursorIon
-)
+IonType = PeptideIon | InternalFragment | ImmoniumIon | ReferenceIon | NamedCompound | ChemicalFormula | SMILESCompound | UnknownIon | PrecursorIon
 
 
 @dataclass(frozen=True, slots=True)
 class PafAnnotation:
-    """Complete fragment ion annotation following mzPAF specification"""
+    """Fragment ion annotation following mzPAF specification"""
 
     # Core ion description
     ion_type: IonType
@@ -79,7 +69,7 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional mass calculations based on sequence can be added here
-            import peptacular as pt  # ty: ignore
+            import peptacular as pt
 
             annot = pt.parse(self.sequence)
 
@@ -118,7 +108,7 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional composition calculations based on sequence can be added here
-            import peptacular as pt  # ty: ignore
+            import peptacular as pt
 
             annot = pt.parse(self.sequence)
 
@@ -247,7 +237,8 @@ class mzPAFParser:
     _ION_TYPES = f"(?:{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_REFERENCE}|{_FORMULA}|{_NAMED}|{_SMILES}|{_UNKNOWN})"
 
     # Modifiers
-    _NEUTRAL_LOSSES = r"(?P<neutral_losses>(?:[+-](?:\d+(?:\.\d+)?|\d*(?:(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])|(?:[A-Z][A-Za-z0-9]*))+)|(?:\d*\[(?:(?:[A-Za-z0-9:\.]+)(?:\[(?:[A-Za-z0-9\.:\-]+)\])?)\])))+)?"
+    _NEUTRAL_LOSSES = r"(?P<neutral_losses>(?:[+-](?:\d+(?:\.\d+)?|\d*(?:(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])\
+        |(?:[A-Z][A-Za-z0-9]*))+)|(?:\d*\[(?:(?:[A-Za-z0-9:\.]+)(?:\[(?:[A-Za-z0-9\.:\-]+)\])?)\])))+)?"
     _ISOTOPE = r"(?P<isotope>(?:(?:[+-]\d*)i(?:(?:\d+)?(?:[A-Z][a-z]*)?|A)?)+)?"
     _ADDUCTS = r"(?:\[(?P<adducts>M(?:[+-]\d*[A-Z][A-Za-z0-9]*)+)\])?"
     _CHARGE = r"(?:\^(?P<charge>[+-]?\d+))?"
@@ -255,9 +246,7 @@ class mzPAFParser:
     _CONFIDENCE = r"(?:\*(?P<confidence>\d*(?:\.\d+)?))?"
 
     # Full pattern
-    PATTERN = re.compile(
-        f"^{_AUXILIARY}{_ANALYTE_REF}{_ION_TYPES}{_NEUTRAL_LOSSES}{_ISOTOPE}{_ADDUCTS}{_CHARGE}{_MASS_ERROR}{_CONFIDENCE}$"
-    )
+    PATTERN = re.compile(f"^{_AUXILIARY}{_ANALYTE_REF}{_ION_TYPES}{_NEUTRAL_LOSSES}{_ISOTOPE}{_ADDUCTS}{_CHARGE}{_MASS_ERROR}{_CONFIDENCE}$")
 
     def parse_single(self, annotation_str: str) -> PafAnnotation:
         """Parse a single annotation string"""
@@ -368,7 +357,9 @@ class mzPAFParser:
             return ()
 
         # Pattern matches: [+-] followed by number, formula, or named group
-        pattern = r"[+-](?:\d+(?:\.\d+)?(?!\[)|\d*(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])|(?:[A-Z][A-Za-z0-9]*))+|\d*\[(?:[A-Za-z0-9:\.]+)(?:\[[A-Za-z0-9\.:\-]+\])?\])"
+        pattern = (
+            r"[+-](?:\d+(?:\.\d+)?(?!\[)|\d*(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])|(?:[A-Z][A-Za-z0-9]*))+|\d*\[(?:[A-Za-z0-9:\.]+)(?:\[[A-Za-z0-9\.:\-]+\])?\])"
+        )
         loss_strings = re.findall(pattern, losses_str)
 
         losses: list[NeutralLoss] = []
@@ -523,10 +514,10 @@ MZ_PAF_PARSER = mzPAFParser()
 
 
 def parse(annotation_str: str) -> list[PafAnnotation]:
-    """Convenience function to parse mzPAF annotation string into list of PafAnnotation"""
+    """parse mzPAF annotation string into list of PafAnnotation"""
     return MZ_PAF_PARSER.parse(annotation_str)
 
 
 def parse_single(annotation_str: str) -> PafAnnotation:
-    """Convenience function to parse single mzPAF annotation string into PafAnnotation"""
+    """parse single mzPAF annotation string into PafAnnotation"""
     return parse(annotation_str)[0]

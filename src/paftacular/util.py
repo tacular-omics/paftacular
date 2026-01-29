@@ -13,16 +13,6 @@ def parse_formula(formula: str) -> Counter[str]:
         Counter mapping element symbols to their counts
         - Regular elements: "H", "O", "Ca"
         - Isotopes: "13C", "2H" (without brackets)
-
-    Examples:
-        >>> parse_formula("H2O")
-        Counter({'H': 2, 'O': 1})
-        >>> parse_formula("CO2")
-        Counter({'C': 1, 'O': 2})
-        >>> parse_formula("[13C2]H6")
-        Counter({'13C': 2, 'H': 6})
-        >>> parse_formula("[13C][12C2]H2")
-        Counter({'13C': 1, '12C': 2, 'H': 2})
     """
     if not formula:
         raise ValueError("Empty formula string")

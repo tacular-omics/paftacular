@@ -2,4 +2,4 @@
 
 ## 0.1.0 (2026-01-14)
 
-* First release on PyPI.
+- First release on PyPI.

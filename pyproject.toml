@@ -21,6 +21,10 @@ classifiers = [
     "Operating System :: OS Independent",
     "Typing :: Typed",
 ]
+[project.optional-dependencies]
+smiles = ["pysmiles>=2.0.1"]
+sequence = ["peptacular>=3.0.0"]
+all = ["pysmiles>=2.0.1", "peptacular>=3.0.0"]
 
 [build-system]
 requires = ["hatchling"]
@@ -33,15 +37,19 @@ packages = ["src/paftacular"]
 package = true
 dev-dependencies = [
     "pysmiles>=2.0.1",
+    "peptacular>=3.0.0",
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
     "pytest-cov>=6.0.0",
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "sphinx-autodoc-typehints>=1.25",
 ]
 
 [tool.ruff]
 target-version = "py312"
-line-length = 120
+line-length = 160
 
 [tool.ruff.lint]
 select = [
@@ -52,8 +60,11 @@ select = [
     "B",   # flake8-bugbear
     "UP",  # pyupgrade
 ]
+ignore = [
+    "E741",  # Abigous variable names)
+]
 
 
-#[tool.uv.sources]
+[tool.uv.sources]
 #tacular = { path = "../tacular", editable = true }
-#peptacular = { path = "../peptacular", editable = true }
+peptacular = { path = "../peptacular", editable = true }

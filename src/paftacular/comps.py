@@ -298,9 +298,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         if self.modification is not None:
             raise NotImplementedError("Mass calculation for modified immonium ions is not implemented")
 
-        return FRAGMENT_ION_LOOKUP[self.amino_acid].get_mass(monoisotopic) + FRAGMENT_ION_LOOKUP["by"].get_mass(
-            monoisotopic
-        )
+        return FRAGMENT_ION_LOOKUP[self.amino_acid].get_mass(monoisotopic) + FRAGMENT_ION_LOOKUP["by"].get_mass(monoisotopic)
 
     @property
     def formula(self) -> str:
@@ -308,9 +306,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        comp: Counter[ElementInfo] = (
-            FRAGMENT_ION_LOOKUP[self.amino_acid].composition + FRAGMENT_ION_LOOKUP["by"].composition
-        )
+        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self.amino_acid].composition + FRAGMENT_ION_LOOKUP["by"].composition
         if comp is None:
             raise ValueError(f"Composition not available for immonium ion of amino acid: {self.amino_acid}")
         return comp
@@ -424,9 +420,7 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
         for node_id in mol.nodes():
             elem = mol.nodes[node_id].get("element", "*")
             if elem == "*":
-                raise ValueError(
-                    f"Unknown element '*' in SMILES '{self.smiles}'. Ensure all atoms are properly specified."
-                )
+                raise ValueError(f"Unknown element '*' in SMILES '{self.smiles}'. Ensure all atoms are properly specified.")
             elem_counts[elem] += 1
 
         return Counter({ELEMENT_LOOKUP[elem]: count for elem, count in elem_counts.items()})
@@ -552,15 +546,10 @@ class NeutralLoss(
             case "reference":
                 refmol = self.reference
                 if not isinstance(refmol, RefMolInfo):
-                    raise ValueError(
-                        f"Unknown reference molecule '{self.base_reference}'. Check that it exists in REFMOL_LOOKUP."
-                    )
+                    raise ValueError(f"Unknown reference molecule '{self.base_reference}'. Check that it exists in REFMOL_LOOKUP.")
                 return refmol.composition
             case "mass":
-                raise ValueError(
-                    f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). "
-                    f"Use a formula or reference instead."
-                )
+                raise ValueError(f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). Use a formula or reference instead.")
 
     @property
     def proforma_formula(self) -> str:
@@ -579,9 +568,7 @@ class NeutralLoss(
                 if isinstance(refmol, RefMolInfo):
                     return refmol.chemical_formula
                 else:
-                    raise ValueError(
-                        f"Cannot get formula for unknown reference molecule '{refmol}' of type: {type(refmol)}"
-                    )
+                    raise ValueError(f"Cannot get formula for unknown reference molecule '{refmol}' of type: {type(refmol)}")
             case "mass":
                 raise ValueError(f"Cannot get formula for mass-based loss: {self.base_mass}")
             case _:
@@ -616,9 +603,7 @@ class NeutralLoss(
         single_mass: float = self._mass_single(monoisotopic)
         return single_mass * self.count
 
-    def serialize(
-        self, loss_type: Literal["mass", "formula", "reference"] | None = None, monoisotopic: bool = True
-    ) -> str:
+    def serialize(self, loss_type: Literal["mass", "formula", "reference"] | None = None, monoisotopic: bool = True) -> str:
         if loss_type is None:
             loss_type = self.loss_type
 
