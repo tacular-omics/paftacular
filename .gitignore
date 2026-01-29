@@ -1,3 +1,47 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# IDEs and editors
+.idea/
+.vscode/
+.zed/
+
+# Virtual environments
+.venv
+
+docs/_build/*
+
+# Testing and coverage reports
+try*.py
+.coverage
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+htmlcov/
+uv.lock
+
+# Other
+coverage.xml
+htmlcov/
+.coverage
+*.cover
+.pytest_cache/
+junit.xml
+
+
+*GNOme.obo
+*PSI-MOD.obo
+*UNIMOD.obo
+*XLMod.obo
+
+*try_*.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -113,3 +157,11 @@ dmypy.json
 # editors
 .vscode/
 .idea/
+
+# Other
+coverage.xml
+htmlcov/
+.coverage
+*.cover
+.pytest_cache/
+junit.xml

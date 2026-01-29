@@ -79,7 +79,7 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional mass calculations based on sequence can be added here
-            import peptacular as pt
+            import peptacular as pt  # ty: ignore
 
             annot = pt.parse(self.sequence)
 
@@ -118,7 +118,7 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional composition calculations based on sequence can be added here
-            import peptacular as pt
+            import peptacular as pt  # ty: ignore
 
             annot = pt.parse(self.sequence)
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "mzpaf parser"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["tacular"]
+dependencies = ["tacular>=1.0.0"]
 authors = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
@@ -12,7 +12,14 @@ maintainers = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
 classifiers = [
-    # TODO
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
 ]
 
 [build-system]
@@ -29,7 +36,7 @@ dev-dependencies = [
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
-    "peptacular"
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.ruff]
@@ -47,6 +54,6 @@ select = [
 ]
 
 
-[tool.uv.sources]
-tacular = { path = "../tacular", editable = true }
-peptacular = { path = "../peptacular", editable = true }
+#[tool.uv.sources]
+#tacular = { path = "../tacular", editable = true }
+#peptacular = { path = "../peptacular", editable = true }
