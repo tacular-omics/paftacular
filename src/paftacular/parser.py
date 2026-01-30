@@ -1,4 +1,5 @@
 import re
+from typing import ClassVar
 
 from .annotation import PafAnnotation
 from .comps import (
@@ -17,45 +18,20 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
-from .constants import ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN, NEUTRAL_LOSS_REGEX_PATTERN, AminoAcids, IonSeries
+from .constants import ADDUCT_REGEX_PATTERN, FULL_PAF_PATTERN, ISOTOPE_REGEX_PATTERN, NEUTRAL_LOSS_REGEX_PATTERN, AminoAcids, IonSeries
 
 
 class mzPAFParser:
-    """Parser for mzPAF annotation strings following PSI specification"""
+    _instance: ClassVar["mzPAFParser | None"] = None
 
-    # Regex components for better readability
-    _AUXILIARY = r"(?P<is_auxiliary>&)?"
-    _ANALYTE_REF = r"(?:(?P<analyte_reference>\d+)@)?"
-
-    # Ion type patterns
-    _PEPTIDE_SERIES = r"(?:(?P<series>(?:da|db|wa|wb)|[axbyczdwv]\.?)(?P<ordinal>\d+)(?:\{(?P<sequence_ordinal>.+)\})?)"
-    _INTERNAL = r"(?P<series_internal>m(?P<internal_start>\d+):(?P<internal_end>\d+)(?:\{(?P<sequence_internal>.+)\})?)"
-    _PRECURSOR = r"(?P<precursor>p)"
-    _IMMONIUM = r"(?:I(?P<immonium>[A-Z])(?:\[(?P<immonium_modification>(?:[^\]]+))\])?)"
-    _REFERENCE = r"(?P<reference>r(?:(?:\[(?P<reference_label>[^\]]+)\])))"
-    _FORMULA = r"(?:f\{(?P<formula>[A-Za-z0-9\[\]]+)\})"
-    _NAMED = r"(?:_\{(?P<named_compound>[^\{\}\s,/]+)\})"
-    _SMILES = r"(?:s\{(?P<smiles>[^\}]+)\})"
-    _UNKNOWN = r"(?:(?P<unannotated>\?)(?P<unannotated_label>\d+)?)"
-
-    # Combine all ion types
-    _ION_TYPES = f"(?:{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_REFERENCE}|{_FORMULA}|{_NAMED}|{_SMILES}|{_UNKNOWN})"
-
-    # Modifiers
-    _NEUTRAL_LOSSES = r"(?P<neutral_losses>(?:[+-](?:\d+(?:\.\d+)?|\d*(?:(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])\
-        |(?:[A-Z][A-Za-z0-9]*))+)|(?:\d*\[(?:(?:[A-Za-z0-9:\.]+)(?:\[(?:[A-Za-z0-9\.:\-]+)\])?)\])))+)?"
-    _ISOTOPE = r"(?P<isotope>(?:(?:[+-]\d*)i(?:(?:\d+)?(?:[A-Z][a-z]*)?|A)?)+)?"
-    _ADDUCTS = r"(?:\[(?P<adducts>M(?:[+-]\d*[A-Z][A-Za-z0-9]*)+)\])?"
-    _CHARGE = r"(?:\^(?P<charge>[+-]?\d+))?"
-    _MASS_ERROR = r"(?:/(?P<mass_error>-?\d+(?:\.\d+)?)(?P<mass_error_unit>ppm)?)?"
-    _CONFIDENCE = r"(?:\*(?P<confidence>\d*(?:\.\d+)?))?"
-
-    # Full pattern
-    PATTERN = re.compile(f"^{_AUXILIARY}{_ANALYTE_REF}{_ION_TYPES}{_NEUTRAL_LOSSES}{_ISOTOPE}{_ADDUCTS}{_CHARGE}{_MASS_ERROR}{_CONFIDENCE}$")
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
 
     def parse(self, annotation_str: str) -> PafAnnotation:
         """Parse a single annotation string"""
-        match = self.PATTERN.match(annotation_str)
+        match = FULL_PAF_PATTERN.match(annotation_str)
         if not match:
             raise ValueError(f"Invalid mzPAF annotation: '{annotation_str}'")
 
@@ -283,7 +259,7 @@ MZ_PAF_PARSER = mzPAFParser()
 
 def parse_multi(annotation_str: str) -> list[PafAnnotation]:
     """parse mzPAF annotation string into list of PafAnnotation"""
-    return MZ_PAF_PARSER.parse_multi(annotation_str)
+    return mzPAFParser().parse_multi(annotation_str)
 
 
 def parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]:

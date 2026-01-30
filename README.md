@@ -24,6 +24,13 @@ mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https:
 
 ## Quick Start
 
+
+There are 3 parsing methods available:
+* ``parse``: Parses a single or multiple comma-separated mzPAF annotations. Returns a single ``PafAnnotation`` or a list of them.
+* ``parse_multi``: Parses multiple comma-separated mzPAF annotations. Always returns a list of ``PafAnnotation``.
+* ``parse_single``: Parses a single mzPAF annotation. Returns a single ``PafAnnotation``. Raises ValueError if multiple annotations are provided.
+
+
 ```python
 import paftacular as pft
 
@@ -37,7 +44,7 @@ print(ann.monoisotopic_mass)   # Calculated mass
 print(ann.serialize())         # Round-trip back to string
 
 # Parse multiple ions
-anns = pft.parse_multi("y5-H2O^2/1.2ppm*0.95,b3^2")
+anns = pft.parse("y5-H2O^2/1.2ppm*0.95,b3^2")
 for ann in anns:
   print(ann.charge)
   print(ann.mass_error.value)
