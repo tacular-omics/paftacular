@@ -1,10 +1,18 @@
 # paftacular
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+<div align="center">
+  <img src="paftacular_logo.png" alt="Paftacular Logo" width="400"/>
+    
+  A Python library for parsing and serializing **mzPAF** (Peak Annotation Format), a standardized format for annotating mass spectrometry fragment ions in peptide/proteomics analysis. mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https://www.psidev.info/) that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, charge states, mass errors, and confidence scores.
 
-A Python library for parsing and serializing **mzPAF** (Peak Annotation Format), a standardized format for annotating mass spectrometry fragment ions in peptide/proteomics analysis.
-
-mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https://www.psidev.info/) that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, charge states, mass errors, and confidence scores.
+    
+  [![Python package](https://github.com/tacular-omics/ppaftacular/actions/workflows/python-package.yml/badge.svg)](https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml)
+  [![codecov](https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=1CTVZVFXF7)](https://codecov.io/github/tacular-omics/paftacular)
+  [![PyPI version](https://badge.fury.io/py/paftacular.svg)](https://badge.fury.io/py/paftacular)
+  [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-g.svg)](https://opensource.org/licenses/MIT)
+  
+</div>
 
 ## Features
 
