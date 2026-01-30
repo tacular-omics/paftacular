@@ -1,6 +1,6 @@
 [project]
 name = "paftacular"
-version = "0.1.0"
+dynamic = ["version"]
 description = "mzpaf parser"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -63,6 +63,10 @@ select = [
 ignore = [
     "E741",  # Abigous variable names)
 ]
+
+[tool.hatch.version]
+path = "src/paftacular/__init__.py"
+
 
 
 #[tool.uv.sources]
