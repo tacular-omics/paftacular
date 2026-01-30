@@ -1,8 +1,8 @@
 # paftacular
 
 <div align="center">
-  <img src="paftacular_logo.png" alt="Paftacular Logo" width="400"/>
-    
+  <img src="paftacular_logo.png" alt="Paftacular Logo" width="400" style="margin-bottom: 20px;"/>
+      
   A Python library for parsing and serializing **mzPAF** (Peak Annotation Format), a standardized format for annotating mass spectrometry fragment ions in peptide/proteomics analysis. mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https://www.psidev.info/) that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, charge states, mass errors, and confidence scores.
 
     
