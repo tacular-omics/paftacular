@@ -1,8 +1,10 @@
+from .annotation import PafAnnotation
 from .comps import (
     Adduct,
     ChemicalFormula,
     ImmoniumIon,
     InternalFragment,
+    IonType,
     IsotopeSpecification,
     MassError,
     NamedCompound,
@@ -13,8 +15,8 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
-from .constants import INTERNAL_MASS_DIFFS, AnnotationName, BackboneCleavageType, IonSeries, SeriesName
-from .parser import AminoAcids, IonType, PafAnnotation, parse, parse_single
+from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries, SeriesName
+from .parser import mzPAFParser, parse, parse_multi, parse_single
 
 __all__ = [
     "PafAnnotation",
@@ -39,5 +41,7 @@ __all__ = [
     "AminoAcids",
     "INTERNAL_MASS_DIFFS",
     "parse",
+    "parse_multi",
     "parse_single",
+    "mzPAFParser",
 ]

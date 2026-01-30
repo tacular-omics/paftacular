@@ -13,11 +13,11 @@ charge states, mass errors, and confidence scores.
 Features
 --------
 
-* **Comprehensive mzPAF support**: Handles all major annotation types from the specification
-* **Parse complex annotations**: Fragment ions, neutral losses, isotopes, adducts, charge states, mass errors, and confidence scores
+* **mzPAF parsing**: Handles all major annotation types from the specification
 * **Mass calculations**: Supports both monoisotopic and average mass calculations
-* **Composition analysis**: Full elemental composition tracking with ProForma-style formulas
+* **Composition analysis**: Full elemental composition tracking
 * **Type-safe**: Comprehensive type hints
+* **Caching**: Object caching for improved performance
 
 .. toctree::
    :maxdepth: 2

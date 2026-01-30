@@ -1,14 +1,12 @@
 import re
-from collections import Counter
-from dataclasses import asdict, dataclass
 
-from tacular import ELEMENT_LOOKUP, ElementInfo
-
+from .annotation import PafAnnotation
 from .comps import (
     Adduct,
     ChemicalFormula,
     ImmoniumIon,
     InternalFragment,
+    IonType,
     IsotopeSpecification,
     MassError,
     NamedCompound,
@@ -18,201 +16,8 @@ from .comps import (
     ReferenceIon,
     SMILESCompound,
     UnknownIon,
-    composition_to_formula_string,
-    composition_to_proforma_formula_string,
 )
-from .constants import AminoAcids, IonSeries
-
-# Type aliases for cleaner code
-IonType = PeptideIon | InternalFragment | ImmoniumIon | ReferenceIon | NamedCompound | ChemicalFormula | SMILESCompound | UnknownIon | PrecursorIon
-
-
-@dataclass(frozen=True, slots=True)
-class PafAnnotation:
-    """Fragment ion annotation following mzPAF specification"""
-
-    # Core ion description
-    ion_type: IonType
-
-    # Optional components
-    analyte_reference: int | None = None
-    is_auxiliary: bool = False
-    neutral_losses: tuple[NeutralLoss, ...] = ()  # Immutable tuple instead of mutable list
-    isotopes: tuple[IsotopeSpecification, ...] = ()  # Renamed from 'isotope' for clarity
-    adducts: tuple[Adduct, ...] = ()  # Immutable tuple
-    charge: int = 1
-    mass_error: MassError | None = None
-    confidence: float | None = None
-
-    def __post_init__(self):
-        """Validate annotation constraints"""
-        if self.charge < 1:
-            raise ValueError(f"Charge must be >= 1, got {self.charge}")
-        if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
-            raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
-
-    def mass(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
-        """Calculate the mass of the annotated ion including modifications"""
-        base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
-
-        # Apply neutral losses/gains
-        for loss in self.neutral_losses:
-            base_mass += loss.mass(monoisotopic=monoisotopic)
-
-        # Apply adducts
-        for adduct in self.adducts:
-            base_mass += adduct.mass(monoisotopic=monoisotopic)
-
-        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-        if self.charge != 0 and len(self.adducts) == 0:
-            base_mass += self.charge * 1.007276466812
-
-        if calculate_sequence is True and self.sequence is not None:
-            # Additional mass calculations based on sequence can be added here
-            import peptacular as pt
-
-            annot = pt.parse(self.sequence)
-
-            if annot.has_charge:
-                raise ValueError("Sequence in annotation should not have charge for mass calculation")
-
-            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
-            base_mass += sequence_mass
-
-        return base_mass
-
-    def mz(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
-        """Calculate the m/z of the annotated ion"""
-        total_mass = self.mass(monoisotopic=monoisotopic, calculate_sequence=calculate_sequence)
-        return total_mass / self.charge
-
-    def composition(self, calculate_sequence: bool = False) -> Counter[ElementInfo]:
-        """Calculate the elemental composition of the annotated ion including modifications"""
-        comp: Counter[ElementInfo] = Counter()
-
-        # Base ion composition
-        comp.update(self.ion_type.composition)
-
-        # Apply neutral losses/gains
-        for loss in self.neutral_losses:
-            comp.update(loss.composition)
-
-        # Apply adducts
-        for adduct in self.adducts:
-            comp.update(adduct.composition)
-
-        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-        if self.charge != 0 and len(self.adducts) == 0:
-            proton = ELEMENT_LOOKUP["H"]
-            comp[proton] += self.charge
-
-        if calculate_sequence is True and self.sequence is not None:
-            # Additional composition calculations based on sequence can be added here
-            import peptacular as pt
-
-            annot = pt.parse(self.sequence)
-
-            if annot.has_charge:
-                raise ValueError("Sequence in annotation should not have charge for mass calculation")
-
-            seq_comp = annot.comp()
-            comp.update(seq_comp)
-
-        return comp
-
-    def dict_composition(self, calculate_sequence: bool = False) -> dict[str, int]:
-        """Get the elemental composition as a dictionary of element symbols to counts"""
-        comp_counter = self.composition(calculate_sequence=calculate_sequence)
-        return {str(elem): count for elem, count in comp_counter.items()}
-
-    @property
-    def sequence(self) -> str | None:
-        """Get the peptide sequence if applicable, else None"""
-        if isinstance(self.ion_type, PeptideIon):
-            return self.ion_type.sequence
-        elif isinstance(self.ion_type, InternalFragment):
-            return self.ion_type.sequence
-        return None
-
-    def formula(self, calculate_sequence: bool = False) -> str:
-        """Get the chemical formula string of the annotated ion"""
-        return composition_to_formula_string(self.composition(calculate_sequence=calculate_sequence))
-
-    def proforma_formula(self, calculate_sequence: bool = False) -> str:
-        """Get the ProForma-style chemical formula string of the annotated ion"""
-        return composition_to_proforma_formula_string(self.composition(calculate_sequence=calculate_sequence))
-
-    def serialize(self) -> str:
-        """Serialize the annotation back to mzPAF string format"""
-        parts: list[str] = []
-
-        # Auxiliary marker
-        if self.is_auxiliary:
-            parts.append("&")
-
-        # Analyte reference
-        if self.analyte_reference is not None:
-            parts.append(f"{self.analyte_reference}@")
-
-        # Ion type
-        parts.append(str(self.ion_type))
-
-        # Neutral losses
-        for loss in self.neutral_losses:
-            parts.append(str(loss))
-
-        # Isotopes
-        for iso in self.isotopes:
-            if iso.count != 0:
-                parts.append(str(iso))
-
-        # Adducts - reconstruct full adduct string
-        if self.adducts:
-            adduct_str = "M" + "".join(str(a) for a in self.adducts)
-            parts.append(f"[{adduct_str}]")
-
-        # Charge state (only if > 1)
-        if self.charge > 1:
-            parts.append(f"^{self.charge}")
-
-        # Mass error
-        if self.mass_error:
-            parts.append(f"/{self.mass_error}")
-
-        # Confidence
-        if self.confidence is not None:
-            parts.append(f"*{self.confidence:g}")
-
-        return "".join(parts)
-
-    @staticmethod
-    def parse(annotation_str: str) -> "PafAnnotation":
-        """Parse a single mzPAF annotation string into a FragmentAnnotation object"""
-        parser = mzPAFParser()
-        return parser.parse_single(annotation_str)
-
-    def as_dict(self) -> dict:
-        """Convert the annotation to a dictionary representation"""
-        ion_dict = {}
-        ion_dict["ion_type"] = type(self.ion_type).__name__
-        ion_dict.update(asdict(self.ion_type))
-        return {
-            "ion": str(self.ion_type),
-            "analyte_reference": self.analyte_reference,
-            "is_auxiliary": self.is_auxiliary,
-            "neutral_losses": [str(nl) for nl in self.neutral_losses],
-            "isotopes": [str(iso) for iso in self.isotopes],
-            "adducts": [str(ad) for ad in self.adducts],
-            "charge": self.charge,
-            "mass_error": str(self.mass_error) if self.mass_error else None,
-            "confidence": self.confidence,
-        }
-
-    def __str__(self) -> str:
-        return self.serialize()
-
-    def __repr__(self) -> str:
-        return f"PafAnnotation({self.as_dict()})"
+from .constants import ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN, NEUTRAL_LOSS_REGEX_PATTERN, AminoAcids, IonSeries
 
 
 class mzPAFParser:
@@ -248,7 +53,7 @@ class mzPAFParser:
     # Full pattern
     PATTERN = re.compile(f"^{_AUXILIARY}{_ANALYTE_REF}{_ION_TYPES}{_NEUTRAL_LOSSES}{_ISOTOPE}{_ADDUCTS}{_CHARGE}{_MASS_ERROR}{_CONFIDENCE}$")
 
-    def parse_single(self, annotation_str: str) -> PafAnnotation:
+    def parse(self, annotation_str: str) -> PafAnnotation:
         """Parse a single annotation string"""
         match = self.PATTERN.match(annotation_str)
         if not match:
@@ -327,27 +132,30 @@ class mzPAFParser:
         raise ValueError(f"Unable to parse ion type. Available groups: {non_null}")
 
     def _parse_isotopes(self, isotope_str: str | None) -> tuple[IsotopeSpecification, ...]:
-        """Parse isotope notation into tuple of specifications"""
+        """Parse isotope notation into tuple of specifications
+
+        Examples:
+            "+i" -> (IsotopeSpecification(count=1),)
+            "-2i13C" -> (IsotopeSpecification(count=-2, element="13C"),)
+            "+i-2i13C+iA" -> (IsotopeSpecification(count=1), IsotopeSpecification(count=-2, element="13C"), IsotopeSpecification(count=1, is_average=True))
+        """
         if not isotope_str:
             return ()
 
+        # Extract individual isotope strings like "+i", "-2i13C", "+iA"
+        isotope_matches = re.findall(ISOTOPE_REGEX_PATTERN, isotope_str)
+        if not isotope_matches:
+            return ()
+
+        # Parse each isotope component
         isotopes: list[IsotopeSpecification] = []
-        # Pattern: [+-]?digits?i element?|A?
-        pattern = r"([+-]?)(\d*)i((?:\d+)?(?:[A-Z][a-z]*)?|A)?"
+        for match_groups in isotope_matches:
+            # Reconstruct the isotope string from regex groups
+            sign_str, count_str, element_or_avg = match_groups
 
-        for match in re.finditer(pattern, isotope_str):
-            sign_str, count_str, element_or_avg = match.groups()
-
-            # Calculate signed count
-            sign = -1 if sign_str == "-" else 1
-            count = (int(count_str) if count_str else 1) * sign
-
-            # Check if averaged isotopomer
-            if element_or_avg == "A":
-                isotopes.append(IsotopeSpecification(count=count, is_average=True))
-            else:
-                element = element_or_avg if element_or_avg else None
-                isotopes.append(IsotopeSpecification(count=count, element=element))
+            # Build the isotope string: sign + count + 'i' + element_or_avg
+            isotope_string = f"{sign_str or '+'}{count_str}i{element_or_avg or ''}"
+            isotopes.append(IsotopeSpecification.parse(isotope_string))
 
         return tuple(isotopes)
 
@@ -357,55 +165,22 @@ class mzPAFParser:
             return ()
 
         # Pattern matches: [+-] followed by number, formula, or named group
-        pattern = (
-            r"[+-](?:\d+(?:\.\d+)?(?!\[)|\d*(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])|(?:[A-Z][A-Za-z0-9]*))+|\d*\[(?:[A-Za-z0-9:\.]+)(?:\[[A-Za-z0-9\.:\-]+\])?\])"
-        )
-        loss_strings = re.findall(pattern, losses_str)
+
+        loss_strings = re.findall(NEUTRAL_LOSS_REGEX_PATTERN, losses_str)
 
         losses: list[NeutralLoss] = []
         for loss_str in loss_strings:
-            sign = loss_str[0]
-            sign_mult: int
-            if sign == "+":
-                sign_mult = 1
-            elif sign == "-":
-                sign_mult = -1
-            else:
-                raise ValueError(f"Invalid sign in neutral loss: '{loss_str}'")
-            content = loss_str[1:]  # Remove sign
-
-            # Try to parse as mass (decimal number)
-            if re.match(r"^\d+(?:\.\d+)?$", content):
-                count = 1 * sign_mult
-                losses.append(NeutralLoss(count=count, base_mass=float(content)))
-
-            # Parse as reference group [Name] or COUNT[Name]
-            elif "[" in content:  # Changed from content.startswith('[')
-                # Extract count and reference name
-                match = re.match(r"^(\d*)\[([^\]]+)\]$", content)
-                if match:
-                    count_str, ref_name = match.groups()
-                    count = int(count_str) if count_str else 1
-                    losses.append(NeutralLoss(count=count * sign_mult, base_reference=ref_name))
-
-            # Parse as formula (with optional count prefix)
-            else:
-                # Extract count and formula
-                match = re.match(r"^(\d*)([A-Z].*)$", content)
-                if match:
-                    count_str, formula = match.groups()
-                    count = int(count_str) if count_str else 1
-                    losses.append(NeutralLoss(count=count * sign_mult, base_formula=formula))
-
+            losses.append(NeutralLoss.parse(loss_str))
         return tuple(losses)
 
     def _parse_adducts(self, adduct_str: str | None) -> tuple[Adduct, ...]:
         """Parse adduct notation into tuple of Adduct objects
 
         Examples:
-            "M+H" -> (Adduct(sign=1, count=1, formula="H"),)
-            "M+2H+Na" -> (Adduct(sign=1, count=2, formula="H"), Adduct(sign=1, count=1, formula="Na"))
-            "M+NH4" -> (Adduct(sign=1, count=1, formula="NH4"),)
+            "M+H" -> (Adduct(count=1, base_formula="H"),)
+            "M+2H+Na" -> (Adduct(count=2, base_formula="H"), Adduct(count=1, base_formula="Na"))
+            "M+NH4" -> (Adduct(count=1, base_formula="NH4"),)
+            "M-H+2Na" -> (Adduct(count=-1, base_formula="H"), Adduct(count=2, base_formula="Na"))
         """
         if not adduct_str:
             return ()
@@ -418,25 +193,18 @@ class mzPAFParser:
         if not content:
             raise ValueError(f"Adduct string must have components after 'M': '{adduct_str}'")
 
-        # Pattern: [+-] followed by optional count and formula
-        # Matches: +2H, +Na, -NH4, +H, etc.
-        pattern = r"([+-])(\d*)([A-Z][A-Za-z0-9]*)"
-
-        adducts: list[Adduct] = []
-        for match in re.finditer(pattern, content):
-            sign_str, count_str, formula = match.groups()
-            sign: int
-            if sign_str == "+":
-                sign = 1
-            elif sign_str == "-":
-                sign = -1
-            else:
-                raise ValueError(f"Invalid sign in adduct: '{match.group(0)}'")
-            count = int(count_str) if count_str else 1
-            adducts.append(Adduct(count=count * sign, base_formula=formula))
-
-        if not adducts:
+        # Extract individual adduct strings like "+H", "+2Na", "-NH4"
+        adduct_strings = re.findall(ADDUCT_REGEX_PATTERN, content)
+        if not adduct_strings:
             raise ValueError(f"No adduct components found in '{adduct_str}'")
+
+        # Parse each adduct component
+        adducts: list[Adduct] = []
+        for match_groups in adduct_strings:
+            # Reconstruct the adduct string from regex groups
+            sign_str, count_str, formula = match_groups
+            adduct_string = f"{sign_str}{count_str}{formula}"
+            adducts.append(Adduct.parse(adduct_string))
 
         return tuple(adducts)
 
@@ -496,7 +264,7 @@ class mzPAFParser:
         except ValueError as e:
             raise ValueError(f"Field '{key}' must be a number, got '{value}'") from e
 
-    def parse(self, annotation_str: str) -> list[PafAnnotation]:
+    def parse_multi(self, annotation_str: str) -> list[PafAnnotation]:
         """Parse potentially multiple comma-separated annotations"""
         if not annotation_str:
             return []
@@ -505,7 +273,7 @@ class mzPAFParser:
         for part in annotation_str.split(","):
             part = part.strip()
             if part:
-                annotations.append(self.parse_single(part))
+                annotations.append(self.parse(part))
 
         return annotations
 
@@ -513,11 +281,22 @@ class mzPAFParser:
 MZ_PAF_PARSER = mzPAFParser()
 
 
-def parse(annotation_str: str) -> list[PafAnnotation]:
+def parse_multi(annotation_str: str) -> list[PafAnnotation]:
     """parse mzPAF annotation string into list of PafAnnotation"""
-    return MZ_PAF_PARSER.parse(annotation_str)
+    return MZ_PAF_PARSER.parse_multi(annotation_str)
+
+
+def parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]:
+    """parse single mzPAF annotation string into PafAnnotation"""
+    annots = parse_multi(annotation_str)
+    if len(annots) == 1:
+        return annots[0]
+    return annots
 
 
 def parse_single(annotation_str: str) -> PafAnnotation:
-    """parse single mzPAF annotation string into PafAnnotation"""
-    return parse(annotation_str)[0]
+    """backward compatibility alias for parse()"""
+    annots = parse_multi(annotation_str)
+    if len(annots) != 1:
+        raise ValueError(f"Expected single annotation, got {len(annots)}: '{annotation_str}'")
+    return annots[0]

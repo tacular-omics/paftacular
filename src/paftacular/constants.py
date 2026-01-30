@@ -1,6 +1,33 @@
 # Table from the specification showing differences from yb
 from enum import StrEnum
 
+
+class InternalSeries(StrEnum):
+    """Enumeration of internal ion series types"""
+
+    AX = "ax"
+    BX = "bx"
+    CX = "cx"
+    AY = "ay"
+    BY = "by"
+    CY = "cy"
+    AZ = "az"
+    BZ = "bz"
+    CZ = "cz"
+
+
+INTERNAL_SERIES_TO_DIFF: dict[InternalSeries, str | None] = {
+    InternalSeries.AX: None,
+    InternalSeries.BX: "+CO",
+    InternalSeries.CX: "+CHNO",
+    InternalSeries.AY: "-CO",
+    InternalSeries.BY: None,
+    InternalSeries.CY: "+NH",
+    InternalSeries.AZ: "-CHNO",
+    InternalSeries.BZ: "-NH",
+    InternalSeries.CZ: None,
+}
+
 INTERNAL_MASS_DIFFS: dict[tuple[str, str], None | str] = {
     ("a", "x"): None,  #  Default, no difference
     ("b", "x"): "+CO",
@@ -94,3 +121,13 @@ class AminoAcids(StrEnum):
     V = "V"
     W = "W"
     Y = "Y"
+
+
+ISOTOPE_REGEX_PATTERN = r"([+-]?)(\d*)i((?:\d+)?(?:[A-Z][a-z]*)?|A)?"
+NEUTRAL_LOSS_REGEX_PATTERN = (
+    r"[+-](?:\d+(?:\.\d+)?(?!\[)|\d*(?:(?:\[[0-9]+[A-Z][A-Za-z0-9]*\])|(?:[A-Z][A-Za-z0-9]*))+|\d*\[(?:[A-Za-z0-9:\.]+)(?:\[[A-Za-z0-9\.:\-]+\])?\])"
+)
+ADDUCT_REGEX_PATTERN = r"([+-])(\d*)([A-Z][A-Za-z0-9]*)"
+
+
+MAX_CACHE_SIZE = 10_000

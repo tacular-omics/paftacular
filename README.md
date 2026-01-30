@@ -28,7 +28,7 @@ mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https:
 import paftacular as pft
 
 # Parse a simple peptide ion
-ann = pft.parse_single("y5")
+ann = pft.parse("y5")
 print(ann.ion_type.series)  # IonSeries.Y
 print(ann.ion_type.position)  # 5
 
@@ -37,7 +37,7 @@ print(ann.monoisotopic_mass)   # Calculated mass
 print(ann.serialize())         # Round-trip back to string
 
 # Parse multiple ions
-anns = pft.parse("y5-H2O^2/1.2ppm*0.95,b3^2")
+anns = pft.parse_multi("y5-H2O^2/1.2ppm*0.95,b3^2")
 for ann in anns:
   print(ann.charge)
   print(ann.mass_error.value)

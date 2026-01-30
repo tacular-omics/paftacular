@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 from tacular import ELEMENT_LOOKUP
 
-from paftacular import PafAnnotation, parse, parse_single
+from paftacular import PafAnnotation, parse, parse_multi
 from paftacular.comps import (
     Adduct,
     ChemicalFormula,
@@ -333,38 +333,43 @@ class TestParsing:
 
     def test_parse_simple(self):
         """Test parsing simple annotation"""
-        annotation = parse_single("b2")
+        annotation = parse("b2")
+        assert isinstance(annotation.ion_type, PeptideIon)
         assert annotation.ion_type.series == IonSeries.B
         assert annotation.ion_type.position == 2
 
     def test_parse_with_sequence(self):
         """Test parsing with sequence"""
-        annotation = parse_single("y3{PEP}")
+        annotation = parse("y3{PEP}")
+        assert isinstance(annotation.ion_type, PeptideIon)
         assert annotation.ion_type.series == IonSeries.Y
         assert annotation.ion_type.position == 3
         assert annotation.ion_type.sequence == "PEP"
 
     def test_parse_with_neutral_loss(self):
         """Test parsing with neutral loss"""
-        annotation = parse_single("b2-H2O")
+        annotation = parse("b2-H2O")
         assert len(annotation.neutral_losses) == 1
         assert annotation.neutral_losses[0].count == -1
 
     def test_parse_with_adduct(self):
         """Test parsing with adduct"""
-        annotation = parse_single("b2[M+Na]")
+        annotation = parse("b2[M+Na]")
         assert len(annotation.adducts) == 1
         assert annotation.adducts[0].count == 1
 
     def test_parse_with_charge(self):
         """Test parsing with charge"""
-        annotation = parse_single("b2^2")
+        annotation = parse("b2^2")
         assert annotation.charge == 2
 
     def test_parse_multiple_annotations(self):
         """Test parsing comma-separated annotations"""
-        annotations = parse("b2, y3, a1")
+        annotations = parse_multi("b2, y3, a1")
         assert len(annotations) == 3
+        assert isinstance(annotations[0].ion_type, PeptideIon)
+        assert isinstance(annotations[1].ion_type, PeptideIon)
+        assert isinstance(annotations[2].ion_type, PeptideIon)
         assert annotations[0].ion_type.series == IonSeries.B
         assert annotations[1].ion_type.series == IonSeries.Y
         assert annotations[2].ion_type.series == IonSeries.A
@@ -383,15 +388,15 @@ class TestParsing:
             "f{C6H12O6}",
         ]
         for test_str in test_strings:
-            annotation = parse_single(test_str)
+            annotation = parse(test_str)
             serialized = annotation.serialize()
-            re_parsed = parse_single(serialized)
+            re_parsed = parse(serialized)
             assert annotation.ion_type == re_parsed.ion_type
 
     def test_invalid_annotation(self):
         """Test that invalid annotations raise errors"""
         with pytest.raises(ValueError, match="Invalid mzPAF annotation"):
-            parse_single("invalid_annotation!")
+            parse("invalid_annotation!")
 
 
 class TestFormulaProperties:
@@ -429,6 +434,163 @@ class TestSequenceProperty:
         """Test sequence property is None for non-peptide ions"""
         annotation = PafAnnotation(ion_type=PrecursorIon())
         assert annotation.sequence is None
+
+
+class TestAsDictMethod:
+    """Test as_dict method"""
+
+    def test_as_dict_basic(self):
+        """Test as_dict returns proper dictionary"""
+        annotation = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
+        result = annotation.as_dict()
+        assert isinstance(result, dict)
+        assert "ion" in result
+        assert "charge" in result
+        assert result["charge"] == 1
+
+    def test_as_dict_with_all_fields(self):
+        """Test as_dict with all fields populated"""
+        annotation = PafAnnotation(
+            ion_type=PeptideIon(series=IonSeries.Y, position=5),
+            analyte_reference=1,
+            is_auxiliary=True,
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
+            isotopes=(IsotopeSpecification(count=1),),
+            adducts=(Adduct(count=1, base_formula="Na"),),
+            charge=2,
+            mass_error=MassError(0.5, "ppm"),
+            confidence=0.95,
+        )
+        result = annotation.as_dict()
+        assert result["analyte_reference"] == 1
+        assert result["is_auxiliary"] is True
+        assert len(result["neutral_losses"]) == 1
+        assert len(result["isotopes"]) == 1
+        assert len(result["adducts"]) == 1
+        assert result["charge"] == 2
+        assert result["mass_error"] is not None
+        assert result["confidence"] == 0.95
+
+
+class TestReprMethod:
+    """Test __repr__ method"""
+
+    def test_repr_basic(self):
+        """Test __repr__ returns string"""
+        annotation = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
+        repr_str = repr(annotation)
+        assert isinstance(repr_str, str)
+        assert "PafAnnotation" in repr_str
+
+
+class TestParseEmptyAndMultiple:
+    """Test parse with empty and multiple annotations"""
+
+    def test_parse_empty_string(self):
+        """Test parsing empty string returns empty list"""
+        result = parse_multi("")
+        assert result == []
+
+    def test_parse_multiple_annotations(self):
+        """Test parsing multiple comma-separated annotations"""
+        result = parse_multi("b5, y10")
+        assert len(result) == 2
+        assert isinstance(result[0].ion_type, PeptideIon)
+        assert isinstance(result[1].ion_type, PeptideIon)
+
+    def test_parse_multiple_with_whitespace(self):
+        """Test parsing handles whitespace correctly"""
+        result = parse_multi("b5,  y10  , c3")
+        assert len(result) == 3
+
+
+class TestCompositionMethods:
+    """Test composition-related methods"""
+
+    def test_composition_basic(self):
+        """Test composition method returns Counter"""
+        annotation = PafAnnotation(ion_type=PrecursorIon())
+        comp = annotation.composition()
+        assert isinstance(comp, Counter)
+
+    def test_dict_composition(self):
+        """Test dict_composition returns dict with string keys"""
+        annotation = PafAnnotation(ion_type=PrecursorIon())
+        comp = annotation.dict_composition()
+        assert isinstance(comp, dict)
+        for key in comp.keys():
+            assert isinstance(key, str)
+
+    def test_composition_with_neutral_loss(self):
+        """Test composition includes neutral loss"""
+        annotation = PafAnnotation(
+            ion_type=PrecursorIon(),
+            neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
+        )
+        comp = annotation.composition()
+        # Should have adjusted composition
+        assert isinstance(comp, Counter)
+
+    def test_composition_with_adduct(self):
+        """Test composition includes adduct"""
+        annotation = PafAnnotation(
+            ion_type=PrecursorIon(),
+            adducts=(Adduct(count=1, base_formula="Na"),),
+        )
+        comp = annotation.composition()
+        # Should include Na
+        assert any("Na" in str(elem) for elem in comp.keys())
+
+    def test_composition_with_charge_no_adducts(self):
+        """Test composition includes protons for charge when no adducts"""
+        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=2)
+        comp = annotation.composition()
+        # Should have H added for charge
+        h_elem = ELEMENT_LOOKUP["H"]
+        assert h_elem in comp
+
+
+class TestMzMethod:
+    """Test m/z calculation"""
+
+    def test_mz_basic(self):
+        """Test m/z calculation"""
+        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=2)
+        mz = annotation.mz()
+        assert isinstance(mz, float)
+        assert mz > 0
+
+    def test_mz_equals_mass_when_charge_one(self):
+        """Test m/z equals mass when charge is 1"""
+        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=1)
+        mass = annotation.mass()
+        mz = annotation.mz()
+        assert abs(mass - mz) < 0.01
+
+
+class TestInvalidAnnotations:
+    """Test error handling for invalid annotations"""
+
+    def test_invalid_annotation_string(self):
+        """Test parsing invalid annotation raises ValueError"""
+        with pytest.raises(ValueError, match="Invalid mzPAF annotation"):
+            parse("not_valid_annotation")
+
+    def test_negative_confidence(self):
+        """Test negative confidence raises ValueError"""
+        with pytest.raises(ValueError, match="Confidence must be between"):
+            PafAnnotation(
+                ion_type=PrecursorIon(),
+                confidence=-0.1,
+            )
+
+    def test_confidence_greater_than_one(self):
+        """Test confidence > 1 raises ValueError"""
+        with pytest.raises(ValueError, match="Confidence must be between"):
+            PafAnnotation(
+                ion_type=PrecursorIon(),
+                confidence=1.1,
+            )
 
 
 if __name__ == "__main__":

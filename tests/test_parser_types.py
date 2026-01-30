@@ -1,7 +1,7 @@
 import pytest
 from tacular import ELEMENT_LOOKUP
 
-from paftacular import PafAnnotation, parse, parse_single
+from paftacular import PafAnnotation, parse, parse_multi
 from paftacular.comps import (
     ChemicalFormula,
     ImmoniumIon,
@@ -17,7 +17,7 @@ from paftacular.constants import AminoAcids, IonSeries
 
 
 def parse_one(s: str) -> PafAnnotation:
-    return parse_single(s)
+    return parse(s)
 
 
 # ============================================================================
@@ -755,7 +755,7 @@ def test_complex_annotation_neutral_loss_isotope():
 
 
 def test_multiple_annotations_parse():
-    anns = parse("y3, b2, p, IY")
+    anns = parse_multi("y3, b2, p, IY")
     assert len(anns) == 4
 
     assert isinstance(anns[0].ion_type, PeptideIon)
@@ -771,7 +771,7 @@ def test_multiple_annotations_parse():
 
 
 def test_multiple_annotations_complex():
-    anns = parse("y5-H2O, b3+NH3, p^2")
+    anns = parse_multi("y5-H2O, b3+NH3, p^2")
     assert len(anns) == 3
 
     # First annotation with neutral loss
@@ -890,6 +890,8 @@ def test_serialization_roundtrip_simple():
     reparsed = parse_one(serialized)
 
     # Compare key properties
+    assert isinstance(reparsed.ion_type, PeptideIon)
+    assert isinstance(ann.ion_type, PeptideIon)
     assert ann.ion_type.series == reparsed.ion_type.series
     assert ann.charge == reparsed.charge
     assert len(ann.neutral_losses) == len(reparsed.neutral_losses)
@@ -910,5 +912,6 @@ def test_internal_fragment_backbone_types():
     fragment = ann.ion_type
 
     # Test default values
+    assert isinstance(fragment, InternalFragment)
     assert fragment.nterm_ion_type is None
     assert fragment.cterm_ion_type is None
