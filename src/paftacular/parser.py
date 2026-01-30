@@ -259,7 +259,7 @@ MZ_PAF_PARSER = mzPAFParser()
 
 def parse_multi(annotation_str: str) -> list[PafAnnotation]:
     """parse mzPAF annotation string into list of PafAnnotation"""
-    return mzPAFParser().parse_multi(annotation_str)
+    return MZ_PAF_PARSER.parse_multi(annotation_str)
 
 
 def parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]:

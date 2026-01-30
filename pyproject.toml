@@ -23,8 +23,8 @@ classifiers = [
 ]
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
-sequence = ["peptacular>=3.0.0"]
-all = ["pysmiles>=2.0.1", "peptacular>=3.0.0"]
+sequence = ["peptacular>=2.0.0"]
+all = ["pysmiles>=2.0.1", "peptacular>=2.0.0"]
 
 [build-system]
 requires = ["hatchling"]
@@ -37,7 +37,7 @@ packages = ["src/paftacular"]
 package = true
 dev-dependencies = [
     "pysmiles>=2.0.1",
-    "peptacular>=3.0.0",
+    "peptacular>=2.0.0",
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
@@ -65,6 +65,6 @@ ignore = [
 ]
 
 
-[tool.uv.sources]
+#[tool.uv.sources]
 #tacular = { path = "../tacular", editable = true }
-peptacular = { path = "../peptacular", editable = true }
+#peptacular = { path = "../peptacular", editable = true }
