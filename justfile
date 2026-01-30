@@ -4,6 +4,9 @@ default: lint format check test
 install:
     uv sync --all-extras
 
+install-all: install
+    
+
 # Install minimal dependencies (no dev, no extras)
 install-prod:
     uv sync --no-dev --frozen
