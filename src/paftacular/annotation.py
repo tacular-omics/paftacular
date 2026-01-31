@@ -195,10 +195,10 @@ class PafAnnotation:
 
             annot = pt.parse(self.sequence)
 
-            if annot.has_charge:
+            if annot.has_charge:  # ty: ignore
                 raise ValueError("Sequence in annotation should not have charge for mass calculation")
 
-            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
+            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")  # type: ignore
             base_mass += sequence_mass
 
         return base_mass
@@ -234,10 +234,10 @@ class PafAnnotation:
 
             annot = pt.parse(self.sequence)
 
-            if annot.has_charge:
+            if annot.has_charge:  # ty: ignore
                 raise ValueError("Sequence in annotation should not have charge for mass calculation")
 
-            seq_comp = annot.comp()
+            seq_comp = annot.comp()  # type: ignore
             comp.update(seq_comp)
 
         return comp
@@ -310,10 +310,9 @@ class PafAnnotation:
     @staticmethod
     def parse(annotation_str: str) -> "PafAnnotation":
         """Parse a single mzPAF annotation string into a FragmentAnnotation object"""
-        from .parser import mzPAFParser
+        from .parser import MZ_PAF_PARSER
 
-        parser = mzPAFParser()
-        return parser.parse(annotation_str)
+        return MZ_PAF_PARSER.parse(annotation_str)
 
     def as_dict(self) -> dict:
         """Convert the annotation to a dictionary representation"""

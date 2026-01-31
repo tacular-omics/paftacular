@@ -68,7 +68,6 @@ ignore = [
 path = "src/paftacular/__init__.py"
 
 
-
 #[tool.uv.sources]
 #tacular = { path = "../tacular", editable = true }
 #peptacular = { path = "../peptacular", editable = true }
