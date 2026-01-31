@@ -2,10 +2,8 @@
 
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from tacular import ElementInfo
+from tacular import ElementInfo
 
 
 class Serializable(ABC):
