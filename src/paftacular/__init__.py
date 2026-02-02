@@ -15,7 +15,7 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
-from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries, SeriesName
+from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries
 from .parser import mzPAFParser, parse, parse_multi, parse_single
 
 __all__ = [
@@ -37,7 +37,6 @@ __all__ = [
     "IonSeries",
     "BackboneCleavageType",
     "AnnotationName",
-    "SeriesName",
     "AminoAcids",
     "INTERNAL_MASS_DIFFS",
     "parse",
