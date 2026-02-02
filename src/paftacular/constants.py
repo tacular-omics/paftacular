@@ -83,22 +83,6 @@ class AnnotationName(StrEnum):
     INTERNAL = "internal"
 
 
-class SeriesName(StrEnum):
-    A = "a"
-    B = "b"
-    C = "c"
-    X = "x"
-    Y = "y"
-    Z = "z"
-    D = "d"
-    W = "w"
-    V = "v"
-    DA = "da"
-    DB = "db"
-    WA = "wa"
-    WB = "wb"
-
-
 class AminoAcids(StrEnum):
     """Standard amino acids"""
 
