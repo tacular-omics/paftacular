@@ -57,3 +57,5 @@ docs-clean:
 docs-open:
     just docs
     python -c "import webbrowser; webbrowser.open('file://{{justfile_directory()}}/docs/_build/html/index.html')"
+
+pre-release: format lint check test docs-test
