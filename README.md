@@ -14,12 +14,14 @@
   
 </div>
 
-## Features
+Features
+--------
 
-- Parse and serialize mzPAF annotations with full specification support
-- Handle fragment ions, neutral losses, isotopes, adducts, charge states, mass errors, and confidence scores
-- Calculate monoisotopic and average masses with elemental composition tracking
-- Type-safe with comprehensive type hints and dataclasses
+* **mzPAF parsing**: Handles parsing / serializing of mzPAF strings
+* **Properties**: Supports calculating mass and composition of annotated ions
+* **Type-Annotations**: typed.py file for static type checking
+* **Caching**: serialization and parsing results are cached for performance (when applicable)
+* **Integrated**: Integrated with peptacular, such that peptacular can output mzPAF annotations for fragment ions
 
 ## Installation
 
