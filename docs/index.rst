@@ -23,13 +23,12 @@
 .. raw:: html
 
    <div style="text-align: center; font-size: 1.0em; margin-bottom: 20px;">
-      Welcome to Paftacular's documentation! Paftacular is a Python library for parsing and serializing <strong>mzPAF</strong> (Peak Annotation Format)
+      Welcome to Paftacular's documentation! Paftacular is a Python library for parsing and serializing <strong>mzPAF</strong> (Peak Annotation Format). mzPAF is a specification from the <a href="https://www.psidev.info/">Proteomics Standards Initiative (PSI)</a>
+      that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, 
+      charge states, mass errors, and confidence scores.
 
    </div>
 
-mzPAF is a specification from the <a href="https://www.psidev.info/">Proteomics Standards Initiative (PSI)</a>
-that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, 
-charge states, mass errors, and confidence scores.
 
 Features
 --------
