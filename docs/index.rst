@@ -9,7 +9,9 @@
 
    <div style="text-align: center; margin-bottom: 5px;">
       <a href="https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml"><img src="https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml/badge.svg" alt="Python package"></a>
-      <a href="https://codecov.io/github/paftacular-omics/paftacular"><img src="https://codecov.io/github/paftacular-omics/paftacular/graph/badge.svg?token=1CTVZVFXF7" alt="codecov"></a>
+      <a href="https://codecov.io/github/tacular-omics/paftacular" > 
+         <img src="https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=lZDTvRrnuq"/> 
+      </a>
       <a href="https://paftacular.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/paftacular/badge/?version=latest" alt="Documentation Status"></a>
       <a href="https://badge.fury.io/py/paftacular"><img src="https://badge.fury.io/py/paftacular.svg" alt="PyPI version"></a>
       <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+"></a>
