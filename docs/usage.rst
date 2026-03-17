@@ -528,4 +528,46 @@ Export to Dictionary
    data = ann.as_dict()
 
 
+Peptacular Integration
+----------------------
+
+`paftacular` integrates with `peptacular <https://github.com/tacular-omics/peptacular>`_
+to convert its ``Fragment`` objects directly into ``PafAnnotation`` objects via ``to_mzpaf()``.
+
+.. code-block:: python
+
+   import peptacular as pt
+   import paftacular as pft
+
+   # Generate fragment ions from a peptide sequence
+   fragments = pt.fragment("PEPTIDE", charges=[1, 2], ion_types=["y", "b"])
+
+   # Convert each fragment to a PafAnnotation
+   annotations = [pft.to_mzpaf(f) for f in fragments]
+   for ann in annotations[:3]:
+       print(ann.serialize())
+   # b1{P}
+   # b2{PE}
+   # b3{PEP}
+
+Optional parameters let you attach a mass error and confidence score to each annotation:
+
+.. code-block:: python
+
+   ann = pft.to_mzpaf(
+       fragments[0],
+       confidence=0.95,
+       mass_error=1.2,
+       mass_error_type="ppm",
+   )
+   print(ann.serialize())   # b1{P}/1.2ppm*0.95
+
+Pass ``include_annotation=False`` to omit the embedded sequence from the annotation
+(useful when sequence context is not needed):
+
+.. code-block:: python
+
+   ann = pft.to_mzpaf(fragments[0], include_annotation=False)
+   print(ann.serialize())   # b1
+
 For more details, see the `PSI mzPAF specification <https://www.psidev.info/>`_.
