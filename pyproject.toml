@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "mzpaf parser"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["tacular>=1.0.0"]
+dependencies = ["peptacular>=3.0.0"]
 authors = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
@@ -12,7 +12,7 @@ maintainers = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Chemistry",
@@ -23,8 +23,7 @@ classifiers = [
 ]
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
-sequence = ["peptacular>=2.5.0"]
-all = ["pysmiles>=2.0.1", "peptacular>=2.5.0"]
+all = ["pysmiles>=2.0.1"]
 
 [build-system]
 requires = ["hatchling"]
@@ -37,7 +36,7 @@ packages = ["src/paftacular"]
 package = true
 dev-dependencies = [
     "pysmiles>=2.0.1",
-    "peptacular>=2.5.0",
+    "peptacular>=3.0.0",
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
@@ -68,6 +67,5 @@ ignore = [
 path = "src/paftacular/__init__.py"
 
 
-#[tool.uv.sources]
-#tacular = { path = "../tacular", editable = true }
-#peptacular = { path = "../peptacular", editable = true }
+[tool.uv.sources]
+peptacular = { path = "../peptacular", editable = true }

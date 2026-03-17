@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import ClassVar
 
-from tacular import ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
+import peptacular as pt
+from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 
 from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries
 from .base import CompositionProvider, MassProvider, Serializable
@@ -38,9 +39,9 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
             raise ValueError(f"Composition not available for ion series: {self.series}")
         return comp
 
-    def serialize(self) -> str:
+    def serialize(self, include_sequence: bool = True) -> str:
         result = f"{self.series}{self.position}"
-        if self.sequence:
+        if include_sequence and self.sequence:
             result += f"{{{self.sequence}}}"
         return result
 
@@ -69,11 +70,11 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
     nterm_ion_type: IonSeries | None = None  # e.g., IonSeries.A, IonSeries.B, IonSeries.C
     cterm_ion_type: IonSeries | None = None  # e.g., IonSeries.X, IonSeries.Y, IonSeries.Z
 
-    def serialize(self) -> str:
+    def serialize(self, include_sequence: bool = True) -> str:
         # If using default yb cleavage, just use 'm'
         result = f"m{self.start_position}:{self.end_position}"
 
-        if self.sequence:
+        if include_sequence and self.sequence:
             result += f"{{{self.sequence}}}"
         return result
 
@@ -145,10 +146,20 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         return ImmoniumIon(amino_acid=AminoAcids(aa_str), modification=modification)
 
     def mass(self, monoisotopic: bool = True) -> float:
+        m = 0.0
         if self.modification is not None:
-            raise NotImplementedError("Mass calculation for modified immonium ions is not implemented")
+            mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
+            m += mod_tag.get_mass(monoisotopic)
 
-        return FRAGMENT_ION_LOOKUP[self.amino_acid].get_mass(monoisotopic) + FRAGMENT_ION_LOOKUP["by"].get_mass(monoisotopic)
+        aa_mass = AA_LOOKUP[self.amino_acid].get_mass(monoisotopic)
+        if aa_mass is None:
+            raise ValueError(f"Mass not available for amino acid: {self.amino_acid}")
+        else:
+            m += aa_mass
+
+        m += FRAGMENT_ION_LOOKUP["by"].get_mass(monoisotopic)
+
+        return m
 
     @property
     def formula(self) -> str:
@@ -156,10 +167,20 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self.amino_acid].composition + FRAGMENT_ION_LOOKUP["by"].composition
-        if comp is None:
-            raise ValueError(f"Composition not available for immonium ion of amino acid: {self.amino_acid}")
-        return comp
+        c = Counter()
+        if self.modification is not None:
+            mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
+            mod_comp = mod_tag.get_composition()
+            if mod_comp is None:
+                raise ValueError(f"Composition not available for modification: {self.modification}")
+            c += mod_comp
+
+        aa_comp = AA_LOOKUP[self.amino_acid].composition
+        if aa_comp is None:
+            raise ValueError(f"Composition not available for amino acid: {self.amino_acid}")
+        c += aa_comp
+        c += FRAGMENT_ION_LOOKUP["by"].composition
+        return c
 
 
 @dataclass(frozen=True, slots=True)

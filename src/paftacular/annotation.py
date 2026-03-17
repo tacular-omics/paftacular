@@ -2,6 +2,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict, Unpack
 
+import peptacular as pt
 from tacular import ELEMENT_LOOKUP, ElementInfo
 
 from .comps import (
@@ -62,6 +63,27 @@ class PafAnnotation:
             raise ValueError(f"Charge must be >= 1, got {self.charge}")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
+
+    @property
+    def peptacular_ion_type(self) -> pt.IonType | None:
+        """Map to peptacular IonType if applicable, else None"""
+        if isinstance(self.ion_type, PeptideIon):
+            series_map = {
+                IonSeries.A: pt.IonType.A,
+                IonSeries.B: pt.IonType.B,
+                IonSeries.C: pt.IonType.C,
+                IonSeries.X: pt.IonType.X,
+                IonSeries.Y: pt.IonType.Y,
+                IonSeries.Z: pt.IonType.Z,
+            }
+            return series_map.get(self.ion_type.series, None)
+        elif isinstance(self.ion_type, PrecursorIon):
+            return pt.IonType.PRECURSOR
+        elif isinstance(self.ion_type, ImmoniumIon):
+            return pt.IonType.IMMONIUM
+        elif isinstance(self.ion_type, InternalFragment):
+            return pt.IonType.BY
+        return None
 
     @staticmethod
     def _create_annotation(ion_type: IonType, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
@@ -173,7 +195,7 @@ class PafAnnotation:
         """Create a PafAnnotation for an unknown/unannotated ion"""
         return PafAnnotation._create_annotation(UnknownIon(label=label), **kwargs)
 
-    def mass(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
+    def mass(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the mass of the annotated ion including modifications"""
         base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
 
@@ -190,25 +212,22 @@ class PafAnnotation:
             base_mass += self.charge * 1.007276466812
 
         if calculate_sequence is True and self.sequence is not None:
-            # Additional mass calculations based on sequence can be added here
-            import peptacular as pt
-
             annot = pt.parse(self.sequence)
 
-            if annot.has_charge:  # ty: ignore
+            if annot.has_charge:
                 raise ValueError("Sequence in annotation should not have charge for mass calculation")
 
-            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")  # type: ignore
+            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
             base_mass += sequence_mass
 
         return base_mass
 
-    def mz(self, monoisotopic: bool = True, calculate_sequence: bool = False) -> float:
+    def mz(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the m/z of the annotated ion"""
         total_mass = self.mass(monoisotopic=monoisotopic, calculate_sequence=calculate_sequence)
         return total_mass / self.charge
 
-    def composition(self, calculate_sequence: bool = False) -> Counter[ElementInfo]:
+    def comp(self, calculate_sequence: bool = True) -> Counter[ElementInfo]:
         """Calculate the elemental composition of the annotated ion including modifications"""
         comp: Counter[ElementInfo] = Counter()
 
@@ -230,21 +249,19 @@ class PafAnnotation:
 
         if calculate_sequence is True and self.sequence is not None:
             # Additional composition calculations based on sequence can be added here
-            import peptacular as pt
-
             annot = pt.parse(self.sequence)
 
-            if annot.has_charge:  # ty: ignore
+            if annot.has_charge:
                 raise ValueError("Sequence in annotation should not have charge for mass calculation")
 
-            seq_comp = annot.comp()  # type: ignore
+            seq_comp = annot.comp()
             comp.update(seq_comp)
 
         return comp
 
-    def dict_composition(self, calculate_sequence: bool = False) -> dict[str, int]:
+    def dict_composition(self, calculate_sequence: bool = True) -> dict[str, int]:
         """Get the elemental composition as a dictionary of element symbols to counts"""
-        comp_counter = self.composition(calculate_sequence=calculate_sequence)
+        comp_counter = self.comp(calculate_sequence=calculate_sequence)
         return {str(elem): count for elem, count in comp_counter.items()}
 
     @property
@@ -256,15 +273,15 @@ class PafAnnotation:
             return self.ion_type.sequence
         return None
 
-    def formula(self, calculate_sequence: bool = False) -> str:
+    def formula(self, calculate_sequence: bool = True) -> str:
         """Get the chemical formula string of the annotated ion"""
-        return composition_to_formula_string(self.composition(calculate_sequence=calculate_sequence))
+        return composition_to_formula_string(self.comp(calculate_sequence=calculate_sequence))
 
-    def proforma_formula(self, calculate_sequence: bool = False) -> str:
+    def proforma_formula(self, calculate_sequence: bool = True) -> str:
         """Get the ProForma-style chemical formula string of the annotated ion"""
-        return composition_to_proforma_formula_string(self.composition(calculate_sequence=calculate_sequence))
+        return composition_to_proforma_formula_string(self.comp(calculate_sequence=calculate_sequence))
 
-    def serialize(self) -> str:
+    def serialize(self, include_sequence: bool = True) -> str:
         """Serialize the annotation back to mzPAF string format"""
         parts: list[str] = []
 
@@ -277,7 +294,12 @@ class PafAnnotation:
             parts.append(f"{self.analyte_reference}@")
 
         # Ion type
-        parts.append(str(self.ion_type))
+        # check if ion type has a sequence attribute
+        match self.ion_type:
+            case PeptideIon() | InternalFragment():
+                parts.append(self.ion_type.serialize(include_sequence=include_sequence))
+            case _:
+                parts.append(str(self.ion_type))
 
         # Neutral losses
         for loss in self.neutral_losses:

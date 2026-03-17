@@ -16,6 +16,7 @@ from .comps import (
     UnknownIon,
 )
 from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries
+from .conversion import to_mzpaf
 from .parser import mzPAFParser, parse, parse_multi, parse_single
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     "parse_multi",
     "parse_single",
     "mzPAFParser",
+    "to_mzpaf",
 ]
 
 __version__ = "1.0.0"

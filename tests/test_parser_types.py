@@ -20,352 +20,334 @@ def parse_one(s: str) -> PafAnnotation:
     return parse(s)
 
 
-# ============================================================================
-# Peptide Ion Tests
-# ============================================================================
-
-
-def test_peptide_simple():
-    ann = parse_one("y12")
-    assert isinstance(ann.ion_type, PeptideIon)
-    assert ann.ion_type.series == IonSeries.Y
-    assert ann.ion_type.position == 12
-
-
-def test_peptide_with_sequence():
-    ann = parse_one("a1{PEPT}")
-    assert isinstance(ann.ion_type, PeptideIon)
-    assert ann.ion_type.series == IonSeries.A
-    assert ann.ion_type.position == 1
-    assert ann.ion_type.sequence == "PEPT"
-
-
-def test_peptide_properties():
-    ann = parse_one("y12")
-    assert isinstance(ann.ion_type, PeptideIon)
-    assert ann.ion_type.formula == "H2O"  # Y ion formula
-    assert ann.ion_type.monoisotopic_mass == pytest.approx(18.010565, rel=1e-5)
-    assert ann.ion_type.composition == {ELEMENT_LOOKUP["H"]: 2, ELEMENT_LOOKUP["O"]: 1}
-
-
-# ============================================================================
-# Internal Fragment Tests
-# ============================================================================
-
-
-def test_internal_fragment():
-    ann = parse_one("m2:5")
-    assert isinstance(ann.ion_type, InternalFragment)
-    assert ann.ion_type.start_position == 2
-    assert ann.ion_type.end_position == 5
-
-
-def test_internal_fragment_with_sequence():
-    ann = parse_one("m3:7{PEPTIDE}")
-    assert isinstance(ann.ion_type, InternalFragment)
-    assert ann.ion_type.start_position == 3
-    assert ann.ion_type.end_position == 7
-    assert ann.ion_type.sequence == "PEPTIDE"
-
-
-# ============================================================================
-# Precursor Ion Tests
-# ============================================================================
-
-
-def test_precursor():
-    ann = parse_one("p")
-    assert isinstance(ann.ion_type, PrecursorIon)
-    assert ann.ion_type.serialize() == "p"
-
-
-# ============================================================================
-# Immonium Ion Tests
-# ============================================================================
-
-
-def test_immonium_simple():
-    ann = parse_one("IA")
-    assert isinstance(ann.ion_type, ImmoniumIon)
-    assert ann.ion_type.amino_acid == AminoAcids.A
-    assert ann.ion_type.modification is None
-    assert ann.ion_type.serialize() == "IA"
-
-
-def test_immonium_with_modification():
-    ann = parse_one("IH[+16]")
-    assert isinstance(ann.ion_type, ImmoniumIon)
-    assert ann.ion_type.amino_acid == AminoAcids.H
-    assert ann.ion_type.modification == "+16"
-    assert ann.ion_type.serialize() == "IH[+16]"
-
-
-# ============================================================================
-# Reference Ion Tests
-# ============================================================================
-
-
-def test_reference_ion():
-    ann = parse_one("r[ATP]")
-    assert isinstance(ann.ion_type, ReferenceIon)
-    assert ann.ion_type.name == "ATP"
-    assert ann.ion_type.serialize() == "r[ATP]"
-
-
-def test_reference_ion_properties():
-    """Test mass, formula, and composition properties of ReferenceIon"""
-    # Use a molecule that's in the REFMOL_LOOKUP (e.g., Adenine)
-    ann = parse_one("r[Adenine]")
-    ref_ion = ann.ion_type
-    assert isinstance(ref_ion, ReferenceIon)
-
-    # Test mass calculations
-    # Adenine (C5H5N5) monoisotopic mass
-    assert ref_ion.monoisotopic_mass == pytest.approx(135.054495, rel=1e-5)
-    # Adenine average mass
-    assert ref_ion.average_mass == pytest.approx(135.127, rel=1e-3)
-    assert ref_ion.mass(monoisotopic=True) == ref_ion.monoisotopic_mass
-    assert ref_ion.mass(monoisotopic=False) == ref_ion.average_mass
-
-    # Test formula
-    assert ref_ion.formula == "C5H5N5"  # Adenine formula
-
-    # Test composition - Adenine has C5H5N5
-    comp = ref_ion.composition
-    assert len(comp) == 3  # Only C, H, N elements
-    assert comp[ELEMENT_LOOKUP["C"]] == 5
-    assert comp[ELEMENT_LOOKUP["H"]] == 5
-    assert comp[ELEMENT_LOOKUP["N"]] == 5
-
-
-# ============================================================================
-# Chemical Formula Tests
-# ============================================================================
-
-
-def test_chemical_formula():
-    ann = parse_one("f{C6H6}")
-    assert isinstance(ann.ion_type, ChemicalFormula)
-    assert ann.ion_type.formula == "C6H6"
-    assert ann.ion_type.serialize() == "f{C6H6}"
-    # Test mass calculations for benzene
-    assert ann.ion_type.monoisotopic_mass == pytest.approx(78.046950, rel=1e-5)
-    assert ann.ion_type.average_mass == pytest.approx(78.11, rel=1e-3)
-
-
-def test_chemical_formula_complex():
-    ann = parse_one("f{C13H9N}")
-    assert isinstance(ann.ion_type, ChemicalFormula)
-    assert ann.ion_type.formula == "C13H9N"
-    comp = ann.ion_type.composition
-    assert comp[ELEMENT_LOOKUP["C"]] == 13
-    assert comp[ELEMENT_LOOKUP["H"]] == 9
-    assert comp[ELEMENT_LOOKUP["N"]] == 1
-
-
-def test_chemical_formula_proforma():
-    """Test proforma_formula property matches input formula"""
-    ann = parse_one("f{C6H6}")
-    assert isinstance(ann.ion_type, ChemicalFormula)
-    assert ann.ion_type.proforma_formula == "C6H6"
-    assert ann.ion_type.proforma_formula == ann.ion_type.formula
-
-
-# ============================================================================
-# Named Compound Tests
-# ============================================================================
-
-
-def test_named_compound():
-    ann = parse_one("_{Urocanic}")
-    assert isinstance(ann.ion_type, NamedCompound)
-    assert ann.ion_type.name == "Urocanic"
-    assert ann.ion_type.serialize() == "_{Urocanic}"
-
-
-# Named compounds with spaces are not directly supported by the parser
-
-
-# ============================================================================
-# SMILES Compound Tests
-# ============================================================================
-
-
-def test_smiles_compound():
-    ann = parse_one("s{CN=C=O}")
-    assert isinstance(ann.ion_type, SMILESCompound)
-    assert ann.ion_type.smiles == "CN=C=O"
-    assert ann.ion_type.serialize() == "s{CN=C=O}"
-
-
-def test_smiles_compound_complex():
-    ann = parse_one("s{COc(c1)cccc1C#N}")
-    assert isinstance(ann.ion_type, SMILESCompound)
-    assert ann.ion_type.smiles == "COc(c1)cccc1C#N"
-    assert ann.ion_type.serialize() == "s{COc(c1)cccc1C#N}"
-
-
-def test_smiles_compound_composition():
-    """Test composition calculation from SMILES"""
-    ann = parse_one("s{CN=C=O}")
-    smiles = ann.ion_type
-    assert isinstance(smiles, SMILESCompound)
-
-    # CN=C=O is methyl isocyanate: C2H3NO
-    comp = smiles.composition
-    assert comp[ELEMENT_LOOKUP["C"]] == 2
-    assert comp[ELEMENT_LOOKUP["N"]] == 1
-    assert comp[ELEMENT_LOOKUP["O"]] == 1
-    assert comp[ELEMENT_LOOKUP["H"]] == 3
-    # Note: H count depends on implicit hydrogens in SMILES parsing
-
-
-def test_smiles_compound_mass():
-    """Test mass calculations from SMILES"""
-    ann = parse_one("s{CN=C=O}")
-    smiles = ann.ion_type
-    assert isinstance(smiles, SMILESCompound)
-
-    # CN=C=O is methyl isocyanate: C2H3NO
-    # Monoisotopic: 12C2 + 1H3 + 14N + 16O
-    # = 12.000*2 + 1.007825*3 + 14.003074 + 15.994915 = 57.021464
-    assert smiles.monoisotopic_mass == pytest.approx(57.021464, rel=1e-5)
-    # Average mass should be slightly higher due to heavier isotopes
-    assert smiles.average_mass == pytest.approx(57.05, rel=1e-2)
-    assert smiles.mass(monoisotopic=True) == smiles.monoisotopic_mass
-    assert smiles.mass(monoisotopic=False) == smiles.average_mass
-
-
-def test_smiles_compound_formula_properties():
-    """Test formula and proforma_formula properties"""
-    ann = parse_one("s{CN=C=O}")
-    smiles = ann.ion_type
-    assert isinstance(smiles, SMILESCompound)
-
-    # CN=C=O is methyl isocyanate: C2H3NO
-    # ProForma formula should be sorted by element symbol
-    proforma = smiles.proforma_formula
-    assert proforma == "C2H3NO"
-
-    # Formula should include + sign prefix
-    formula = smiles.formula
-    assert formula == "+C2H3NO"
-    assert formula == f"+{proforma}"
-
-
-# ============================================================================
-# Unknown Ion Tests
-# ============================================================================
-
-
-def test_unknown_ion():
-    ann = parse_one("?")
-    assert isinstance(ann.ion_type, UnknownIon)
-    assert ann.ion_type.label is None
-    assert ann.ion_type.serialize() == "?"
-
-
-def test_unknown_ion_with_label():
-    ann = parse_one("?42")
-    assert isinstance(ann.ion_type, UnknownIon)
-    assert ann.ion_type.label == 42
-    assert ann.ion_type.serialize() == "?42"
-
-
-# ============================================================================
-# Neutral Loss Tests - Formula
-# ============================================================================
-
-
-def test_neutral_loss_formula_water():
-    ann = parse_one("y5-H2O")
-    assert ann.neutral_losses and len(ann.neutral_losses) == 1
-    loss = ann.neutral_losses[0]
-
-    # Basic properties
-    assert loss.loss_type == "formula"
-    assert loss.formula == "-H2O"
-    assert loss.count == -1
-    assert loss.base_formula == "H2O"
-
-    # ProForma formula
-    assert loss.proforma_formula == "H-2O-1"
-
-    # Composition check
-    comp = loss.composition
-    assert comp[ELEMENT_LOOKUP["H"]] == -2
-    assert comp[ELEMENT_LOOKUP["O"]] == -1
-
-    # Mass
-    assert loss.mass() == pytest.approx(-18.010565, rel=1e-6)
-    assert loss.monoisotopic_mass == pytest.approx(-18.010565, rel=1e-6)
-
-    # Serialization
-    assert loss.serialize() == "-H2O"
-    assert loss.serialize(loss_type="formula") == "-H2O"
-    assert float(loss.serialize(loss_type="mass")) == pytest.approx(-18.01056, rel=1e-4)
-    with pytest.raises(ValueError):
-        loss.serialize(loss_type="reference")
-
-
-def test_neutral_loss_multiple_formula():
-    # Note: -3NH3 may be parsed as a mass value depending on parser
-    # Use a clearly formula-based example
-    ann = parse_one("y5-2H2O")
-    assert ann.neutral_losses and len(ann.neutral_losses) == 1
-    loss = ann.neutral_losses[0]
-
-    assert loss.loss_type == "formula" or loss.loss_type == "mass"
-    if loss.loss_type == "formula":
-        assert loss.sign == -1
-        assert loss.count >= 1
-
-
-def test_neutral_loss_formula_gain():
-    ann = parse_one("y5+H2")
-    assert ann.neutral_losses and len(ann.neutral_losses) == 1
-    loss = ann.neutral_losses[0]
-
-    assert loss.loss_type == "formula"
-    assert loss.count == 1
-    assert loss.formula == "+H2"
-    # H2 mass: 2 * 1.007825 = 2.01565 Da
-    assert loss.mass() == pytest.approx(2.01565, rel=1e-5)
-
-
-# ============================================================================
-# Neutral Loss Tests - Reference
-# ============================================================================
-
-
-def test_neutral_loss_reference_gain():
-    ann = parse_one("y5+[Adenine]")
-    assert ann.neutral_losses and len(ann.neutral_losses) == 1
-    loss = ann.neutral_losses[0]
-
-    # Basic properties
-    assert loss.loss_type == "reference"
-    assert loss.base_reference == "Adenine"
-    assert loss.count == 1
-
-    # ProForma formula
-    assert loss.proforma_formula == "C5H5N5"
-
-    # Composition check
-    comp = loss.composition
-    assert comp[ELEMENT_LOOKUP["C"]] == 5
-    assert comp[ELEMENT_LOOKUP["H"]] == 5
-    assert comp[ELEMENT_LOOKUP["N"]] == 5
-
-    # Mass
-    assert loss.mass() == pytest.approx(135.0544951833, rel=1e-6)
-    assert loss.monoisotopic_mass == pytest.approx(135.0544951833, rel=1e-6)
-
-    # Serialization
-    assert loss.serialize() == "+[Adenine]"
-    assert loss.serialize(loss_type="reference") == "+[Adenine]"
-    assert loss.serialize(loss_type="formula") == "+C5H5N5"
-    assert float(loss.serialize(loss_type="mass")) == pytest.approx(135.05450, rel=1e-4)
+class TestPeptideIonParsing:
+    """Test parsing peptide ion annotations"""
+
+    def test_peptide_simple(self):
+        """Test parsing simple peptide ion"""
+        ann = parse_one("y12")
+        assert isinstance(ann.ion_type, PeptideIon)
+        assert ann.ion_type.series == IonSeries.Y
+        assert ann.ion_type.position == 12
+
+    def test_peptide_with_sequence(self):
+        """Test parsing peptide ion with sequence"""
+        ann = parse_one("a1{PEPT}")
+        assert isinstance(ann.ion_type, PeptideIon)
+        assert ann.ion_type.series == IonSeries.A
+        assert ann.ion_type.position == 1
+        assert ann.ion_type.sequence == "PEPT"
+
+    def test_peptide_properties(self):
+        """Test peptide ion mass and composition properties"""
+        ann = parse_one("y12")
+        assert isinstance(ann.ion_type, PeptideIon)
+        assert ann.ion_type.formula == "H2O"  # Y ion formula
+        assert ann.ion_type.monoisotopic_mass == pytest.approx(18.010565, rel=1e-5)
+        assert ann.ion_type.composition == {ELEMENT_LOOKUP["H"]: 2, ELEMENT_LOOKUP["O"]: 1}
+
+
+class TestInternalFragmentParsing:
+    """Test parsing internal fragment annotations"""
+
+    def test_internal_fragment(self):
+        """Test parsing basic internal fragment"""
+        ann = parse_one("m2:5")
+        assert isinstance(ann.ion_type, InternalFragment)
+        assert ann.ion_type.start_position == 2
+        assert ann.ion_type.end_position == 5
+
+    def test_internal_fragment_with_sequence(self):
+        """Test parsing internal fragment with sequence"""
+        ann = parse_one("m3:7{PEPTIDE}")
+        assert isinstance(ann.ion_type, InternalFragment)
+        assert ann.ion_type.start_position == 3
+        assert ann.ion_type.end_position == 7
+        assert ann.ion_type.sequence == "PEPTIDE"
+
+    def test_internal_fragment_backbone_types(self):
+        """Test nterm_ion_type and cterm_ion_type defaults"""
+        ann = parse_one("m2:5")
+        fragment = ann.ion_type
+        assert isinstance(fragment, InternalFragment)
+        assert fragment.nterm_ion_type is None
+        assert fragment.cterm_ion_type is None
+
+
+class TestPrecursorIonParsing:
+    """Test parsing precursor ion annotations"""
+
+    def test_precursor(self):
+        """Test parsing precursor ion"""
+        ann = parse_one("p")
+        assert isinstance(ann.ion_type, PrecursorIon)
+        assert ann.ion_type.serialize() == "p"
+
+
+class TestImmoniumIonParsing:
+    """Test parsing immonium ion annotations"""
+
+    def test_immonium_simple(self):
+        """Test parsing simple immonium ion"""
+        ann = parse_one("IA")
+        assert isinstance(ann.ion_type, ImmoniumIon)
+        assert ann.ion_type.amino_acid == AminoAcids.A
+        assert ann.ion_type.modification is None
+        assert ann.ion_type.serialize() == "IA"
+
+    def test_immonium_with_modification(self):
+        """Test parsing immonium ion with modification"""
+        ann = parse_one("IH[+16]")
+        assert isinstance(ann.ion_type, ImmoniumIon)
+        assert ann.ion_type.amino_acid == AminoAcids.H
+        assert ann.ion_type.modification == "+16"
+        assert ann.ion_type.serialize() == "IH[+16]"
+
+
+class TestReferenceIonParsing:
+    """Test parsing reference ion annotations"""
+
+    def test_reference_ion(self):
+        """Test parsing reference ion"""
+        ann = parse_one("r[ATP]")
+        assert isinstance(ann.ion_type, ReferenceIon)
+        assert ann.ion_type.name == "ATP"
+        assert ann.ion_type.serialize() == "r[ATP]"
+
+    def test_reference_ion_properties(self):
+        """Test mass, formula, and composition properties of ReferenceIon"""
+        ann = parse_one("r[Adenine]")
+        ref_ion = ann.ion_type
+        assert isinstance(ref_ion, ReferenceIon)
+
+        # Test mass calculations - Adenine (C5H5N5)
+        assert ref_ion.monoisotopic_mass == pytest.approx(135.054495, rel=1e-5)
+        assert ref_ion.average_mass == pytest.approx(135.127, rel=1e-3)
+        assert ref_ion.mass(monoisotopic=True) == ref_ion.monoisotopic_mass
+        assert ref_ion.mass(monoisotopic=False) == ref_ion.average_mass
+
+        # Test formula
+        assert ref_ion.formula == "C5H5N5"
+
+        # Test composition - Adenine has C5H5N5
+        comp = ref_ion.composition
+        assert len(comp) == 3
+        assert comp[ELEMENT_LOOKUP["C"]] == 5
+        assert comp[ELEMENT_LOOKUP["H"]] == 5
+        assert comp[ELEMENT_LOOKUP["N"]] == 5
+
+
+class TestChemicalFormulaParsing:
+    """Test parsing chemical formula annotations"""
+
+    def test_chemical_formula(self):
+        """Test parsing simple chemical formula"""
+        ann = parse_one("f{C6H6}")
+        assert isinstance(ann.ion_type, ChemicalFormula)
+        assert ann.ion_type.formula == "C6H6"
+        assert ann.ion_type.serialize() == "f{C6H6}"
+        # Test mass calculations for benzene
+        assert ann.ion_type.monoisotopic_mass == pytest.approx(78.046950, rel=1e-5)
+        assert ann.ion_type.average_mass == pytest.approx(78.11, rel=1e-3)
+
+    def test_chemical_formula_complex(self):
+        """Test parsing complex chemical formula"""
+        ann = parse_one("f{C13H9N}")
+        assert isinstance(ann.ion_type, ChemicalFormula)
+        assert ann.ion_type.formula == "C13H9N"
+        comp = ann.ion_type.composition
+        assert comp[ELEMENT_LOOKUP["C"]] == 13
+        assert comp[ELEMENT_LOOKUP["H"]] == 9
+        assert comp[ELEMENT_LOOKUP["N"]] == 1
+
+    def test_chemical_formula_proforma(self):
+        """Test proforma_formula property matches input formula"""
+        ann = parse_one("f{C6H6}")
+        assert isinstance(ann.ion_type, ChemicalFormula)
+        assert ann.ion_type.proforma_formula == "C6H6"
+        assert ann.ion_type.proforma_formula == ann.ion_type.formula
+
+
+class TestNamedCompoundParsing:
+    """Test parsing named compound annotations"""
+
+    def test_named_compound(self):
+        """Test parsing named compound"""
+        ann = parse_one("_{Urocanic}")
+        assert isinstance(ann.ion_type, NamedCompound)
+        assert ann.ion_type.name == "Urocanic"
+        assert ann.ion_type.serialize() == "_{Urocanic}"
+
+
+class TestSMILESCompoundParsing:
+    """Test parsing SMILES compound annotations"""
+
+    def test_smiles_compound(self):
+        """Test parsing simple SMILES compound"""
+        ann = parse_one("s{CN=C=O}")
+        assert isinstance(ann.ion_type, SMILESCompound)
+        assert ann.ion_type.smiles == "CN=C=O"
+        assert ann.ion_type.serialize() == "s{CN=C=O}"
+
+    def test_smiles_compound_complex(self):
+        """Test parsing complex SMILES compound"""
+        ann = parse_one("s{COc(c1)cccc1C#N}")
+        assert isinstance(ann.ion_type, SMILESCompound)
+        assert ann.ion_type.smiles == "COc(c1)cccc1C#N"
+        assert ann.ion_type.serialize() == "s{COc(c1)cccc1C#N}"
+
+    def test_smiles_compound_composition(self):
+        """Test composition calculation from SMILES"""
+        ann = parse_one("s{CN=C=O}")
+        smiles = ann.ion_type
+        assert isinstance(smiles, SMILESCompound)
+
+        # CN=C=O is methyl isocyanate: C2H3NO
+        comp = smiles.composition
+        assert comp[ELEMENT_LOOKUP["C"]] == 2
+        assert comp[ELEMENT_LOOKUP["N"]] == 1
+        assert comp[ELEMENT_LOOKUP["O"]] == 1
+        assert comp[ELEMENT_LOOKUP["H"]] == 3
+
+    def test_smiles_compound_mass(self):
+        """Test mass calculations from SMILES"""
+        ann = parse_one("s{CN=C=O}")
+        smiles = ann.ion_type
+        assert isinstance(smiles, SMILESCompound)
+
+        # CN=C=O is methyl isocyanate: C2H3NO
+        assert smiles.monoisotopic_mass == pytest.approx(57.021464, rel=1e-5)
+        assert smiles.average_mass == pytest.approx(57.05, rel=1e-2)
+        assert smiles.mass(monoisotopic=True) == smiles.monoisotopic_mass
+        assert smiles.mass(monoisotopic=False) == smiles.average_mass
+
+    def test_smiles_compound_formula_properties(self):
+        """Test formula and proforma_formula properties"""
+        ann = parse_one("s{CN=C=O}")
+        smiles = ann.ion_type
+        assert isinstance(smiles, SMILESCompound)
+
+        # CN=C=O is methyl isocyanate: C2H3NO
+        proforma = smiles.proforma_formula
+        assert proforma == "C2H3NO"
+
+        # Formula should include + sign prefix
+        formula = smiles.formula
+        assert formula == "+C2H3NO"
+        assert formula == f"+{proforma}"
+
+    def test_invalid_smiles(self):
+        """Test invalid SMILES string handling"""
+        ann = parse_one("s{-783yfuINVALID!!!}")
+        smiles = ann.ion_type
+        assert isinstance(smiles, SMILESCompound)
+        with pytest.raises(ValueError):
+            _ = smiles.composition
+
+
+class TestUnknownIonParsing:
+    """Test parsing unknown ion annotations"""
+
+    def test_unknown_ion(self):
+        """Test parsing unknown ion without label"""
+        ann = parse_one("?")
+        assert isinstance(ann.ion_type, UnknownIon)
+        assert ann.ion_type.label is None
+        assert ann.ion_type.serialize() == "?"
+
+    def test_unknown_ion_with_label(self):
+        """Test parsing unknown ion with label"""
+        ann = parse_one("?42")
+        assert isinstance(ann.ion_type, UnknownIon)
+        assert ann.ion_type.label == 42
+        assert ann.ion_type.serialize() == "?42"
+
+
+class TestNeutralLossParsing:
+    """Test parsing neutral loss modifiers"""
+
+    def test_neutral_loss_formula_water(self):
+        """Test parsing water loss"""
+        ann = parse_one("y5-H2O")
+        assert ann.neutral_losses and len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+
+        # Basic properties
+        assert loss.loss_type == "formula"
+        assert loss.formula == "-H2O"
+        assert loss.count == -1
+        assert loss.base_formula == "H2O"
+
+        # ProForma formula
+        assert loss.proforma_formula == "H-2O-1"
+
+        # Composition check
+        comp = loss.composition
+        assert comp[ELEMENT_LOOKUP["H"]] == -2
+        assert comp[ELEMENT_LOOKUP["O"]] == -1
+
+        # Mass
+        assert loss.mass() == pytest.approx(-18.010565, rel=1e-6)
+        assert loss.monoisotopic_mass == pytest.approx(-18.010565, rel=1e-6)
+
+        # Serialization
+        assert loss.serialize() == "-H2O"
+        assert loss.serialize(loss_type="formula") == "-H2O"
+        assert float(loss.serialize(loss_type="mass")) == pytest.approx(-18.01056, rel=1e-4)
+        with pytest.raises(ValueError):
+            loss.serialize(loss_type="reference")
+
+    def test_neutral_loss_multiple_formula(self):
+        """Test parsing multiple formula-based neutral losses"""
+        ann = parse_one("y5-2H2O")
+        assert ann.neutral_losses and len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+
+        assert loss.loss_type == "formula" or loss.loss_type == "mass"
+        if loss.loss_type == "formula":
+            assert loss.sign == -1
+            assert loss.count >= 1
+
+    def test_neutral_loss_formula_gain(self):
+        """Test parsing neutral gain with formula"""
+        ann = parse_one("y5+H2")
+        assert ann.neutral_losses and len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+
+        assert loss.loss_type == "formula"
+        assert loss.count == 1
+        assert loss.formula == "+H2"
+        # H2 mass: 2 * 1.007825 = 2.01565 Da
+        assert loss.mass() == pytest.approx(2.01565, rel=1e-5)
+
+    def test_neutral_loss_reference_gain(self):
+        ann = parse_one("y5+[Adenine]")
+        assert ann.neutral_losses and len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+
+        # Basic properties
+        assert loss.loss_type == "reference"
+        assert loss.base_reference == "Adenine"
+        assert loss.count == 1
+
+        # ProForma formula
+        assert loss.proforma_formula == "C5H5N5"
+
+        # Composition check
+        comp = loss.composition
+        assert comp[ELEMENT_LOOKUP["C"]] == 5
+        assert comp[ELEMENT_LOOKUP["H"]] == 5
+        assert comp[ELEMENT_LOOKUP["N"]] == 5
+
+        # Mass
+        assert loss.mass() == pytest.approx(135.0544951833, rel=1e-6)
+        assert loss.monoisotopic_mass == pytest.approx(135.0544951833, rel=1e-6)
+
+        # Serialization
+        assert loss.serialize() == "+[Adenine]"
+        assert loss.serialize(loss_type="reference") == "+[Adenine]"
+        assert loss.serialize(loss_type="formula") == "+C5H5N5"
+        assert float(loss.serialize(loss_type="mass")) == pytest.approx(135.05450, rel=1e-4)
 
 
 def test_neutral_loss_multiple_reference():

@@ -299,7 +299,7 @@ class TestComposition:
     def test_basic_composition(self):
         """Test basic composition calculation"""
         annotation = PafAnnotation(ion_type=ChemicalFormula(formula="C6H12O6"))
-        comp = annotation.composition()
+        comp = annotation.comp()
         assert isinstance(comp, Counter)
         # Should contain C, H, O elements
         assert any(elem.symbol == "C" for elem in comp)
@@ -312,7 +312,7 @@ class TestComposition:
             ion_type=ChemicalFormula(formula="C6H12O6"),
             charge=2,
         )
-        comp = annotation.composition()
+        comp = annotation.comp()
         # Should have protons added
         h_element = ELEMENT_LOOKUP["H"]
         assert h_element in comp
@@ -323,7 +323,7 @@ class TestComposition:
             ion_type=ChemicalFormula(formula="C6H12O6"),
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
-        comp = annotation.composition()
+        comp = annotation.comp()
         # Composition should be affected by loss
         assert isinstance(comp, Counter)
 
@@ -510,7 +510,7 @@ class TestCompositionMethods:
     def test_composition_basic(self):
         """Test composition method returns Counter"""
         annotation = PafAnnotation(ion_type=PrecursorIon())
-        comp = annotation.composition()
+        comp = annotation.comp()
         assert isinstance(comp, Counter)
 
     def test_dict_composition(self):
@@ -527,7 +527,7 @@ class TestCompositionMethods:
             ion_type=PrecursorIon(),
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
-        comp = annotation.composition()
+        comp = annotation.comp()
         # Should have adjusted composition
         assert isinstance(comp, Counter)
 
@@ -537,14 +537,14 @@ class TestCompositionMethods:
             ion_type=PrecursorIon(),
             adducts=(Adduct(count=1, base_formula="Na"),),
         )
-        comp = annotation.composition()
+        comp = annotation.comp()
         # Should include Na
         assert any("Na" in str(elem) for elem in comp.keys())
 
     def test_composition_with_charge_no_adducts(self):
         """Test composition includes protons for charge when no adducts"""
         annotation = PafAnnotation(ion_type=PrecursorIon(), charge=2)
-        comp = annotation.composition()
+        comp = annotation.comp()
         # Should have H added for charge
         h_elem = ELEMENT_LOOKUP["H"]
         assert h_elem in comp

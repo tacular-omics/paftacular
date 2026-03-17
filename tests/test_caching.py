@@ -199,7 +199,7 @@ class TestCacheMemoryBehavior:
         first_ion = UnknownIon._cache[first_key]
 
         # Add one more entry, which should trigger eviction
-        new_ion = UnknownIon(label=MAX_CACHE_SIZE)
+        UnknownIon(label=MAX_CACHE_SIZE)
 
         # Cache should not exceed MAX_CACHE_SIZE
         assert len(UnknownIon._cache) == MAX_CACHE_SIZE
