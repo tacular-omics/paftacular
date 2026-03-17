@@ -65,7 +65,3 @@ ignore = [
 
 [tool.hatch.version]
 path = "src/paftacular/__init__.py"
-
-
-[tool.uv.sources]
-peptacular = { path = "../peptacular", editable = true }
