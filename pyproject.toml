@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "mzpaf parser"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["peptacular>=3.0.0"]
+dependencies = ["tacular>=1.0.0"]
 authors = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
@@ -23,7 +23,8 @@ classifiers = [
 ]
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
-all = ["pysmiles>=2.0.1"]
+peptacular = ["peptacular>=3.0.0"]
+all = ["pysmiles>=2.0.1", "peptacular>=3.0.0"]
 
 [build-system]
 requires = ["hatchling"]

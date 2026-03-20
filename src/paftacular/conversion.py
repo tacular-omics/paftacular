@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import Literal
 
-import peptacular as pt
+try:
+    import peptacular as pt
+except ImportError:
+    pt = None  # type: ignore[assignment]
 
 from paftacular import IonSeries
 
@@ -20,6 +25,11 @@ from .comps import (
 from .constants import INTERNAL_MASS_DIFFS, AminoAcids
 
 
+def _require_peptacular() -> None:
+    if pt is None:
+        raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
+
+
 def to_mzpaf(
     frag: pt.Fragment,
     confidence: float | None = None,
@@ -28,6 +38,7 @@ def to_mzpaf(
     include_annotation: bool = True,
 ) -> PafAnnotation:
     """Convert fragment to mzPAF format string."""
+    _require_peptacular()
 
     ion = None
     internal_loss = None

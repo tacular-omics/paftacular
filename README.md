@@ -22,14 +22,15 @@ Features
 * **Properties**: Supports calculating mass and composition of annotated ions
 * **Type-Annotations**: typed.py file for static type checking
 * **Caching**: serialization and parsing results are cached for performance (when applicable)
-* **Peptacular**: Integrated with peptacular to enable parsing of included sequences and generation of mzPAF annotations
+* **Peptacular**: Optionally integrated with peptacular to enable parsing of included sequences and generation of mzPAF annotations
 
 ## Installation
 
 ```bash
    pip install paftacular
-   pip install paftacular[smiles] # with smiles support
-   pip install paftacular[all] # with all optional dependencies
+   pip install paftacular[peptacular] # with peptacular integration
+   pip install paftacular[smiles]     # with SMILES support
+   pip install paftacular[all]        # with all optional dependencies
 ```
 
 ## Quick Start

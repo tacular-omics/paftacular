@@ -1,7 +1,8 @@
-import peptacular as pt
 import pytest
 
-import paftacular as paf
+pt = pytest.importorskip("peptacular")
+
+import paftacular as paf  # noqa: E402
 
 
 class TestConversion:

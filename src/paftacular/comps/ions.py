@@ -6,12 +6,20 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import ClassVar
 
-import peptacular as pt
+try:
+    import peptacular as pt
+except ImportError:
+    pt = None  # type: ignore[assignment]
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 
 from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries
 from .base import CompositionProvider, MassProvider, Serializable
 from .util import composition_to_proforma_formula_string, formula_to_composition
+
+
+def _require_peptacular() -> None:
+    if pt is None:
+        raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,6 +156,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     def mass(self, monoisotopic: bool = True) -> float:
         m = 0.0
         if self.modification is not None:
+            _require_peptacular()
             mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
             m += mod_tag.get_mass(monoisotopic)
 
@@ -169,6 +178,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     def composition(self) -> Counter[ElementInfo]:
         c = Counter()
         if self.modification is not None:
+            _require_peptacular()
             mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
             mod_comp = mod_tag.get_composition()
             if mod_comp is None:

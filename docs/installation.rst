@@ -14,9 +14,9 @@ Installing from PyPI
 .. code-block:: bash
 
    pip install paftacular
-   pip install paftacular[sequence] # for peptide sequence support
-   pip install paftacular[smiles] # with smiles support
-   pip install paftacular[all] # with all optional dependencies
+   pip install paftacular[peptacular] # with peptacular integration
+   pip install paftacular[smiles]     # with SMILES support
+   pip install paftacular[all]        # with all optional dependencies
 
 Optional Dependencies
 ---------------------

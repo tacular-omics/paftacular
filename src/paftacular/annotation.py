@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from collections import Counter
 from dataclasses import asdict, dataclass
 from typing import Literal, TypedDict, Unpack
 
-import peptacular as pt
+try:
+    import peptacular as pt
+except ImportError:
+    pt = None  # type: ignore[assignment]
 from tacular import ELEMENT_LOOKUP, ElementInfo
 
 from .comps import (
@@ -24,6 +29,11 @@ from .comps import (
     composition_to_proforma_formula_string,
 )
 from .constants import INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
+
+
+def _require_peptacular() -> None:
+    if pt is None:
+        raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
 
 
 class CommonAnnotationParams(TypedDict, total=False):
@@ -67,6 +77,7 @@ class PafAnnotation:
     @property
     def peptacular_ion_type(self) -> pt.IonType | None:
         """Map to peptacular IonType if applicable, else None"""
+        _require_peptacular()
         if isinstance(self.ion_type, PeptideIon):
             series_map = {
                 IonSeries.A: pt.IonType.A,
@@ -86,7 +97,7 @@ class PafAnnotation:
         return None
 
     @staticmethod
-    def _create_annotation(ion_type: IonType, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def _create_annotation(ion_type: IonType, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Internal factory method that handles common parameter conversion"""
 
         # Convert neutral losses from strings if necessary
@@ -133,12 +144,12 @@ class PafAnnotation:
         )
 
     @staticmethod
-    def make_precursor(**kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_precursor(**kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for the precursor ion"""
         return PafAnnotation._create_annotation(PrecursorIon(), **kwargs)
 
     @staticmethod
-    def make_peptide(ion_type: str | IonSeries, position: int, sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_peptide(ion_type: str | IonSeries, position: int, sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a peptide fragment ion"""
         ion_series: IonSeries = ion_type if isinstance(ion_type, IonSeries) else IonSeries(ion_type)
         return PafAnnotation._create_annotation(PeptideIon(series=ion_series, position=position, sequence=sequence), **kwargs)
@@ -146,7 +157,7 @@ class PafAnnotation:
     @staticmethod
     def make_internal(
         start_position: int, end_position: int, ion_type: str | InternalSeries = "by", sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]
-    ) -> "PafAnnotation":
+    ) -> PafAnnotation:
         """Create a PafAnnotation for an internal fragment"""
         internal_ion = InternalFragment(
             start_position=start_position,
@@ -165,33 +176,33 @@ class PafAnnotation:
         return PafAnnotation._create_annotation(internal_ion, **kwargs)
 
     @staticmethod
-    def make_immonium(amino_acid: str | AminoAcids, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_immonium(amino_acid: str | AminoAcids, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for an immonium ion"""
         aa_enum: AminoAcids = amino_acid if isinstance(amino_acid, AminoAcids) else AminoAcids(amino_acid)
         return PafAnnotation._create_annotation(ImmoniumIon(amino_acid=aa_enum, modification=modification), **kwargs)
 
     @staticmethod
-    def make_reference(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_reference(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a reference ion"""
         return PafAnnotation._create_annotation(ReferenceIon(name=name), **kwargs)
 
     @staticmethod
-    def make_named_compound(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_named_compound(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a named compound"""
         return PafAnnotation._create_annotation(NamedCompound(name=name), **kwargs)
 
     @staticmethod
-    def make_formula(formula: str, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_formula(formula: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a chemical formula"""
         return PafAnnotation._create_annotation(ChemicalFormula(formula=formula), **kwargs)
 
     @staticmethod
-    def make_smiles(smiles: str, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_smiles(smiles: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a SMILES compound"""
         return PafAnnotation._create_annotation(SMILESCompound(smiles=smiles), **kwargs)
 
     @staticmethod
-    def make_unknown(label: int | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> "PafAnnotation":
+    def make_unknown(label: int | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for an unknown/unannotated ion"""
         return PafAnnotation._create_annotation(UnknownIon(label=label), **kwargs)
 
@@ -212,6 +223,7 @@ class PafAnnotation:
             base_mass += self.charge * 1.007276466812
 
         if calculate_sequence is True and self.sequence is not None:
+            _require_peptacular()
             annot = pt.parse(self.sequence)
 
             if annot.has_charge:
@@ -248,6 +260,7 @@ class PafAnnotation:
             comp[proton] += self.charge
 
         if calculate_sequence is True and self.sequence is not None:
+            _require_peptacular()
             # Additional composition calculations based on sequence can be added here
             annot = pt.parse(self.sequence)
 
@@ -330,7 +343,7 @@ class PafAnnotation:
         return "".join(parts)
 
     @staticmethod
-    def parse(annotation_str: str) -> "PafAnnotation":
+    def parse(annotation_str: str) -> PafAnnotation:
         """Parse a single mzPAF annotation string into a FragmentAnnotation object"""
         from .parser import MZ_PAF_PARSER
 
