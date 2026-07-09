@@ -303,10 +303,9 @@ class TestNeutralLossParsing:
         assert ann.neutral_losses and len(ann.neutral_losses) == 1
         loss = ann.neutral_losses[0]
 
-        assert loss.loss_type == "formula" or loss.loss_type == "mass"
-        if loss.loss_type == "formula":
-            assert loss.sign == -1
-            assert loss.count >= 1
+        assert loss.loss_type == "formula"
+        assert loss.count == -2
+        assert loss.base_formula == "H2O"
 
     def test_neutral_loss_formula_gain(self):
         """Test parsing neutral gain with formula"""
@@ -476,11 +475,12 @@ def test_isotope_specification_errors():
     with pytest.raises(ValueError, match="average isotopomer"):
         _ = iso.mass()
 
-    # Test generic isotope - cannot calculate composition without element
+    # Generic isotope (no element) resolves to a 13C substitution per mzPAF section 4.6:
+    # composition gains one 13C and loses one 12C, consistent with its mass shift.
     ann2 = parse_one("y5+i")
     iso2 = ann2.isotopes[0]
-    with pytest.raises(ValueError, match="generic isotope"):
-        _ = iso2.composition
+    assert iso2.composition[ELEMENT_LOOKUP["13C"]] == 1
+    assert iso2.composition[ELEMENT_LOOKUP.get_monoisotopic("C")] == -1
 
 
 # ============================================================================
@@ -897,3 +897,181 @@ def test_internal_fragment_backbone_types():
     assert isinstance(fragment, InternalFragment)
     assert fragment.nterm_ion_type is None
     assert fragment.cterm_ion_type is None
+
+
+class TestMzPafSpecComplianceRegressions:
+    """Regressions for mzPAF-spec-compliance bugs found in a pre-release audit against the
+    official specification (HUPO-PSI mzPAF v1.0.1 FINAL), its reference regex/grammar, and its
+    reference Python implementation's test suite."""
+
+    @pytest.mark.parametrize(
+        "s,expected_count,expected_formula",
+        [
+            ("y2-2H2O", -2, "H2O"),
+            ("y2-3H2O", -3, "H2O"),
+            ("p+2H", 2, "H"),
+            ("p+3H", 3, "H"),
+            ("y2+2NH3", 2, "NH3"),
+        ],
+    )
+    def test_count_prefixed_formula_neutral_loss_not_corrupted(self, s, expected_count, expected_formula):
+        """A count-prefixed formula loss/gain must keep its formula, not collapse to a bare mass.
+
+        Regression: the neutral-loss tokenizer tried a bare-mass alternative before the
+        count+formula alternative, so e.g. "-2H2O" silently became a mass-loss of 2.0 Da with
+        "H2O" dropped entirely -- this is the spec's own canonical example for this syntax.
+        """
+        ann = parse_one(s)
+        assert len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+        assert loss.loss_type == "formula"
+        assert loss.count == expected_count
+        assert loss.base_formula == expected_formula
+
+    def test_bare_mass_neutral_loss_still_works(self):
+        """The bare-mass-loss extension (not part of the official grammar, but documented and
+        tested paftacular behavior) must still work after fixing the count-prefixed-formula bug."""
+        ann = parse_one("y5-17.03")
+        loss = ann.neutral_losses[0]
+        assert loss.loss_type == "mass"
+        assert loss.base_mass == pytest.approx(17.03)
+
+    def test_isotope_labeled_formula_in_neutral_loss(self):
+        """A neutral loss combining a plain atom run and an isotope-bracket atom (e.g. real
+        spec example page 19) must parse as one formula-type loss, not raise."""
+        ann = parse_one("y5-H2[18O1][M+Na]")
+        assert len(ann.neutral_losses) == 1
+        loss = ann.neutral_losses[0]
+        assert loss.loss_type == "formula"
+        assert loss.base_formula == "H2[18O1]"
+        assert len(ann.adducts) == 1
+
+    def test_isotope_bracket_adduct(self):
+        """Isotope-labeled adducts (real spec examples page 22) must parse, not raise."""
+        ann = parse_one("y6[M+[2H2]]^2")
+        assert ann.charge == 2
+        assert len(ann.adducts) == 1
+        assert ann.adducts[0].base_formula == "[2H2]"
+
+        ann2 = parse_one("y5[M+[15N1]H4]")
+        assert len(ann2.adducts) == 1
+        assert ann2.adducts[0].base_formula == "[15N1]H4"
+
+    def test_isotope_requires_nucleon_count_when_element_given(self):
+        """mzPAF section 4.6: an isotope with an element letter but no nucleon count (e.g. "+iN")
+        is explicitly invalid and must be rejected, not silently accepted with a zero shift."""
+        with pytest.raises(ValueError):
+            parse_one("y5+iN")
+
+    def test_isotope_does_not_swallow_neutral_loss_bare_mass(self):
+        """A count-prefixed isotope (e.g. "+2i13C") must not be misread as a bare-mass neutral
+        loss of just the leading count, leaving the isotope's own marker dangling unparsed."""
+        ann = parse_one("y5+2i13C")
+        assert ann.neutral_losses == ()
+        assert len(ann.isotopes) == 1
+        assert ann.isotopes[0].count == 2
+        assert ann.isotopes[0].element == "13C"
+
+    def test_mass_error_allows_explicit_plus_sign(self):
+        """mzPAF's mass-error component allows an explicit '+' sign, not just '-'."""
+        ann = parse_one("y2/+0.5ppm")
+        assert ann.mass_error is not None
+        assert ann.mass_error.value == pytest.approx(0.5)
+
+    def test_named_compound_allows_whitespace(self):
+        """The spec's own literal named-compound example contains a space and must parse."""
+        ann = parse_one("_{Urocanic Acid}")
+        assert isinstance(ann.ion_type, NamedCompound)
+        assert ann.ion_type.name == "Urocanic Acid"
+
+    def test_multi_annotation_comma_inside_brackets(self):
+        """A comma legitimately appearing inside bracketed content (e.g. a reference or
+        named-compound label) must not be mistaken for an annotation separator.
+
+        Regression: parse()/parse_multi() used a naive str.split(",") instead of the spec's
+        Appendix A greedy-match-then-comma-or-error algorithm.
+        """
+        ann = parse_one("r[Ref,WithComma]")
+        assert isinstance(ann.ion_type, ReferenceIon)
+        assert ann.ion_type.name == "Ref,WithComma"
+
+        ann2 = parse_one("_{Foo,Bar}")
+        assert isinstance(ann2.ion_type, NamedCompound)
+        assert ann2.ion_type.name == "Foo,Bar"
+
+    def test_multi_annotation_double_comma_rejected(self):
+        """Consecutive commas must raise a parse error, not silently produce fewer annotations."""
+        with pytest.raises(ValueError):
+            parse_multi("y1,,y2")
+
+    def test_multi_annotation_whitespace_around_commas_still_tolerated(self):
+        """Existing lenient whitespace-around-commas behavior must be preserved by the
+        Appendix-A-based splitting algorithm."""
+        result = parse_multi("b5,  y10  , c3")
+        assert len(result) == 3
+
+    @pytest.mark.parametrize("s", ["b2+i", "y5+i", "y5+i13C", "y5-2i", "y5+2i13C"])
+    def test_annotation_isotope_mass_and_comp_are_consistent(self, s):
+        """Regression: the annotation-level mass()/comp() isotope loop must agree with each other.
+
+        The generic isotope (`+i`, no element) is the standard mzPAF 13C-peak notation. mass()
+        resolves it via the 13C-12C shift, so comp() must resolve it the same way (gain 13C, lose
+        12C) rather than raising -- otherwise mass() returns a number while comp() throws.
+        """
+        ann = parse_one(s)
+        comp = ann.dict_composition()  # must not raise for generic or element-specified isotopes
+        mass_from_comp = sum(ELEMENT_LOOKUP[sym].get_mass(monoisotopic=True) * n for sym, n in comp.items())
+        # comp is neutral-basis (a full H proton per charge); mass() reports the charged species,
+        # i.e. one electron mass lighter per charge. This electron delta is the only allowed gap.
+        electron_mass = 0.000548579909
+        assert ann.mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
+
+    def test_annotation_generic_isotope_matches_explicit_13c(self):
+        """`+i` (generic) and `+i13C` (explicit) must produce identical mass and composition."""
+        generic, explicit = parse_one("y5+i"), parse_one("y5+i13C")
+        assert generic.mass() == pytest.approx(explicit.mass())
+        assert generic.dict_composition() == explicit.dict_composition()
+
+    def test_annotation_average_isotope_fails_consistently(self):
+        """An average isotope (`+iA`) has no defined monoisotopic mass or composition, so both
+        mass() and comp() must raise -- consistently, never one succeeding while the other throws."""
+        ann = parse_one("y5+iA")
+        with pytest.raises(ValueError):
+            ann.mass()
+        with pytest.raises(ValueError):
+            ann.dict_composition()
+
+    def test_immonium_atom_removing_modification_keeps_negative_comp(self):
+        """Regression: ImmoniumIon.composition normalized with unary `+`, which drops any element
+        whose net total is <= 0 -- so a modification removing more of an element than the residue
+        supplies made composition/formula silently disagree with mass(). Net-negative totals must be
+        kept (only exact zeros stripped) so comp() stays consistent with mass()."""
+        ann = parse_one("IK[Dehydrated]")  # dehydration removes an O the K immonium doesn't have
+        comp = ann.dict_composition()
+        assert comp["O"] == -1  # kept, not clamped to 0
+        electron_mass = 0.000548579909
+        mass_from_comp = sum(ELEMENT_LOOKUP[sym].get_mass(monoisotopic=True) * n for sym, n in comp.items())
+        assert ann.mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
+        # A mixed-sign composition can't be written as a plain formula, but ProForma allows negatives.
+        assert ann.proforma_formula() == "C5H11N2O-1"
+
+    def test_parser_no_catastrophic_backtracking_on_long_atom_run(self):
+        """Regression (ReDoS): `_ATOM_TOKEN+` over the overlapping `[A-Z]`/`[A-Za-z0-9]` classes was
+        a `(a+)+`-style catastrophic-backtracking shape -- an anchored non-match on a long single-
+        letter run hung mzPAFParser.parse. The possessive `*+` quantifier must keep it linear."""
+        import signal
+
+        from paftacular.parser import mzPAFParser
+
+        def _timeout(signum, frame):
+            raise TimeoutError("parse did not return quickly -- catastrophic backtracking regressed")
+
+        pathological = "y1+" + "H" * 40 + "!"  # valid prefix, invalid tail -> forces a full non-match
+        old_handler = signal.signal(signal.SIGALRM, _timeout)
+        signal.setitimer(signal.ITIMER_REAL, 2.0)
+        try:
+            with pytest.raises(ValueError):
+                mzPAFParser().parse(pathological)
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, old_handler)

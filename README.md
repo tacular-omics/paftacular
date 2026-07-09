@@ -6,7 +6,7 @@
   A Python library for parsing and serializing **mzPAF** (Peak Annotation Format), a standardized format for annotating mass spectrometry fragment ions in peptide/proteomics analysis. mzPAF is a specification from the [Proteomics Standards Initiative (PSI)](https://www.psidev.info/) that provides a compact, human-readable notation for describing fragment ion types, chemical modifications, charge states, mass errors, and confidence scores.
 
     
-  [![Python package](https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml/badge.svg)](https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml)
+  [![Python package](https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml/badge.svg)](https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml)
 [![codecov](https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=lZDTvRrnuq)](https://codecov.io/github/tacular-omics/paftacular)
   [![Documentation Status](https://readthedocs.org/projects/paftacular/badge/?version=latest)](https://paftacular.readthedocs.io/en/latest/?badge=latest)
   [![PyPI version](https://badge.fury.io/py/paftacular.svg)](https://badge.fury.io/py/paftacular)
@@ -47,11 +47,11 @@ import paftacular as pft
 
 # Parse a simple peptide ion
 ann = pft.parse("y5")
-print(ann.ion_type.series)  # IonSeries.Y
+print(ann.ion_type.series)  # y
 print(ann.ion_type.position)  # 5
 
 # Calculate masses
-print(ann.monoisotopic_mass)   # Calculated mass
+print(ann.mass())              # Monoisotopic mass by default
 print(ann.serialize())         # Round-trip back to string
 
 # Parse multiple ions

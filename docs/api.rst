@@ -1,6 +1,14 @@
 API Reference
 =============
 
+Annotation
+----------
+
+.. automodule:: paftacular.annotation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Parser
 ------
 

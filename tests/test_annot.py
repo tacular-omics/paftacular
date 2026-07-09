@@ -336,9 +336,7 @@ class TestMassCalculations:
         from tacular import FRAGMENT_ION_LOOKUP
 
         by_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI")
-        ax_frag = InternalFragment(
-            start_position=3, end_position=5, sequence="PTI", nterm_ion_type=IonSeries.A, cterm_ion_type=IonSeries.X
-        )
+        ax_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI", nterm_ion_type=IonSeries.A, cterm_ion_type=IonSeries.X)
         assert by_frag.mass() != ax_frag.mass()
         assert ax_frag.mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(True) + by_frag.mass(), rel=1e-9)
 

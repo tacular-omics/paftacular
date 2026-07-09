@@ -8,7 +8,7 @@
 .. raw:: html
 
    <div style="text-align: center; margin-bottom: 5px;">
-      <a href="https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml"><img src="https://github.com/pgarrett-scripps/paftacular/actions/workflows/python-package.yml/badge.svg" alt="Python package"></a>
+      <a href="https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml"><img src="https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml/badge.svg" alt="Python package"></a>
       <a href="https://codecov.io/github/tacular-omics/paftacular" > 
          <img src="https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=lZDTvRrnuq"/> 
       </a>
@@ -38,6 +38,25 @@ Features
 * **Type-Annotations**: typed.py file for static type checking
 * **Caching**: serialization and parsing results are cached for performance (when applicable)
 * **Integrated**: Integrated with peptacular, such that peptacular can output mzPAF annotations for fragment ions
+
+Quick Example
+-------------
+
+.. testcode::
+
+   import paftacular as pft
+
+   ann = pft.parse("y5")
+   print(ann.ion_type.series)
+   print(ann.mass())
+
+.. testoutput::
+
+   y
+   19.017841466812
+
+See :doc:`usage` for the full guide, including creating annotations programmatically,
+computing masses/compositions, and round-tripping to mzPAF strings.
 
 .. toctree::
    :maxdepth: 2

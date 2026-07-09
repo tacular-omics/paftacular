@@ -165,3 +165,5 @@ htmlcov/
 *.cover
 .pytest_cache/
 junit.xml
+# scratch / manual testing
+tmp.py

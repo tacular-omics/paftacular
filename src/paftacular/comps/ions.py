@@ -190,10 +190,11 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        # Counter's `+`/`+=` drop any element whose running total is <= 0 at that
-        # step, even if a later term would bring it back positive. Accumulate with
-        # `.update()` (which doesn't filter) and normalize with unary `+` only once,
-        # at the end, so an atom-removing modification can't be silently lost.
+        # Counter's `+`/`+=` (and unary `+`) drop any element whose total is <= 0, which would
+        # make this composition silently disagree with mass() whenever a modification removes more
+        # of an element than the residue+immonium supply (net-negative) or exactly cancels it
+        # (net-zero). Accumulate with `.update()` (which never filters), then strip only the
+        # exact-zero entries at the end -- negatives are kept so comp() stays consistent with mass().
         c: Counter[ElementInfo] = Counter()
         if self.modification is not None:
             _require_peptacular()
@@ -208,7 +209,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
             raise ValueError(f"Composition not available for amino acid: {self.amino_acid}")
         c.update(aa_comp)
         c.update(FRAGMENT_ION_LOOKUP["i"].composition)
-        return +c
+        return Counter({el: n for el, n in c.items() if n != 0})
 
 
 @dataclass(frozen=True, slots=True)

@@ -9,7 +9,7 @@ from tacular import ELEMENT_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 
 from paftacular.constants import ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN
 
-from ..constants import MAX_CACHE_SIZE
+from ..constants import _ATOM_TOKEN, MAX_CACHE_SIZE
 from .base import CompositionProvider, MassProvider, ScalableComposition, Serializable
 from .util import composition_to_proforma_formula_string, formula_to_composition
 
@@ -101,6 +101,20 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         """Calculate mass contribution of isotope specification"""
         if monoisotopic is False:
             raise ValueError("Cannot calculate mass shift for average isotopomer specification")
+
+        if self.count == 0:
+            return 0.0
+
+        if self.is_average:
+            raise ValueError("Cannot calculate mass shift for average isotopomer specification")
+
+        if self.element is None:
+            # Generic isotope (no element specified): mzPAF section 4.6 defines this as the
+            # difference between 13C and 12C, regardless of which atom actually carries it.
+            c13 = ELEMENT_LOOKUP["13C"].get_mass(monoisotopic=True)
+            c12 = ELEMENT_LOOKUP.get_monoisotopic("C").get_mass(monoisotopic=True)
+            return (c13 - c12) * self.count
+
         comp = self.composition
         m = 0.0
         for elem, count in comp.items():
@@ -117,7 +131,14 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
             raise ValueError("Cannot calculate composition for average isotopomer specification")
 
         if self.element is None:
-            raise ValueError("Cannot calculate composition for generic isotope specification without element")
+            # Generic isotope (no element specified): mzPAF section 4.6 defines this as a 13C
+            # substitution (13C in place of 12C) regardless of which atom actually carries it, so
+            # gain one 13C and lose one 12C per count. Mirrors the element-specified path below and
+            # keeps composition consistent with mass() (which uses the same 13C-12C shift).
+            comp = Counter()
+            comp[ELEMENT_LOOKUP["13C"]] = self.count
+            comp[ELEMENT_LOOKUP.get_monoisotopic("C")] = -self.count
+            return comp
 
         if self.element not in ELEMENT_LOOKUP:
             raise ValueError(f"Unknown element for isotope specification: {self.element}")
@@ -349,23 +370,22 @@ class NeutralLoss(
             count = 1 * sign_mult
             return NeutralLoss(count=count, base_mass=float(content))
 
-        # Parse as reference group [Name] or COUNT[Name]
-        elif "[" in content:  # Changed from content.startswith('[')
-            # Extract count and reference name
-            match = re.match(r"^(\d*)\[([^\]]+)\]$", content)
-            if match:
-                count_str, ref_name = match.groups()
-                count = int(count_str) if count_str else 1
-                return NeutralLoss(count=count * sign_mult, base_reference=ref_name)
+        # Parse as a formula: one or more atoms, each either plain (e.g. "H2O") or an
+        # isotope-labeled atom in brackets (e.g. "[18O1]"), optionally count-prefixed, and the
+        # two forms may be mixed (e.g. "H2[18O1]"). Tried before the reference-group branch since
+        # a reference name can never itself start with an atom/isotope-bracket token.
+        match = re.match(rf"^(\d*)({_ATOM_TOKEN}+)$", content)
+        if match:
+            count_str, formula = match.groups()
+            count = int(count_str) if count_str else 1
+            return NeutralLoss(count=count * sign_mult, base_formula=formula)
 
-        # Parse as formula (with optional count prefix)
-        else:
-            # Extract count and formula
-            match = re.match(r"^(\d*)([A-Z].*)$", content)
-            if match:
-                count_str, formula = match.groups()
-                count = int(count_str) if count_str else 1
-                return NeutralLoss(count=count * sign_mult, base_formula=formula)
+        # Parse as reference group [Name] or COUNT[Name]
+        match = re.match(r"^(\d*)\[([^\]]+)\]$", content)
+        if match:
+            count_str, ref_name = match.groups()
+            count = int(count_str) if count_str else 1
+            return NeutralLoss(count=count * sign_mult, base_reference=ref_name)
 
         raise ValueError(f"Could not parse neutral loss: '{loss_str}'")
 

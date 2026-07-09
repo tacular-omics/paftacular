@@ -18,7 +18,15 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
-from .constants import ADDUCT_REGEX_PATTERN, FULL_PAF_PATTERN, ISOTOPE_REGEX_PATTERN, NEUTRAL_LOSS_REGEX_PATTERN, AminoAcids, IonSeries
+from .constants import (
+    ADDUCT_REGEX_PATTERN,
+    FULL_PAF_PATTERN,
+    ISOTOPE_REGEX_PATTERN,
+    NEUTRAL_LOSS_REGEX_PATTERN,
+    PARTIAL_PAF_PATTERN,
+    AminoAcids,
+    IonSeries,
+)
 
 
 class mzPAFParser:
@@ -34,7 +42,10 @@ class mzPAFParser:
         match = FULL_PAF_PATTERN.match(annotation_str)
         if not match:
             raise ValueError(f"Invalid mzPAF annotation: '{annotation_str}'")
+        return self._build_annotation(match)
 
+    def _build_annotation(self, match: re.Match[str]) -> PafAnnotation:
+        """Build a PafAnnotation from a match against FULL_PAF_PATTERN/PARTIAL_PAF_PATTERN"""
         groups = match.groupdict()
 
         return PafAnnotation(
@@ -241,15 +252,37 @@ class mzPAFParser:
             raise ValueError(f"Field '{key}' must be a number, got '{value}'") from e
 
     def parse_multi(self, annotation_str: str) -> list[PafAnnotation]:
-        """Parse potentially multiple comma-separated annotations"""
+        """Parse potentially multiple comma-separated annotations
+
+        Follows the mzPAF spec's Appendix A strategy: from the current position, greedily match
+        one annotation; if the next unmatched character is a comma, skip it and continue; if the
+        match reached the end of the string, parsing is complete; otherwise it's a parse error.
+        This (rather than a naive comma split) is required because commas may legitimately appear
+        inside bracketed content, e.g. a reference or named-compound label.
+        """
         if not annotation_str:
             return []
 
+        n = len(annotation_str)
+
+        def skip_whitespace(pos: int) -> int:
+            while pos < n and annotation_str[pos].isspace():
+                pos += 1
+            return pos
+
         annotations: list[PafAnnotation] = []
-        for part in annotation_str.split(","):
-            part = part.strip()
-            if part:
-                annotations.append(self.parse(part))
+        i = skip_whitespace(0)
+        while i < n:
+            match = PARTIAL_PAF_PATTERN.match(annotation_str, i)
+            if not match:
+                raise ValueError(f"Invalid mzPAF annotation starting at position {i}: '{annotation_str[i:]}'")
+            annotations.append(self._build_annotation(match))
+            i_end = skip_whitespace(match.end())
+            if i_end < n:
+                if annotation_str[i_end] != ",":
+                    raise ValueError(f"Unparsed content following annotation at position {i_end}: '{annotation_str[i_end:]}'")
+                i_end = skip_whitespace(i_end + 1)
+            i = i_end
 
         return annotations
 

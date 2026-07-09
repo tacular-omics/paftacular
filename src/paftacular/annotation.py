@@ -214,13 +214,24 @@ class PafAnnotation:
         for loss in self.neutral_losses:
             base_mass += loss.mass(monoisotopic=monoisotopic)
 
-        # Apply adducts
-        for adduct in self.adducts:
-            base_mass += adduct.mass(monoisotopic=monoisotopic)
+        if isinstance(self.ion_type, ChemicalFormula):
+            # A ChemicalFormula's atom count already represents the fully charged species
+            # (mzPAF section 4.4.9): any adduct only labels which atoms carry the charge and
+            # MUST NOT add mass, and the theoretical m/z needs only an electron-mass correction
+            # per charge, not a full proton per charge like the other (neutral-basis) ion types.
+            base_mass -= self.charge * 0.000548579909
+        else:
+            # Apply adducts
+            for adduct in self.adducts:
+                base_mass += adduct.mass(monoisotopic=monoisotopic)
 
-        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-        if self.charge != 0 and len(self.adducts) == 0:
-            base_mass += self.charge * 1.007276466812
+            # Adjust for charge state (if no adducts specified) default protonation/deprotonation
+            if self.charge != 0 and len(self.adducts) == 0:
+                base_mass += self.charge * 1.007276466812
+
+        # Apply isotopes
+        for isotope in self.isotopes:
+            base_mass += isotope.mass(monoisotopic=monoisotopic)
 
         if calculate_sequence is True and self.sequence is not None:
             _require_peptacular()
@@ -250,14 +261,25 @@ class PafAnnotation:
         for loss in self.neutral_losses:
             comp.update(loss.composition)
 
-        # Apply adducts
-        for adduct in self.adducts:
-            comp.update(adduct.composition)
+        if isinstance(self.ion_type, ChemicalFormula):
+            # A ChemicalFormula's atom count already represents the fully charged species
+            # (mzPAF section 4.4.9): any adduct only labels which atoms carry the charge and
+            # MUST NOT add atoms on top, and there's no separate proton to add for the charge
+            # itself (electrons aren't atoms, so there's nothing to add to the composition).
+            pass
+        else:
+            # Apply adducts
+            for adduct in self.adducts:
+                comp.update(adduct.composition)
 
-        # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-        if self.charge != 0 and len(self.adducts) == 0:
-            proton = ELEMENT_LOOKUP["H"]
-            comp[proton] += self.charge
+            # Adjust for charge state (if no adducts specified) default protonation/deprotonation
+            if self.charge != 0 and len(self.adducts) == 0:
+                proton = ELEMENT_LOOKUP["H"]
+                comp[proton] += self.charge
+
+        # Apply isotopes
+        for isotope in self.isotopes:
+            comp.update(isotope.composition)
 
         if calculate_sequence is True and self.sequence is not None:
             _require_peptacular()

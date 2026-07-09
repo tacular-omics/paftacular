@@ -1,6 +1,10 @@
 Usage
 =====
 
+.. contents:: Table of Contents
+   :local:
+   :depth: 2
+
 .. testsetup:: *
 
    import paftacular as pft
@@ -214,9 +218,9 @@ Complex Annotations
    ann = pft.parse("&2@y5-H2O+i13C[M+H+Na]^2/-0.55ppm*0.85")
    print(ann.is_auxiliary)        # True (& flag)
    print(ann.analyte_reference)   # 2 (@ reference)
-   print(ann.ion_type.series)     # IonSeries.Y
+   print(ann.ion_type.series)     # y
    print(ann.ion_type.position)   # 5
-   print(ann.neutral_mods)        # Tuple with H2O loss
+   print(ann.neutral_losses)      # Tuple with H2O loss
    print(ann.isotopes)            # Tuple with 13C isotope
    print(ann.adducts)             # Tuple with H and Na
    print(ann.charge)              # 2
@@ -232,19 +236,18 @@ Mass Calculations
 
    # Get calculated masses
    ann = pft.parse("y5")
-   print(ann.monoisotopic_mass)   # Monoisotopic mass
-   print(ann.average_mass)        # Average mass
-   print(ann.mass)                # Defaults to monoisotopic
+   print(ann.mass(monoisotopic=True))    # Monoisotopic mass
+   print(ann.mass(monoisotopic=False))   # Average mass
 
    # With modifications
    ann = pft.parse("y5-H2O")
-   print(ann.monoisotopic_mass)   # Mass adjusted for water loss
+   print(ann.mass(monoisotopic=True))    # Mass adjusted for water loss
 
    # Get composition
    ann = pft.parse("f{C6H12O6}")
-   comp = ann.composition  # Counter with ElementInfo keys
-   print(ann.formula)              # "C6H12O6"
-   print(ann.proforma_formula)     # ProForma-style formula
+   comp = ann.comp(calculate_sequence=True)  # Counter with ElementInfo keys
+   print(ann.formula())              # "C6H13O6" (includes the +1 charge proton by default)
+   print(ann.proforma_formula())     # ProForma-style formula
 
 Parsing Multiple Annotations
 -----------------------------
