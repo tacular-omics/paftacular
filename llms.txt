@@ -1,0 +1,31 @@
+# paftacular
+
+> Python library for parsing and serializing mzPAF, the HUPO-PSI Peak
+> Annotation Format for mass spectrometry fragment-ion annotations (e.g.
+> `y5-H2O^2/1.2ppm*0.95`, `b2{PEP}`, `IK[Acetyl]`). Requires `tacular` for
+> element/amino-acid/fragment-ion-mass lookups; optionally integrates with
+> `peptacular` for peptide-sequence-aware mass/composition calculations and
+> converting `peptacular` `Fragment` objects directly into mzPAF annotations.
+
+Parse an mzPAF string into a `PafAnnotation`, or build one programmatically via
+`PafAnnotation.make_*` factory methods, then compute its mass, elemental
+composition, or chemical formula, or serialize it back to mzPAF notation —
+`import paftacular as pft; pft.parse("y5-H2O^2/1.2ppm*0.95").mass()`.
+
+## Docs
+
+- [README](README.md): installation, quick start, mzPAF format overview
+- [CLAUDE.md](CLAUDE.md): architecture and command reference for AI coding agents, including the frozen-dataclass instance-caching pattern and fragment-ion-lookup-key gotchas
+- [HISTORY.md](HISTORY.md): changelog
+- [Read the Docs](https://paftacular.readthedocs.io/en/latest/): full usage guide and API reference (Sphinx)
+
+## Source
+
+- [GitHub repository](https://github.com/tacular-omics/paftacular)
+- [PyPI package](https://pypi.org/project/paftacular/)
+
+## Optional
+
+- [mzPAF specification](https://github.com/HUPO-PSI/mzPAF): the HUPO-PSI peak annotation format standard that paftacular parses and serializes
+- [tacular](https://github.com/tacular-omics/tacular): required dependency providing element/amino-acid/fragment-ion-mass lookups
+- [peptacular](https://github.com/tacular-omics/peptacular): optional dependency for peptide-sequence-aware mass/composition calculations and `to_mzpaf()` Fragment conversion
