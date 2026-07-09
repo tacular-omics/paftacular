@@ -327,6 +327,40 @@ class TestMassCalculations:
         )
         assert annotation.mass() == pytest.approx(residue_sum, rel=1e-9)
 
+    def test_internal_fragment_respects_backbone_cleavage_type(self):
+        """A non-default (e.g. 'ax') internal fragment must not silently reuse the 'by' shift.
+
+        Regression test: InternalFragment previously ignored its own nterm_ion_type/
+        cterm_ion_type fields and always used the 'by' (0 shift) lookup.
+        """
+        from tacular import FRAGMENT_ION_LOOKUP
+
+        by_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI")
+        ax_frag = InternalFragment(
+            start_position=3, end_position=5, sequence="PTI", nterm_ion_type=IonSeries.A, cterm_ion_type=IonSeries.X
+        )
+        assert by_frag.mass() != ax_frag.mass()
+        assert ax_frag.mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(True) + by_frag.mass(), rel=1e-9)
+
+    def test_internal_fragment_requires_both_backbone_cleavage_types(self):
+        """Setting only one of nterm_ion_type/cterm_ion_type must raise, not silently default."""
+        with pytest.raises(ValueError):
+            InternalFragment(start_position=1, end_position=2, nterm_ion_type=IonSeries.A)
+
+    def test_immonium_composition_matches_mass_with_modification(self):
+        """A modified ImmoniumIon's composition-implied mass must match .mass().
+
+        Regression test: ImmoniumIon.composition accumulated the modification's
+        composition into an empty Counter before the amino acid's own composition;
+        Counter's `+=` drops any element whose running total is <= 0 at that step,
+        silently losing an atom-removing modification (e.g. Deamidated).
+        """
+        pytest.importorskip("peptacular")
+
+        ion = ImmoniumIon(amino_acid=AminoAcids.A, modification="Deamidated")
+        mass_from_composition = sum(elem.mass for elem, count in ion.composition.items() for _ in range(count))
+        assert mass_from_composition == pytest.approx(ion.mass(), abs=1e-6)
+
 
 class TestComposition:
     """Test elemental composition calculations"""

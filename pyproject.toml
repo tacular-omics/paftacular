@@ -23,8 +23,8 @@ classifiers = [
 ]
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
-peptacular = ["peptacular>=3.0.0"]
-all = ["pysmiles>=2.0.1", "peptacular>=3.0.0"]
+peptacular = ["peptacular>=3.1.2"]
+all = ["pysmiles>=2.0.1", "peptacular>=3.1.2"]
 
 [build-system]
 requires = ["hatchling"]
@@ -37,7 +37,7 @@ packages = ["src/paftacular"]
 package = true
 dev-dependencies = [
     "pysmiles>=2.0.1",
-    "peptacular>=3.0.0",
+    "peptacular>=3.1.2",
     "pytest>=9.0.2",
     "ruff>=0.14.11",
     "ty>=0.0.11",
@@ -46,6 +46,13 @@ dev-dependencies = [
     "sphinx-rtd-theme>=2.0",
     "sphinx-autodoc-typehints>=1.25",
 ]
+
+# peptacular 3.1.2 fixes several correctness bugs paftacular depends on (e.g.
+# comp()/mass() disagreeing for atom-removing modifications) but hasn't been
+# published to PyPI yet. Point at the local checkout until it's released, then
+# drop this override -- pyproject.toml's version floor is already set for it.
+[tool.uv.sources]
+peptacular = { path = "../peptacular", editable = true }
 
 [tool.ruff]
 target-version = "py312"

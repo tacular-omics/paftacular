@@ -78,6 +78,21 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
     nterm_ion_type: IonSeries | None = None  # e.g., IonSeries.A, IonSeries.B, IonSeries.C
     cterm_ion_type: IonSeries | None = None  # e.g., IonSeries.X, IonSeries.Y, IonSeries.Z
 
+    def __post_init__(self):
+        """Validate that backbone cleavage types are set together or not at all"""
+        if (self.nterm_ion_type is None) != (self.cterm_ion_type is None):
+            raise ValueError(
+                "nterm_ion_type and cterm_ion_type must both be set or both be None, "
+                f"got nterm_ion_type={self.nterm_ion_type!r}, cterm_ion_type={self.cterm_ion_type!r}"
+            )
+
+    @property
+    def _fragment_ion_key(self) -> str:
+        """tacular FRAGMENT_ION_LOOKUP key for this fragment's backbone cleavage type, e.g. 'by', 'ax'"""
+        nterm = self.nterm_ion_type if self.nterm_ion_type is not None else IonSeries.B
+        cterm = self.cterm_ion_type if self.cterm_ion_type is not None else IonSeries.Y
+        return f"{nterm}{cterm}"
+
     def serialize(self, include_sequence: bool = True) -> str:
         # If using default yb cleavage, just use 'm'
         result = f"m{self.start_position}:{self.end_position}"
@@ -98,19 +113,18 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         return InternalFragment(start_position=int(start_str), end_position=int(end_str), sequence=sequence)
 
     def mass(self, monoisotopic: bool = True) -> float:
-        # Start with base mass of internal fragment (no cleavage)
-        return FRAGMENT_ION_LOOKUP["by"].get_mass(monoisotopic)
+        return FRAGMENT_ION_LOOKUP[self._fragment_ion_key].get_mass(monoisotopic)
 
     @property
     def formula(self) -> str:
-        formula = FRAGMENT_ION_LOOKUP["by"].formula
+        formula = FRAGMENT_ION_LOOKUP[self._fragment_ion_key].formula
         if formula is None:
             raise ValueError("Formula not available for internal fragment")
         return formula
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP["by"].composition
+        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self._fragment_ion_key].composition
         if comp is None:
             raise ValueError("Composition not available for internal fragment")
         return comp
@@ -176,21 +190,25 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        c = Counter()
+        # Counter's `+`/`+=` drop any element whose running total is <= 0 at that
+        # step, even if a later term would bring it back positive. Accumulate with
+        # `.update()` (which doesn't filter) and normalize with unary `+` only once,
+        # at the end, so an atom-removing modification can't be silently lost.
+        c: Counter[ElementInfo] = Counter()
         if self.modification is not None:
             _require_peptacular()
             mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
             mod_comp = mod_tag.get_composition()
             if mod_comp is None:
                 raise ValueError(f"Composition not available for modification: {self.modification}")
-            c += mod_comp
+            c.update(mod_comp)
 
         aa_comp = AA_LOOKUP[self.amino_acid].composition
         if aa_comp is None:
             raise ValueError(f"Composition not available for amino acid: {self.amino_acid}")
-        c += aa_comp
-        c += FRAGMENT_ION_LOOKUP["i"].composition
-        return c
+        c.update(aa_comp)
+        c.update(FRAGMENT_ION_LOOKUP["i"].composition)
+        return +c
 
 
 @dataclass(frozen=True, slots=True)

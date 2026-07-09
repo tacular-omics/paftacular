@@ -332,8 +332,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "peptacular", marker = "extra == 'all'", specifier = ">=3.0.0" },
-    { name = "peptacular", marker = "extra == 'peptacular'", specifier = ">=3.0.0" },
+    { name = "peptacular", marker = "extra == 'all'", editable = "../peptacular" },
+    { name = "peptacular", marker = "extra == 'peptacular'", editable = "../peptacular" },
     { name = "pysmiles", marker = "extra == 'all'", specifier = ">=2.0.1" },
     { name = "pysmiles", marker = "extra == 'smiles'", specifier = ">=2.0.1" },
     { name = "tacular", specifier = ">=1.1.0" },
@@ -342,7 +342,7 @@ provides-extras = ["all", "peptacular", "smiles"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "peptacular", specifier = ">=3.0.0" },
+    { name = "peptacular", editable = "../peptacular" },
     { name = "pysmiles", specifier = ">=2.0.1" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
@@ -367,14 +367,30 @@ wheels = [
 
 [[package]]
 name = "peptacular"
-version = "3.0.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../peptacular" }
 dependencies = [
     { name = "tacular" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/62/2f/9ed9860b0eeb10350011ad6d4900a48f168689b5c6c7506ecf04f625edde/peptacular-3.0.0.tar.gz", hash = "sha256:9a8685836871d46b84fa70fad2fd52077c462880997f9a89575852e6f4788cc5", size = 1915396, upload-time = "2026-03-16T21:55:57.152Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/3d/e6679aa339dd39320f7c125e20351cc39458178a6904f9a4cd1d54ac99d7/peptacular-3.0.0-py3-none-any.whl", hash = "sha256:23219a8f86ebb4b30a891a693544e2757770305dd4f840dbed8cbe0723732203", size = 158358, upload-time = "2026-03-16T21:55:55.701Z" },
+
+[package.metadata]
+requires-dist = [{ name = "tacular", specifier = ">=1.1.0" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "lxml", specifier = ">=6.0.2" },
+    { name = "myst-parser" },
+    { name = "pandas", specifier = ">=3.0.0" },
+    { name = "pympler", specifier = ">=1.1" },
+    { name = "pyteomics", git = "https://github.com/levitsky/pyteomics.git" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+    { name = "pyupgrade", specifier = ">=3.21.0" },
+    { name = "ruff", specifier = ">=0.14.7" },
+    { name = "sphinx", specifier = ">=7.0" },
+    { name = "sphinx-autodoc-typehints", specifier = ">=1.25" },
+    { name = "sphinx-rtd-theme", specifier = ">=2.0" },
+    { name = "ty", specifier = ">=0.0.11" },
 ]
 
 [[package]]
