@@ -166,7 +166,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         else:
             m += aa_mass
 
-        m += FRAGMENT_ION_LOOKUP["by"].get_mass(monoisotopic)
+        m += FRAGMENT_ION_LOOKUP["i"].get_mass(monoisotopic)
 
         return m
 
@@ -189,7 +189,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         if aa_comp is None:
             raise ValueError(f"Composition not available for amino acid: {self.amino_acid}")
         c += aa_comp
-        c += FRAGMENT_ION_LOOKUP["by"].composition
+        c += FRAGMENT_ION_LOOKUP["i"].composition
         return c
 
 

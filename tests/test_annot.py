@@ -292,6 +292,41 @@ class TestMassCalculations:
         # Should add 2 protons
         assert annotation.mass() > 0
 
+    @pytest.mark.parametrize(
+        "amino_acid,literature_mz",
+        [
+            (AminoAcids.G, 30.034),
+            (AminoAcids.A, 44.050),
+            (AminoAcids.P, 70.065),
+            (AminoAcids.V, 72.081),
+            (AminoAcids.L, 86.096),
+            (AminoAcids.F, 120.081),
+            (AminoAcids.Y, 136.076),
+            (AminoAcids.W, 159.092),
+        ],
+    )
+    def test_immonium_mass_matches_literature(self, amino_acid, literature_mz):
+        """ImmoniumIon mass must equal published immonium ion m/z values.
+
+        Regression test: ImmoniumIon.mass() previously (accidentally) used the
+        internal by-fragment shift instead of the immonium-specific (-CO) shift.
+        """
+        annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=amino_acid, modification=None), charge=1)
+        assert annotation.mass() == pytest.approx(literature_mz, abs=1e-3)
+
+    def test_internal_by_fragment_mass_equals_residue_sum(self):
+        """A 'by' internal fragment's mass shift must be zero (default, per mzPAF)."""
+        from tacular import AA_LOOKUP
+
+        sequence = "PTI"
+        proton_mass = 1.007276466812
+        residue_sum = sum(AA_LOOKUP[AminoAcids(c)].get_mass(True) for c in sequence) + proton_mass
+        annotation = PafAnnotation(
+            ion_type=InternalFragment(start_position=3, end_position=5, sequence=sequence),
+            charge=1,
+        )
+        assert annotation.mass() == pytest.approx(residue_sum, rel=1e-9)
+
 
 class TestComposition:
     """Test elemental composition calculations"""
