@@ -332,8 +332,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "peptacular", marker = "extra == 'all'", editable = "../peptacular" },
-    { name = "peptacular", marker = "extra == 'peptacular'", editable = "../peptacular" },
+    { name = "peptacular", marker = "extra == 'all'", specifier = ">=3.1.2" },
+    { name = "peptacular", marker = "extra == 'peptacular'", specifier = ">=3.1.2" },
     { name = "pysmiles", marker = "extra == 'all'", specifier = ">=2.0.1" },
     { name = "pysmiles", marker = "extra == 'smiles'", specifier = ">=2.0.1" },
     { name = "tacular", specifier = ">=1.1.0" },
@@ -342,7 +342,7 @@ provides-extras = ["all", "peptacular", "smiles"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "peptacular", editable = "../peptacular" },
+    { name = "peptacular", specifier = ">=3.1.2" },
     { name = "pysmiles", specifier = ">=2.0.1" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
@@ -367,30 +367,14 @@ wheels = [
 
 [[package]]
 name = "peptacular"
-source = { editable = "../peptacular" }
+version = "3.1.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tacular" },
 ]
-
-[package.metadata]
-requires-dist = [{ name = "tacular", specifier = ">=1.1.0" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "lxml", specifier = ">=6.0.2" },
-    { name = "myst-parser" },
-    { name = "pandas", specifier = ">=3.0.0" },
-    { name = "pympler", specifier = ">=1.1" },
-    { name = "pyteomics", git = "https://github.com/levitsky/pyteomics.git" },
-    { name = "pytest", specifier = ">=9.0.1" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "pyupgrade", specifier = ">=3.21.0" },
-    { name = "ruff", specifier = ">=0.14.7" },
-    { name = "sphinx", specifier = ">=7.0" },
-    { name = "sphinx-autodoc-typehints", specifier = ">=1.25" },
-    { name = "sphinx-rtd-theme", specifier = ">=2.0" },
-    { name = "ty", specifier = ">=0.0.11" },
+sdist = { url = "https://files.pythonhosted.org/packages/68/f2/5c352fc3fb7640c335870f341af54c33098c859a273ec8347790f6bce159/peptacular-3.1.2.tar.gz", hash = "sha256:d489112d3b0c5b77a9c7bbbbefa6d7e559868845795c8be2bb6b2e127d4afe63", size = 1088779, upload-time = "2026-07-10T00:59:57.637Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/5a/664a5ddd40d8890b7bc835dad9462882676615fc53ebb171a012fd31e3f1/peptacular-3.1.2-py3-none-any.whl", hash = "sha256:4a6a82c1745153ec32577631ed90bc7ff5f056a6af7698013fb3a5f6a8889a9d", size = 172461, upload-time = "2026-07-10T00:59:56.392Z" },
 ]
 
 [[package]]

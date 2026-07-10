@@ -47,13 +47,6 @@ dev-dependencies = [
     "sphinx-autodoc-typehints>=1.25",
 ]
 
-# peptacular 3.1.2 fixes several correctness bugs paftacular depends on (e.g.
-# comp()/mass() disagreeing for atom-removing modifications) but hasn't been
-# published to PyPI yet. Point at the local checkout until it's released, then
-# drop this override -- pyproject.toml's version floor is already set for it.
-[tool.uv.sources]
-peptacular = { path = "../peptacular", editable = true }
-
 [tool.ruff]
 target-version = "py312"
 line-length = 160
