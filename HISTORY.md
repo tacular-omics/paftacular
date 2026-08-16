@@ -7,8 +7,7 @@
 ## 1.0.0 (2026-03-17)
 
 - Added `to_mzpaf()` function to convert `peptacular` Fragment objects to `PafAnnotation`
-- `peptacular` is now a required dependency (previously optional)
-- Added Zenodo DOI for citation
+- Added optional `peptacular` integration for sequence-aware calculations and fragment conversion
 - Improved mass calculation for immonium ions with modifications
 - Added caching for serialization and parsing results
 
@@ -28,3 +27,10 @@
 - Fixed catastrophic backtracking (ReDoS) in the annotation regex on long single-element runs
 - Bumped the `tacular` dependency floor to `>=1.1.0`, which fixes a systematic error in tacular's own internal-fragment-ion offset table
 - Bumped the optional `peptacular` dependency floor to `>=3.1.2`, which fixes upstream composition/mass consistency bugs (e.g. atom-removing modifications silently dropped from `comp()`)
+
+## 1.1.1 (2026-08-15)
+
+- Added machine-readable citation metadata and publication guidance
+- Added complete PyPI project metadata, community guidelines, and third-party notices
+- Expanded CI coverage across supported Python versions and publication artifacts
+- Prepared the GitHub release for archival in Zenodo

@@ -1,0 +1,12 @@
+Citation
+========
+
+If you use paftacular in research, cite the archived software release. The repository's
+``CITATION.cff`` file provides machine-readable citation metadata and can be rendered as
+APA or BibTeX through GitHub's **Cite this repository** menu.
+
+The Zenodo DOI will be added to this page after version 1.1.1 is archived.
+
+The software source is licensed under the MIT License. The bundled mzPAF specification
+is an unmodified Proteomics Standards Initiative document and remains under the
+copyright and distribution terms stated inside that document.

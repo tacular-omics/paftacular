@@ -1,10 +1,12 @@
 [project]
 name = "paftacular"
 dynamic = ["version"]
-description = "mzpaf parser"
+description = "Parse, serialize, and analyze HUPO-PSI mzPAF peak annotations"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = ["tacular>=1.1.0"]
+keywords = ["mass-spectrometry", "mzpaf", "peak-annotation", "proteomics", "psi"]
 authors = [
     { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
 ]
@@ -18,9 +20,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/tacular-omics/paftacular"
+Documentation = "https://paftacular.readthedocs.io/"
+Repository = "https://github.com/tacular-omics/paftacular"
+Issues = "https://github.com/tacular-omics/paftacular/issues"
+Changelog = "https://github.com/tacular-omics/paftacular/blob/main/HISTORY.md"
+
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
 peptacular = ["peptacular>=3.1.2"]
@@ -33,9 +45,8 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/paftacular"]
 
-[tool.uv]
-package = true
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pysmiles>=2.0.1",
     "peptacular>=3.1.2",
     "pytest>=9.0.2",
@@ -46,6 +57,9 @@ dev-dependencies = [
     "sphinx-rtd-theme>=2.0",
     "sphinx-autodoc-typehints>=1.25",
 ]
+
+[tool.uv]
+package = true
 
 [tool.ruff]
 target-version = "py312"

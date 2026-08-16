@@ -47,4 +47,4 @@ __all__ = [
     "to_mzpaf",
 ]
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"

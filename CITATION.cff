@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use paftacular in research, please cite the software using this metadata."
+title: "paftacular: Parsing and serializing mzPAF peak annotations"
+type: software
+authors:
+  - family-names: Garrett
+    given-names: Patrick
+    affiliation: Scripps Research
+    email: pgarrett@scripps.edu
+abstract: >-
+  paftacular is a Python library for parsing, constructing, serializing, and
+  analyzing HUPO Proteomics Standards Initiative mzPAF peak annotations. It
+  supports fragment-ion types, modifications, isotopes, adducts, charge states,
+  mass errors, confidence scores, and mass and elemental-composition calculations.
+keywords:
+  - mass spectrometry
+  - mzPAF
+  - peak annotation
+  - proteomics
+  - HUPO-PSI
+license: MIT
+repository-code: "https://github.com/tacular-omics/paftacular"
+url: "https://paftacular.readthedocs.io/"
+version: 1.1.1
+date-released: 2026-08-15

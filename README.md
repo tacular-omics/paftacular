@@ -20,17 +20,17 @@ Features
 
 * **mzPAF parsing**: Handles parsing / serializing of mzPAF strings
 * **Properties**: Supports calculating mass and composition of annotated ions
-* **Type-Annotations**: typed.py file for static type checking
+* **Type annotations**: Includes a `py.typed` marker for static type checking
 * **Caching**: serialization and parsing results are cached for performance (when applicable)
 * **Peptacular**: Optionally integrated with peptacular to enable parsing of included sequences and generation of mzPAF annotations
 
 ## Installation
 
 ```bash
-   pip install paftacular
-   pip install paftacular[peptacular] # with peptacular integration
-   pip install paftacular[smiles]     # with SMILES support
-   pip install paftacular[all]        # with all optional dependencies
+pip install paftacular
+pip install paftacular[peptacular] # with peptacular integration
+pip install paftacular[smiles]     # with SMILES support
+pip install paftacular[all]        # with all optional dependencies
 ```
 
 ## Quick Start
@@ -66,6 +66,10 @@ for ann in anns:
 
 Full documentation is available at [Read the Docs](https://paftacular.readthedocs.io/).
 
+## Citation
+
+If you use paftacular in research, cite the archived software release. Machine-readable citation metadata is available in [`CITATION.cff`](CITATION.cff); GitHub's **Cite this repository** menu can render it as APA or BibTeX. The Zenodo DOI will be added here after the 1.1.1 release is archived.
+
 ## mzPAF Format
 
 The mzPAF format uses compact notation:
@@ -80,10 +84,10 @@ See the [PSI mzPAF specification](https://www.psidev.info/) for full details.
 
 ## License
 
-MIT
+paftacular is distributed under the [MIT License](LICENSE). The bundled mzPAF specification remains under its own PSI copyright and distribution terms; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Contributing
 
-Contributions welcome! Please submit a Pull Request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, issue reporting, support, and pull-request guidance. Project governance is described in [GOVERNANCE.md](GOVERNANCE.md), and security reports are handled according to [SECURITY.md](SECURITY.md).
 
 **Author:** Patrick Garrett (pgarrett@scripps.edu)

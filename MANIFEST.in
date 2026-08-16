@@ -1,5 +1,11 @@
 include HISTORY.md
 include README.md
+include CITATION.cff
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include GOVERNANCE.md
+include SECURITY.md
+include THIRD_PARTY_NOTICES.md
 
 recursive-include tests *
 recursive-exclude * __pycache__

@@ -5,9 +5,7 @@ name: Python package
 
 on:
   push:
-    paths:
-      - 'src/**'
-      - 'tests/**'
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -17,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -27,27 +25,45 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v4
-    - name: Install just
-      uses: extractions/setup-just@v2
     - name: Install dependencies
-      run: just install
+      run: uv sync --all-extras --frozen
     - name: Lint with ruff
-      run: just lint
+      run: uv run ruff check src tests
+    - name: Check formatting
+      run: uv run ruff format --check src tests
     - name: Type check with ty
-      run: just check
+      run: uv run ty check src
     - name: Test with pytest
-      run: just test-cov codecov-tests
+      run: uv run pytest tests --cov=src --cov-branch --cov-report=term-missing --cov-report=xml --junitxml=junit.xml
     - name: Upload coverage reports to Codecov
+      if: ${{ matrix.python-version == '3.12' }}
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: tacular-omics/paftacular
         fail_ci_if_error: false
     - name: Upload test results to Codecov
-      if: ${{ !cancelled() }}
+      if: ${{ !cancelled() && matrix.python-version == '3.12' }}
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: tacular-omics/paftacular
         report_type: test_results
         fail_ci_if_error: false
+
+  docs-and-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    - uses: astral-sh/setup-uv@v4
+    - name: Install dependencies
+      run: uv sync --all-extras --frozen
+    - name: Build documentation
+      run: uv run sphinx-build -W -b html docs docs/_build/html
+    - name: Test documentation examples
+      run: uv run sphinx-build -W -b doctest docs docs/_build/doctest
+    - name: Build release artifacts
+      run: uv build
