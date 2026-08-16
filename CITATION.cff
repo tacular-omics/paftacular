@@ -38,8 +38,8 @@ keywords:
   - HUPO-PSI
   - Bioinformatics
 license: MIT
-doi: "10.5281/zenodo.21960114"
+doi: "10.5281/zenodo.19076277"
 repository-code: "https://github.com/tacular-omics/paftacular"
 url: "https://paftacular.readthedocs.io/"
-version: 1.1.1
-date-released: 2026-08-16
+version: "1.1.1"
+date-released: "2026-08-15"

@@ -4,14 +4,16 @@ dynamic = ["version"]
 description = "Parse, serialize, and analyze HUPO-PSI mzPAF peak annotations"
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = ["tacular>=1.1.0"]
 keywords = ["mass-spectrometry", "mzpaf", "peak-annotation", "proteomics", "psi"]
 authors = [
-    { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
+    { name = "Patrick T. Garrett", email = "pgarrett@scripps.edu" },
+    { name = "John R. Yates III", email = "jyates@scripps.edu" },
 ]
 maintainers = [
-    { name = "Patrick Garrett", email = "pgarrett@scripps.edu" }
+    { name = "Patrick T. Garrett", email = "pgarrett@scripps.edu" }
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",

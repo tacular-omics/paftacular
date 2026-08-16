@@ -1,5 +1,6 @@
 {
   "title": "paftacular: Parsing and serializing mzPAF peak annotations",
+  "version": "1.1.1",
   "description": "paftacular is a Python implementation of the HUPO Proteomics Standards Initiative mzPAF notation for mass spectrometry peak annotations. It parses individual or comma-separated annotations into typed PafAnnotation objects and serializes those objects back to mzPAF text. The model represents analyte references, fragment-ion series and positions, internal and precursor ions, neutral losses and gains, isotopes, adducts, charge states, mass errors, and confidence values. Parsed annotations can be inspected, constructed in code, compared, cached, and round-tripped through the canonical text form. Calculation methods derive monoisotopic or average mass and elemental composition for annotated ions using shared reference data from tacular. Optional peptacular integration connects embedded peptide sequences with ProForma parsing and fragment generation. Optional SMILES support handles formula calculations for applicable chemical structures. paftacular is intended for spectrum annotation software, spectral-library tooling, proteomics pipelines, and validation tasks that need a structured representation of mzPAF annotations. It requires Python 3.12 or later.",
   "creators": [
     {
