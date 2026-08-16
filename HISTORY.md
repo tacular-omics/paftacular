@@ -31,6 +31,7 @@
 ## 1.1.1 (2026-08-15)
 
 - Added machine-readable citation metadata and publication guidance
+- Linked the existing Zenodo concept DOI for version-independent citation
 - Added complete PyPI project metadata, community guidelines, and third-party notices
 - Expanded CI coverage across supported Python versions and publication artifacts
 - Prepared the GitHub release for archival in Zenodo

@@ -14,6 +14,7 @@
       </a>
       <a href="https://paftacular.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/paftacular/badge/?version=latest" alt="Documentation Status"></a>
       <a href="https://badge.fury.io/py/paftacular"><img src="https://badge.fury.io/py/paftacular.svg" alt="PyPI version"></a>
+      <a href="https://doi.org/10.5281/zenodo.19076277"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.19076277.svg" alt="Zenodo DOI"></a>
       <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+"></a>
       <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
    </div>

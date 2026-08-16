@@ -10,6 +10,7 @@
 [![codecov](https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=lZDTvRrnuq)](https://codecov.io/github/tacular-omics/paftacular)
   [![Documentation Status](https://readthedocs.org/projects/paftacular/badge/?version=latest)](https://paftacular.readthedocs.io/en/latest/?badge=latest)
   [![PyPI version](https://badge.fury.io/py/paftacular.svg)](https://badge.fury.io/py/paftacular)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19076277.svg)](https://doi.org/10.5281/zenodo.19076277)
   [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-g.svg)](https://opensource.org/licenses/MIT)
   
@@ -68,7 +69,7 @@ Full documentation is available at [Read the Docs](https://paftacular.readthedoc
 
 ## Citation
 
-If you use paftacular in research, cite the archived software release. Machine-readable citation metadata is available in [`CITATION.cff`](CITATION.cff); GitHub's **Cite this repository** menu can render it as APA or BibTeX. The Zenodo DOI will be added here after the 1.1.1 release is archived.
+If you use paftacular in research, cite the archived software release. Machine-readable citation metadata is available in [`CITATION.cff`](CITATION.cff); GitHub's **Cite this repository** menu can render it as APA or BibTeX. The stable DOI for all versions is [10.5281/zenodo.19076277](https://doi.org/10.5281/zenodo.19076277); individual releases also receive version-specific DOIs from Zenodo.
 
 ## mzPAF Format
 

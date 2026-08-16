@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: Garrett
     given-names: Patrick
-    affiliation: Scripps Research
+    affiliation: The Scripps Research Institute
     email: pgarrett@scripps.edu
 abstract: >-
   paftacular is a Python library for parsing, constructing, serializing, and
@@ -19,6 +19,7 @@ keywords:
   - proteomics
   - HUPO-PSI
 license: MIT
+doi: "10.5281/zenodo.19076277"
 repository-code: "https://github.com/tacular-omics/paftacular"
 url: "https://paftacular.readthedocs.io/"
 version: 1.1.1
