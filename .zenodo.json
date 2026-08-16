@@ -1,0 +1,72 @@
+{
+  "title": "paftacular: Parsing and serializing mzPAF peak annotations",
+  "description": "A Python library for parsing, constructing, serializing, and analyzing HUPO Proteomics Standards Initiative mzPAF peak annotations, including fragment-ion types, modifications, isotopes, adducts, charge states, mass errors, confidence scores, and mass and elemental-composition calculations.",
+  "creators": [
+    {
+      "name": "Garrett, Patrick T.",
+      "orcid": "0000-0002-8434-9693",
+      "affiliation": "Scripps Research Institute"
+    },
+    {
+      "name": "Yates III, John R.",
+      "orcid": "0000-0001-5267-1672",
+      "affiliation": "Scripps Research Institute"
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "mit",
+  "language": "eng",
+  "keywords": [
+    "Python",
+    "Proteomics",
+    "Mass Spectrometry",
+    "mzPAF",
+    "Peak Annotation",
+    "HUPO-PSI",
+    "Bioinformatics"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://paftacular.readthedocs.io/",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://pypi.org/project/paftacular/",
+      "relation": "isAlternateIdentifier",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.5281/zenodo.18475556",
+      "relation": "requires",
+      "scheme": "doi",
+      "resource_type": "software"
+    }
+  ],
+  "communities": [
+    {
+      "identifier": "proteomics"
+    },
+    {
+      "identifier": "hupo-psi"
+    }
+  ],
+  "grants": [
+    {
+      "id": "10.13039/100000002::R01AG077046"
+    },
+    {
+      "id": "10.13039/100000002::R01MH132570"
+    },
+    {
+      "id": "10.13039/100000002::R01MH100175"
+    },
+    {
+      "id": "10.13039/100000002::R01HL165168"
+    },
+    {
+      "id": "10.13039/100000002::U01AG088679"
+    }
+  ]
+}
