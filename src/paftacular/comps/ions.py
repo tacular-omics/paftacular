@@ -13,8 +13,9 @@ except ImportError:
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 
 from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries
+from ..util import validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
-from .util import composition_to_proforma_formula_string, formula_to_composition
+from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition
 
 
 def _require_peptacular() -> None:
@@ -29,6 +30,10 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
     series: IonSeries
     position: int
     sequence: str | None = None  # ProForma sequence
+
+    def __post_init__(self):
+        validate_integer(self.position, "Position", 1)
+        IonSeries(self.series)
 
     def mass(self, monoisotopic: bool = True) -> float:
         return FRAGMENT_ION_LOOKUP[self.series].get_mass(monoisotopic)
@@ -56,13 +61,16 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
     @staticmethod
     def parse(s: str) -> "PeptideIon":
         """Parse peptide ion string like 'b5', 'y10{PEPTIDE}'"""
-        s = s.strip()
-        match = re.match(r"((?:da|db|wa|wb)|[axbyczdwv]\.?)(\d+)(?:\{(.+)\})?", s)
-        if not match:
-            raise ValueError(f"Invalid peptide ion: '{s}'")
+        from ..annotation import PafAnnotation
+        from ..parser import parse_single
 
-        series_str, position_str, sequence = match.groups()
-        return PeptideIon(series=IonSeries(series_str), position=int(position_str), sequence=sequence)
+        try:
+            annotation = parse_single(s)
+        except ValueError as error:
+            raise ValueError(f"Invalid peptide ion: {s!r}") from error
+        if not isinstance(annotation.ion_type, PeptideIon) or annotation != PafAnnotation(annotation.ion_type):
+            raise ValueError(f"Invalid peptide ion component: {s!r}")
+        return annotation.ion_type
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,6 +93,12 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
                 "nterm_ion_type and cterm_ion_type must both be set or both be None, "
                 f"got nterm_ion_type={self.nterm_ion_type!r}, cterm_ion_type={self.cterm_ion_type!r}"
             )
+        validate_integer(self.start_position, "Start position", 1)
+        validate_integer(self.end_position, "End position", self.start_position)
+        if self.nterm_ion_type is not None and (
+            self.nterm_ion_type not in (IonSeries.A, IonSeries.B, IonSeries.C) or self.cterm_ion_type not in (IonSeries.X, IonSeries.Y, IonSeries.Z)
+        ):
+            raise ValueError("Internal cleavage types must be a/b/c and x/y/z")
 
     @property
     def _fragment_ion_key(self) -> str:
@@ -99,18 +113,41 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
 
         if include_sequence and self.sequence:
             result += f"{{{self.sequence}}}"
-        return result
+        return result + self.cleavage_correction
+
+    @property
+    def cleavage_correction(self) -> str:
+        """Encode the actual backbone composition as mzPAF gains and losses."""
+        positive = Counter({element: count for element, count in self.composition.items() if count > 0})
+        negative = Counter({element: -count for element, count in self.composition.items() if count < 0})
+        gain = "+" + composition_to_formula_string(positive) if positive else ""
+        loss = "-" + composition_to_formula_string(negative) if negative else ""
+        return gain + loss
 
     @staticmethod
     def parse(s: str) -> "InternalFragment":
         """Parse internal fragment string like 'm5:10', 'm5:10{PEPTIDE}'"""
-        s = s.strip()
-        match = re.match(r"m(\d+):(\d+)(?:\{(.+)\})?", s)
-        if not match:
-            raise ValueError(f"Invalid internal fragment: '{s}'")
+        from ..annotation import PafAnnotation
+        from ..constants import InternalSeries
+        from ..parser import parse_single
 
-        start_str, end_str, sequence = match.groups()
-        return InternalFragment(start_position=int(start_str), end_position=int(end_str), sequence=sequence)
+        try:
+            annotation = parse_single(s)
+        except ValueError as error:
+            raise ValueError(f"Invalid internal fragment: {s!r}") from error
+        ion = annotation.ion_type
+        if not isinstance(ion, InternalFragment) or annotation != PafAnnotation(ion, neutral_losses=annotation.neutral_losses):
+            raise ValueError(f"Invalid internal fragment component: {s!r}")
+        if not annotation.neutral_losses:
+            return ion
+        correction: Counter[ElementInfo] = Counter()
+        for loss in annotation.neutral_losses:
+            correction.update(loss.composition)
+        for series in InternalSeries:
+            candidate = InternalFragment(ion.start_position, ion.end_position, ion.sequence, IonSeries(series[0]), IonSeries(series[1]))
+            if candidate.composition == correction:
+                return candidate
+        raise ValueError("Neutral correction does not describe a supported internal cleavage")
 
     def mass(self, monoisotopic: bool = True) -> float:
         return FRAGMENT_ION_LOOKUP[self._fragment_ion_key].get_mass(monoisotopic)
@@ -141,6 +178,9 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
 
     def __new__(cls, amino_acid: AminoAcids, modification: str | None = None):
         """Create or retrieve cached instance"""
+        AminoAcids(amino_acid)
+        if modification is not None and (not isinstance(modification, str) or not modification):
+            raise ValueError("Modification must be a nonempty string")
         key = (amino_acid, modification)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -160,7 +200,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "ImmoniumIon":
         """Parse immonium ion string like 'IK', 'IM[Oxidation]'"""
         s = s.strip()
-        match = re.match(r"I([A-Z])(?:\[([^\]]+)\])?", s)
+        match = re.fullmatch(r"I([A-Z])(?:\[([^\]]+)\])?", s)
         if not match:
             raise ValueError(f"Invalid immonium ion: '{s}'")
 
@@ -222,8 +262,12 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
 
     def __new__(cls, name: str):
         """Create or retrieve cached instance"""
+        if not isinstance(name, str) or not name:
+            raise ValueError("Reference name must be a nonempty string")
         key = (name,)
         if key not in cls._cache:
+            if len(cls._cache) >= MAX_CACHE_SIZE:
+                cls._cache.pop(next(iter(cls._cache)))
             instance = object.__new__(cls)
             cls._cache[key] = instance
         return cls._cache[key]
@@ -250,7 +294,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "ReferenceIon":
         """Parse reference ion string like 'r[Phospho]'"""
         s = s.strip()
-        match = re.match(r"r\[([^\]]+)\]", s)
+        match = re.fullmatch(r"r\[([^\]]+)\]", s)
         if not match:
             raise ValueError(f"Invalid reference ion: '{s}'")
         return ReferenceIon(name=match.group(1))
@@ -270,6 +314,8 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
 
     def __new__(cls, name: str):
         """Create or retrieve cached instance"""
+        if not isinstance(name, str) or not name:
+            raise ValueError("Compound name must be a nonempty string")
         key = (name,)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -293,7 +339,7 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "NamedCompound":
         """Parse named compound string like '_{Urocanic Acid}'"""
         s = s.strip()
-        match = re.match(r"_\{([^\}]+)\}", s)
+        match = re.fullmatch(r"_\{([^\}]+)\}", s)
         if not match:
             raise ValueError(f"Invalid named compound: '{s}'")
         return NamedCompound(name=match.group(1))
@@ -333,7 +379,7 @@ class ChemicalFormula(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "ChemicalFormula":
         """Parse chemical formula string like 'f{C13H9}'"""
         s = s.strip()
-        match = re.match(r"f\{([^\}]+)\}", s)
+        match = re.fullmatch(r"f\{([^\}]+)\}", s)
         if not match:
             raise ValueError(f"Invalid chemical formula: '{s}'")
         return ChemicalFormula(formula=match.group(1))
@@ -358,7 +404,7 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "SMILESCompound":
         """Parse SMILES compound string like 's{CN=C=O}'"""
         s = s.strip()
-        match = re.match(r"s\{([^\}]+)\}", s)
+        match = re.fullmatch(r"s\{([^\}]+)\}", s)
         if not match:
             raise ValueError(f"Invalid SMILES compound: '{s}'")
         return SMILESCompound(smiles=match.group(1))
@@ -376,10 +422,15 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
             raise ValueError(f"Invalid SMILES string '{self.smiles}': {e}") from e
 
         elem_counts: Counter[str] = Counter()
+        if sum(mol.nodes[node_id].get("charge", 0) for node_id in mol.nodes()) != 0:
+            raise ValueError("mzPAF SMILES must describe a neutral molecule. Specify charge carriers using adducts")
         for node_id in mol.nodes():
             elem = mol.nodes[node_id].get("element", "*")
             if elem == "*":
                 raise ValueError(f"Unknown element '*' in SMILES '{self.smiles}'. Ensure all atoms are properly specified.")
+            isotope = mol.nodes[node_id].get("isotope")
+            if isotope is not None:
+                elem = f"{isotope}{elem}"
             elem_counts[elem] += 1
 
         return Counter({ELEMENT_LOOKUP[elem]: count for elem, count in elem_counts.items()})
@@ -403,6 +454,8 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
 
     def __new__(cls, label: int | None = None):
         """Create or retrieve cached instance"""
+        if label is not None:
+            validate_integer(label, "Unknown ion label")
         key = (label,)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -430,7 +483,7 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         if s == "?":
             return UnknownIon(label=None)
-        match = re.match(r"\?(\d+)", s)
+        match = re.fullmatch(r"\?(\d+)", s)
         if not match:
             raise ValueError(f"Invalid unknown ion: '{s}'")
         return UnknownIon(label=int(match.group(1)))

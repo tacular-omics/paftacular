@@ -10,6 +10,7 @@ from tacular import ELEMENT_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 from paftacular.constants import ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN
 
 from ..constants import _ATOM_TOKEN, MAX_CACHE_SIZE
+from ..util import format_number, validate_number
 from .base import CompositionProvider, MassProvider, ScalableComposition, Serializable
 from .util import composition_to_proforma_formula_string, formula_to_composition
 
@@ -21,11 +22,16 @@ class MassError(Serializable):
     value: float
     unit: Literal["da", "ppm"] = "da"
 
+    def __post_init__(self):
+        validate_number(self.value)
+        if self.unit not in ("da", "ppm"):
+            raise ValueError(f"Unknown mass error unit: {self.unit}")
+
     def serialize(self) -> str:
         if self.unit == "ppm":
-            return f"{self.value:g}ppm"
+            return f"{format_number(self.value)}ppm"
         elif self.unit == "da":
-            return f"{self.value:g}"
+            return format_number(self.value)
         else:
             raise ValueError(f"Unknown mass error unit: {self.unit}")
 
@@ -51,6 +57,12 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
 
     def __new__(cls, count: int = 0, element: str | None = None, is_average: bool = False):
         """Create or retrieve cached instance"""
+        if type(count) is not int or type(is_average) is not bool:
+            raise ValueError("Isotope count must be an integer and is_average must be a boolean")
+        if element is not None and (not isinstance(element, str) or not re.fullmatch(r"\d+[A-Z][a-z]?", element)):
+            raise ValueError("An isotope element requires a nucleon count and element symbol")
+        if is_average and element is not None:
+            raise ValueError("Average isotopes cannot also specify an element")
         key = (count, element, is_average)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -82,7 +94,7 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "IsotopeSpecification":
         """Parse isotope string like '+i', '-2i13C', '+iA'"""
         s = s.strip()
-        match = re.match(ISOTOPE_REGEX_PATTERN, s)
+        match = re.fullmatch(ISOTOPE_REGEX_PATTERN, s)
         if not match:
             raise ValueError(f"Invalid isotope specification: '{s}'")
 
@@ -148,8 +160,8 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         base_symbol = elem_info.symbol
         mono_info: ElementInfo = ELEMENT_LOOKUP.get_monoisotopic(base_symbol)
         comp: Counter[ElementInfo] = Counter()
-        comp[elem_info] = self.count
-        comp[mono_info] = -self.count
+        comp[elem_info] += self.count
+        comp[mono_info] -= self.count
         return comp
 
     def as_dict(self) -> dict:
@@ -196,6 +208,15 @@ class NeutralLoss(
 
     def __new__(cls, count: int, base_formula: str | None = None, base_mass: float | None = None, base_reference: str | None = None):
         """Create or retrieve cached instance"""
+        if type(count) is not int or count == 0:
+            raise ValueError("Neutral loss count must be a nonzero integer")
+        if sum(value is not None for value in (base_formula, base_mass, base_reference)) != 1:
+            raise ValueError("Exactly one of formula, mass, or reference must be set")
+        for value in (base_formula, base_reference):
+            if value is not None and (not isinstance(value, str) or not value):
+                raise ValueError("Formula and reference must be nonempty strings")
+        if base_mass is not None:
+            validate_number(base_mass)
         key = (count, base_formula, base_mass, base_reference)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -204,12 +225,6 @@ class NeutralLoss(
             instance = object.__new__(cls)
             cls._cache[key] = instance
         return cls._cache[key]
-
-    def __post_init__(self):
-        """Validate that exactly one of formula/mass/reference is set"""
-        set_count = sum([self.base_formula is not None, self.base_mass is not None, self.base_reference is not None])
-        if set_count != 1:
-            raise ValueError("Exactly one of formula, mass, or reference must be set")
 
     @property
     def reference(self) -> RefMolInfo | str | None:
@@ -306,7 +321,7 @@ class NeutralLoss(
         match loss_type:
             case "mass":
                 mass = self.mass(monoisotopic=monoisotopic)
-                return f"{mass:+.5f}"
+                return ("+" if mass >= 0 else "-") + format_number(abs(mass), minimum_places=5)
             case "formula":
                 formula = self.formula
                 return f"{formula}"
@@ -355,6 +370,9 @@ class NeutralLoss(
     @staticmethod
     def parse(loss_str: str) -> "NeutralLoss":
         """Parse a neutral loss string into a NeutralLoss object"""
+        loss_str = loss_str.strip()
+        if not loss_str:
+            raise ValueError("Empty neutral loss")
         sign = loss_str[0]
         sign_mult: int
         if sign == "+":
@@ -399,6 +417,10 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
 
     def __new__(cls, count: int, base_formula: str):
         """Create or retrieve cached instance"""
+        if type(count) is not int or count == 0:
+            raise ValueError("Count must be a non-zero integer")
+        if not isinstance(base_formula, str) or not base_formula:
+            raise ValueError("Formula cannot be empty")
         key = (count, base_formula)
         if key not in cls._cache:
             # Evict oldest entry if cache is full
@@ -407,13 +429,6 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
             instance = object.__new__(cls)
             cls._cache[key] = instance
         return cls._cache[key]
-
-    def __post_init__(self):
-        """Validate adduct"""
-        if self.count == 0:
-            raise ValueError(f"Count must be non-zero, got {self.count}")
-        if not self.base_formula:
-            raise ValueError("Formula cannot be empty")
 
     @property
     def _single_composition(self) -> Counter[ElementInfo]:
@@ -434,7 +449,7 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
     def parse(s: str) -> "Adduct":
         """Parse a single adduct string like '+H', '+2Na', '-NH4'"""
         s = s.strip()
-        match = re.match(ADDUCT_REGEX_PATTERN, s)
+        match = re.fullmatch(ADDUCT_REGEX_PATTERN, s)
         if not match:
             raise ValueError(f"Invalid adduct: '{s}'")
 

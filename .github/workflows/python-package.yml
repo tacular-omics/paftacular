@@ -7,6 +7,7 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build:
@@ -28,9 +29,9 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-extras --frozen
     - name: Lint with ruff
-      run: uv run ruff check src tests
+      run: uv run ruff check src tests benchmarks
     - name: Check formatting
-      run: uv run ruff format --check src tests
+      run: uv run ruff format --check src tests benchmarks
     - name: Type check with ty
       run: uv run ty check src
     - name: Test with pytest
@@ -67,3 +68,46 @@ jobs:
       run: uv run sphinx-build -W -b doctest docs docs/_build/doctest
     - name: Build release artifacts
       run: uv build
+
+  wheel-installations:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        extra: [none, smiles, peptacular, all]
+        dependencies: [minimum, latest]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    - uses: astral-sh/setup-uv@v4
+    - name: Build and install wheel outside the checkout
+      shell: bash
+      run: |
+        uv build
+        uv venv /tmp/paftacular-wheel
+        wheels=(dist/*.whl)
+        requirement="${wheels[0]}"
+        if [[ "${{ matrix.extra }}" != "none" ]]
+        then
+          requirement+="[${{ matrix.extra }}]"
+        fi
+        options=()
+        if [[ "${{ matrix.dependencies }}" == "minimum" ]]
+        then
+          options+=(--constraint ci/minimum-dependencies.txt)
+        fi
+        uv pip install --python /tmp/paftacular-wheel/bin/python "$requirement" pytest "${options[@]}"
+    - name: Test installation and public APIs
+      env:
+        PAFTACULAR_TEST_WHEEL: "1"
+        PAFTACULAR_EXPECT_EXTRAS: ${{ matrix.extra }}
+      run: |
+        cd /tmp
+        /tmp/paftacular-wheel/bin/python -I -m pytest "$GITHUB_WORKSPACE/tests/test_installation.py" "$GITHUB_WORKSPACE/tests/test_interchange.py" "$GITHUB_WORKSPACE/tests/test_regressions.py" "$GITHUB_WORKSPACE/tests/test_resolution.py"
+    - name: Run the full suite with all extras
+      if: matrix.extra == 'all'
+      run: |
+        cd /tmp
+        /tmp/paftacular-wheel/bin/python -I -m pytest "$GITHUB_WORKSPACE/tests"

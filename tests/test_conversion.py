@@ -78,6 +78,32 @@ class TestConversion:
         assert "m3:5{PTI}-CO^2" == str(paf_annot)
         assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
 
+    @pytest.mark.parametrize(
+        "options",
+        [
+            {"charge": "Na:z+1"},
+            {"charge": "Na:z+1^2"},
+            {"charge": 2, "isotopes": 1},
+            {"charge": 2, "isotopes": {"13C": 2}},
+            {"charge": 2, "deltas": -18.010565},
+            {"charge": 2, "deltas": "H-2O-1"},
+        ],
+    )
+    def test_conversion_preserves_modifiers(self, options):
+        fragment = pt.parse("PEPTIDE").frag(ion_type="y", position=3, **options)
+        annotation = paf.to_mzpaf(fragment, confidence=0.123456789, mass_error=1e-7)
+        assert annotation.mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
+        assert paf.parse_single(annotation.serialize()) == annotation
+
+    def test_precursor_conversion_retains_context(self):
+        fragment = pt.parse("PEPTIDE").frag(ion_type="p", charge=2)
+        annotation = paf.to_mzpaf(fragment)
+        assert annotation.serialize() == "p^2"
+        assert annotation.sequence == "PEPTIDE"
+        assert annotation.mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
+        assert paf.PafAnnotation.from_dict(annotation.to_dict()) == annotation
+        assert paf.to_mzpaf(fragment, include_annotation=False).sequence is None
+
 
 if __name__ == "__main__":
     import pytest

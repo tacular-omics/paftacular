@@ -17,7 +17,9 @@ from .comps import (
 )
 from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries
 from .conversion import to_mzpaf
-from .parser import mzPAFParser, parse, parse_multi, parse_single
+from .errors import PafParseError
+from .parser import ParseResult, iter_parse, mzPAFParser, parse, parse_batch, parse_multi, parse_single
+from .resolution import resolve
 
 __all__ = [
     "PafAnnotation",
@@ -45,6 +47,11 @@ __all__ = [
     "parse_single",
     "mzPAFParser",
     "to_mzpaf",
+    "PafParseError",
+    "ParseResult",
+    "parse_batch",
+    "iter_parse",
+    "resolve",
 ]
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"

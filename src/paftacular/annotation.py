@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import asdict, dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Literal, TypedDict, Unpack
 
 try:
@@ -29,6 +30,7 @@ from .comps import (
     composition_to_proforma_formula_string,
 )
 from .constants import INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
+from .util import format_number, validate_integer, validate_number
 
 
 def _require_peptacular() -> None:
@@ -66,11 +68,24 @@ class PafAnnotation:
     charge: int = 1
     mass_error: MassError | None = None
     confidence: float | None = None
+    resolved_sequence: str | None = None
 
     def __post_init__(self):
         """Validate annotation constraints"""
-        if self.charge < 1:
-            raise ValueError(f"Charge must be >= 1, got {self.charge}")
+        validate_integer(self.charge, "Charge", 1)
+        if self.analyte_reference is not None:
+            validate_integer(self.analyte_reference, "Analyte reference")
+        if self.confidence is not None:
+            validate_number(self.confidence)
+        if self.resolved_sequence is not None:
+            if not isinstance(self.ion_type, PeptideIon | InternalFragment | PrecursorIon):
+                raise ValueError("Resolved sequence requires a peptide, internal, or precursor ion")
+            if not isinstance(self.resolved_sequence, str) or not self.resolved_sequence:
+                raise ValueError("Resolved sequence must be a nonempty string")
+            if isinstance(self.ion_type, PeptideIon | InternalFragment):
+                embedded = self.ion_type.sequence
+                if embedded is not None and embedded != self.resolved_sequence:
+                    raise ValueError("Embedded and resolved sequences must agree")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
@@ -93,7 +108,7 @@ class PafAnnotation:
         elif isinstance(self.ion_type, ImmoniumIon):
             return pt.IonType.IMMONIUM
         elif isinstance(self.ion_type, InternalFragment):
-            return pt.IonType.BY
+            return pt.IonType(self.ion_type._fragment_ion_key)
         return None
 
     @staticmethod
@@ -224,6 +239,8 @@ class PafAnnotation:
             # Apply adducts
             for adduct in self.adducts:
                 base_mass += adduct.mass(monoisotopic=monoisotopic)
+            if self.adducts:
+                base_mass -= self.charge * 0.000548579909
 
             # Adjust for charge state (if no adducts specified) default protonation/deprotonation
             if self.charge != 0 and len(self.adducts) == 0:
@@ -289,8 +306,18 @@ class PafAnnotation:
             if annot.has_charge:
                 raise ValueError("Sequence in annotation should not have charge for mass calculation")
 
-            seq_comp = annot.comp()
+            seq_comp = annot.comp(ion_type="n")
             comp.update(seq_comp)
+
+        # Consume ordinary atoms when an isotope delta removes the monoisotope.
+        # Keep genuine deficits when the annotation provides insufficient context.
+        for element, count in tuple(comp.items()):
+            if count < 0 and element == ELEMENT_LOOKUP.get_monoisotopic(element.symbol):
+                ordinary = ELEMENT_LOOKUP[element.symbol]
+                if ordinary != element:
+                    available = min(-count, max(0, comp[ordinary]))
+                    comp[element] += available
+                    comp[ordinary] -= available
 
         return comp
 
@@ -302,11 +329,32 @@ class PafAnnotation:
     @property
     def sequence(self) -> str | None:
         """Get the peptide sequence if applicable, else None"""
+        if self.resolved_sequence is not None:
+            return self.resolved_sequence
         if isinstance(self.ion_type, PeptideIon):
             return self.ion_type.sequence
         elif isinstance(self.ion_type, InternalFragment):
             return self.ion_type.sequence
         return None
+
+    def resolve(self, analytes: str | Mapping[int, str]) -> PafAnnotation:
+        """Resolve this peptide, internal, or precursor ion against analyte context."""
+        from .resolution import resolve
+
+        return resolve(self, analytes)
+
+    def to_dict(self) -> dict:
+        """Export the versioned, reversible structured representation."""
+        from .serialization import to_dict
+
+        return to_dict(self)
+
+    @staticmethod
+    def from_dict(data: Mapping[str, object]) -> PafAnnotation:
+        """Validate and reconstruct a versioned structured representation."""
+        from .serialization import from_dict
+
+        return from_dict(data)
 
     def formula(self, calculate_sequence: bool = True) -> str:
         """Get the chemical formula string of the annotated ion"""
@@ -360,7 +408,7 @@ class PafAnnotation:
 
         # Confidence
         if self.confidence is not None:
-            parts.append(f"*{self.confidence:g}")
+            parts.append(f"*{format_number(self.confidence)}")
 
         return "".join(parts)
 
@@ -373,9 +421,6 @@ class PafAnnotation:
 
     def as_dict(self) -> dict:
         """Convert the annotation to a dictionary representation"""
-        ion_dict = {}
-        ion_dict["ion_type"] = type(self.ion_type).__name__
-        ion_dict.update(asdict(self.ion_type))
         return {
             "ion": str(self.ion_type),
             "analyte_reference": self.analyte_reference,

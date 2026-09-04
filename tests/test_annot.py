@@ -39,7 +39,7 @@ class TestPafAnnotationBasics:
 
     def test_charge_validation(self):
         """Test that charge must be >= 1"""
-        with pytest.raises(ValueError, match="Charge must be >= 1"):
+        with pytest.raises(ValueError, match="Charge must be an integer >= 1"):
             PafAnnotation(
                 ion_type=PeptideIon(series=IonSeries.B, position=2),
                 charge=0,

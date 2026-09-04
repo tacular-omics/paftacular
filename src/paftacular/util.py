@@ -1,5 +1,33 @@
 import re
 from collections import Counter
+from decimal import Decimal
+from math import isfinite
+
+
+def validate_number(value: float) -> None:
+    """Require a number representable as a finite float, excluding booleans."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValueError("Expected a finite number")
+    try:
+        finite = isfinite(value)
+    except OverflowError:
+        finite = False
+    if not finite:
+        raise ValueError("Expected a finite number")
+
+
+def format_number(value: float, minimum_places: int = 0) -> str:
+    """Render a finite number as a decimal that round trips through float."""
+    validate_number(value)
+    whole, _, fraction = format(Decimal(str(value)), "f").partition(".")
+    fraction = fraction.rstrip("0").ljust(minimum_places, "0")
+    return whole + ("." + fraction if fraction else "")
+
+
+def validate_integer(value: int, name: str, minimum: int = 0) -> None:
+    """Reject booleans, nonintegral types, and values below the minimum."""
+    if type(value) is not int or value < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
 
 
 def parse_formula(formula: str) -> Counter[str]:

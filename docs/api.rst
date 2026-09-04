@@ -17,6 +17,21 @@ Parser
    :undoc-members:
    :show-inheritance:
 
+Resolution and Errors
+---------------------
+
+.. automodule:: paftacular.resolution
+   :members:
+
+.. automodule:: paftacular.errors
+   :members:
+
+Structured Interchange
+----------------------
+
+.. automodule:: paftacular.serialization
+   :members: to_dict, from_dict
+
 Annotation Types
 ----------------
 

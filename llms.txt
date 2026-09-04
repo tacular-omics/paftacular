@@ -3,14 +3,17 @@
 > Python library for parsing and serializing mzPAF, the HUPO-PSI Peak
 > Annotation Format for mass spectrometry fragment-ion annotations (e.g.
 > `y5-H2O^2/1.2ppm*0.95`, `b2{PEP}`, `IK[Acetyl]`). Requires `tacular` for
-> element/amino-acid/fragment-ion-mass lookups; optionally integrates with
+> element/amino-acid/fragment-ion-mass lookups. It optionally integrates with
 > `peptacular` for peptide-sequence-aware mass/composition calculations and
 > converting `peptacular` `Fragment` objects directly into mzPAF annotations.
 
-Parse an mzPAF string into a `PafAnnotation`, or build one programmatically via
-`PafAnnotation.make_*` factory methods, then compute its mass, elemental
-composition, or chemical formula, or serialize it back to mzPAF notation —
-`import paftacular as pft; pft.parse("y5-H2O^2/1.2ppm*0.95").mass()`.
+Parse mzPAF with `parse_single()` or `parse_multi()`. `iter_parse()` and
+`parse_batch()` retain structured errors for individual input records.
+Build annotations with `PafAnnotation.make_*` factories. Use `resolve()` with
+a full analyte before calculating complete peptide or precursor masses.
+Without sequence context, these calculations return offsets and modifiers.
+Use `to_dict()` and `PafAnnotation.from_dict()` for versioned interchange,
+including resolved context. `as_dict()` remains a compact display format.
 
 ## Docs
 

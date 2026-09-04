@@ -22,7 +22,7 @@ Features
 * **mzPAF parsing**: Handles parsing / serializing of mzPAF strings
 * **Properties**: Supports calculating mass and composition of annotated ions
 * **Type annotations**: Includes a `py.typed` marker for static type checking
-* **Caching**: serialization and parsing results are cached for performance (when applicable)
+* **Caching**: repeated modifier and selected ion components share bounded instance caches
 * **Peptacular**: Optionally integrated with peptacular to enable parsing of included sequences and generation of mzPAF annotations
 
 ## Installation
@@ -52,16 +52,49 @@ print(ann.ion_type.series)  # y
 print(ann.ion_type.position)  # 5
 
 # Calculate masses
-print(ann.mass())              # Monoisotopic mass by default
+print(ann.mass())              # Ion offset only, because y5 has no sequence context
 print(ann.serialize())         # Round-trip back to string
 
 # Parse multiple ions
 anns = pft.parse("y5-H2O^2/1.2ppm*0.95,b3^2")
 for ann in anns:
   print(ann.charge)
-  print(ann.mass_error.value)
+  print(ann.mass_error.value if ann.mass_error else None)
   print(ann.confidence)
 ```
+
+## Resolve peptide context
+
+With `paftacular[peptacular]` installed, resolve a fragment against a full ProForma analyte before calculating its complete mass:
+
+```python
+import paftacular as pft
+
+ann = pft.parse_single("y2").resolve("PEPTIDE")
+print(ann.sequence)  # DE
+print(ann.mz())
+```
+
+Without an embedded or resolved sequence, peptide and precursor calculations return only the ion offset and modifiers. Resolved context is preserved by `to_dict()`, while mzPAF serialization preserves the original annotation text structure.
+
+## Batch parsing and interchange
+
+```python
+import json
+import paftacular as pft
+
+for result in pft.iter_parse(["y2,b3", "invalid", "p^2"]):
+    if result.ok:
+        print(result.index, len(result.annotations))
+    else:
+        print(result.index, result.error.position, result.error.reason)
+
+ann = pft.parse_single("y2/0.000001ppm")
+restored = pft.PafAnnotation.from_dict(json.loads(json.dumps(ann.to_dict())))
+assert restored == ann
+```
+
+`to_dict()` produces versioned component data. The existing `as_dict()` remains a compact display representation.
 
 ## Documentation
 
@@ -81,7 +114,7 @@ The mzPAF format uses compact notation:
 
 Examples: `y5`, `b2{PEP}`, `y5-H2O^2`, `y5/1.2ppm*0.95`
 
-See the [PSI mzPAF specification](https://www.psidev.info/) for full details.
+See the [PSI mzPAF specification](https://www.psidev.info/mzpaf) for full details.
 
 ## License
 

@@ -41,5 +41,5 @@ license: MIT
 doi: "10.5281/zenodo.19076277"
 repository-code: "https://github.com/tacular-omics/paftacular"
 url: "https://paftacular.readthedocs.io/"
-version: "1.1.1"
-date-released: "2026-08-15"
+version: "1.2.0"
+date-released: "2026-09-04"

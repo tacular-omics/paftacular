@@ -22,7 +22,7 @@ from .comps import (
     PrecursorIon,
     UnknownIon,
 )
-from .constants import INTERNAL_MASS_DIFFS, AminoAcids
+from .constants import INTERNAL_MASS_DIFFS, NEUTRAL_LOSS_REGEX_PATTERN, AminoAcids
 
 
 def _require_peptacular() -> None:
@@ -116,7 +116,9 @@ def to_mzpaf(
                     internal_ion_key = tuple(list(ion_info.ion_type.value))
                     if internal_ion_key not in INTERNAL_MASS_DIFFS:
                         raise ValueError(f"Internal ion type {ion_info.ion_type} not supported in mzPAF.")
-                    internal_loss = INTERNAL_MASS_DIFFS[internal_ion_key]
+                    internal_loss = InternalFragment(
+                        start, end, nterm_ion_type=IonSeries(internal_ion_key[0]), cterm_ion_type=IonSeries(internal_ion_key[1])
+                    ).cleavage_correction
 
                     sequence = None
                     if include_annotation:
@@ -160,7 +162,7 @@ def to_mzpaf(
         case dict():
             for loss, count in frag_losses.items():
                 if isinstance(loss, float):
-                    nloss = NeutralLoss(count=count, base_mass=loss)
+                    nloss = NeutralLoss(count=count if loss >= 0 else -count, base_mass=abs(loss))
                     losses.append(nloss)
                 elif isinstance(loss, pt.ChargedFormula):
                     paf_formula = loss.to_mz_paf()
@@ -178,19 +180,15 @@ def to_mzpaf(
             raise TypeError(f"Invalid losses type: {type(frag.losses)}")
 
     # Add internal loss if applicable
-    if internal_loss is not None:
-        if internal_loss.startswith("-"):
-            cnt = -1
-        elif internal_loss.startswith("+"):
-            cnt = 1
-        else:
-            raise ValueError(f"Invalid internal loss format: {internal_loss}")
-        losses.append(NeutralLoss(count=cnt, base_formula=internal_loss[1:]))
+    if internal_loss:
+        import re
+
+        losses.extend(NeutralLoss.parse(value) for value in re.findall(NEUTRAL_LOSS_REGEX_PATTERN, internal_loss))
 
     pzpaf_adducts: list[Adduct] = []
     if frag._charge_adducts is not None:
         _adducts: tuple[pt.GlobalChargeCarrier, ...] = tuple(mod.value for mod in frag.charge_adducts.mods)
-        pzpaf_adducts = [Adduct(count=a.occurance, base_formula=a.to_mz_paf()[2:]) for a in _adducts]
+        pzpaf_adducts = [Adduct.parse(a.to_mz_paf()[1:]) for a in _adducts]
 
     mz_paf_mass_error = None
     if mass_error is not None:
@@ -204,4 +202,9 @@ def to_mzpaf(
         charge=frag.charge_state,
         mass_error=mz_paf_mass_error,
         confidence=confidence,
+        resolved_sequence=(
+            pt.parse(frag.sequence).serialize(exclude_charge=True)
+            if isinstance(ion, PrecursorIon) and include_annotation and frag.sequence is not None
+            else None
+        ),
     )

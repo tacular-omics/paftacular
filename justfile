@@ -1,37 +1,28 @@
-default: lint format check test
+default: check
 
-# Install all dependencies (dev + all extras)
 install:
     uv sync --all-extras
 
 install-all: install
-    
 
-# Install minimal dependencies (no dev, no extras)
 install-prod:
     uv sync --no-dev --frozen
 
-# Run linting checks
 lint:
-    uv run ruff check src
+    uv run ruff check src tests benchmarks
 
-# Format code
 format:
-	uv run ruff check --select I --fix src tests
-	uv run ruff format src tests
+    uv run ruff check --select I --fix src tests benchmarks
+    uv run ruff format src tests benchmarks
 
-# Run ty type checker
+format-check:
+    uv run ruff format --check src tests benchmarks
+
 ty:
     uv run ty check src
 
+check: lint format-check ty test
 
-# Run type checking
-check:
-    just lint
-    just ty
-    just test
-
-# Run tests
 test:
     uv run pytest tests
 
@@ -39,23 +30,24 @@ test-cov:
     uv run pytest tests --cov=src --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml
 
 codecov-tests:
-    uv run pytest tests --cov=src --junitxml=junit.xml -o junit_family=legacy
+    uv run pytest tests --cov=src --cov-branch --junitxml=junit.xml
 
-# Build documentation
 docs:
-    cd docs && uv run sphinx-build -b html . _build/html
+    uv run sphinx-build -W -b html docs docs/_build/html
 
 docs-test:
-    cd docs && uv run sphinx-build -b doctest . _build/doctest
+    uv run sphinx-build -W -b doctest docs docs/_build/doctest
 
-
-# Clean documentation build
 docs-clean:
     rm -rf docs/_build
 
-# Build and open documentation
-docs-open:
-    just docs
-    python -c "import webbrowser; webbrowser.open('file://{{justfile_directory()}}/docs/_build/html/index.html')"
+docs-open: docs
+    uv run python -m webbrowser "file://{{justfile_directory()}}/docs/_build/html/index.html"
 
-pre-release: format lint check test docs-test
+benchmark:
+    uv run python benchmarks/parse.py
+
+build:
+    uv build
+
+pre-release: format check docs docs-test build

@@ -1,5 +1,26 @@
 # History
 
+## 1.2.0 (2026-09-04)
+
+### Correctness and maintenance
+
+- Corrected embedded-sequence compositions, explicit-adduct electron accounting, isotope substitution, and SMILES isotope labels
+- Preserved physical internal-fragment masses through conversion and serialization, documenting the difference from the specification's cleavage table
+- Fixed counted charge-adduct conversion and retained precursor sequence context during peptacular conversion
+- Fixed annotation boundaries around embedded ProForma, required complete component parsing, and rejected zero charge and invalid positions
+- Preserved float precision in grammar-compatible numeric serialization
+- Bounded the reference-ion cache and repaired pickle and copy reconstruction of cached components
+- Added scientific regression cases, executable documentation examples, installation matrices, and a parser benchmark
+- Gated publishing on repository checks and release-version verification
+- Updated the bundled specification to the unmodified ratified mzPAF 1.0.1 document
+
+### New APIs
+
+- Added explicit analyte-context resolution for peptide, internal, and precursor annotations
+- Added structured parse errors, lazy record parsing, and batch results that retain individual failures
+- Added versioned dictionary/JSON interchange with strict structural validation and preservation of resolved context
+- Kept the existing as_dict() representation and context-free mass behavior compatible
+
 ## 0.1.0 (2026-01-14)
 
 - First release on PyPI.

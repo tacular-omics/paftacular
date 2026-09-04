@@ -163,7 +163,7 @@ Adducts
    ann = pft.parse("y5[M+Na]")
 
    # Multiple adducts
-   ann = pft.parse("y5[M+2H+Na]")
+   ann = pft.parse("y5[M+2H+Na]^3")
    ann = pft.parse("p[M+NH4]")
 
 Charge States
@@ -198,7 +198,7 @@ Mass Errors and Confidence
    print(ann.mass_error.unit)   # "ppm"
 
    # Mass error in daltons
-   ann = pft.parse("y5/-0.003da")
+   ann = pft.parse("y5/-0.003")
 
    # Confidence score (0.0 to 1.0)
    ann = pft.parse("y5*0.95")
@@ -234,7 +234,7 @@ Mass Calculations
 
    import paftacular as pft
 
-   # Get calculated masses
+   # Without sequence context these are ion offsets, not complete fragment masses
    ann = pft.parse("y5")
    print(ann.mass(monoisotopic=True))    # Monoisotopic mass
    print(ann.mass(monoisotopic=False))   # Average mass
@@ -246,7 +246,7 @@ Mass Calculations
    # Get composition
    ann = pft.parse("f{C6H12O6}")
    comp = ann.comp(calculate_sequence=True)  # Counter with ElementInfo keys
-   print(ann.formula())              # "C6H13O6" (includes the +1 charge proton by default)
+   print(ann.formula())              # "C6H12O6" (formula ions already specify all atoms)
    print(ann.proforma_formula())     # ProForma-style formula
 
 Parsing Multiple Annotations
@@ -357,12 +357,12 @@ All factory methods accept common parameters for modifications.
 .. testcode::
 
    # Add adducts
-   ann = PafAnnotation.make_precursor(adducts=["+H", "+Na"])
+   ann = PafAnnotation.make_precursor(adducts=["+H", "+Na"], charge=2)
    print(ann.serialize())
 
 .. testoutput::
 
-   p[M+H+Na]
+   p[M+H+Na]^2
 
 .. testcode::
 
@@ -574,3 +574,139 @@ Pass ``include_annotation=False`` to omit the embedded sequence from the annotat
    print(ann.serialize())   # b1
 
 For more details, see the `PSI mzPAF specification <https://www.psidev.info/>`_.
+
+Resolving Analyte Context
+-------------------------
+
+``mass()`` and ``mz()`` preserve their historical behavior: without sequence
+context, peptide and precursor annotations return only the ion offset and
+modifiers. Use ``resolve()`` for a complete fragment calculation. It returns a
+new annotation and leaves the original unchanged.
+
+.. testcode::
+
+   original = pft.parse_single("y2")
+   resolved = original.resolve("PEPTIDE")
+   print(resolved.sequence)
+   print(round(resolved.mz(), 4))
+   print(original.sequence)
+
+.. testoutput::
+
+   DE
+   263.0874
+   None
+
+A mapping selects analytes by their mzPAF references. An omitted reference
+selects key 1. A supplied string is the full analyte for the current annotation.
+Resolution supports a/b/c/x/y/z peptide fragments, internal fragments, and
+precursors. It rejects missing references, out-of-range positions, internal
+fragments that include a terminus, and conflicting embedded sequences.
+Other ion types and side-chain series currently raise ``ValueError``.
+The analyte's charge is excluded from the selected sequence. The annotation's
+own charge and adducts determine the final charged species.
+
+.. testcode::
+
+   resolved = pft.parse_single("2@b2").resolve({1: "AAAA", 2: "PEPTIDE"})
+   print(resolved.sequence)
+   print(resolved.serialize())
+
+.. testoutput::
+
+   PE
+   2@b2
+
+Resolved context is deliberately separate from mzPAF text. Use ``to_dict()``
+when persisting it. Parsing ``resolved.serialize()`` requires resolving the
+analyte again before computing a complete mass.
+
+Structured Errors and Batch Parsing
+-----------------------------------
+
+``PafParseError`` is a ``ValueError`` subclass with ``text``, ``reason``,
+``position``, and ``annotation_index`` attributes. Positions and indices start
+at zero. Syntax errors point to unexpected content or the end of incomplete
+input. Semantic errors identify the start of the affected annotation.
+
+``iter_parse()`` processes an iterable lazily. ``parse_batch()`` collects its
+results into a list. Each result preserves the original record text and index.
+If any annotation in a record is malformed, that record has an error and no
+partial annotations. Later records still run. Empty records succeed with an
+empty annotation tuple. Programming errors such as passing non-string records
+are not converted into parse errors.
+
+.. testcode::
+
+   results = pft.parse_batch(["y2,b3", "y2,b3!", "p"])
+   print([result.ok for result in results])
+   print(results[1].index, results[1].error.annotation_index, results[1].error.position)
+
+.. testoutput::
+
+   [True, False, True]
+   1 1 5
+
+Versioned Interchange
+---------------------
+
+``to_dict()`` exports schema version 1, including an ion type discriminator,
+component fields, optional mass error, and resolved sequence context.
+``PafAnnotation.from_dict()`` reconstructs that representation, rejecting
+unknown versions, missing or extra fields, invalid types, nonfinite numbers,
+and malformed mzPAF fields. It does not require optional dependencies to
+reconstruct data. Chemical and ProForma interpretation happens when properties
+are calculated. The legacy ``as_dict()`` remains unchanged and is not accepted
+as a versioned interchange object.
+
+.. testcode::
+
+   import json
+   resolved = pft.parse_single("b2").resolve("PEPTIDE")
+   data = resolved.to_dict()
+   restored = pft.PafAnnotation.from_dict(json.loads(json.dumps(data)))
+   print(data["schema_version"], data["ion"]["type"])
+   print(restored == resolved)
+   print(restored.sequence)
+
+.. testoutput::
+
+   1 PeptideIon
+   True
+   PE
+
+Calculation and Serialization Conventions
+-----------------------------------------
+
+``mass()`` is the charged species mass. ``comp()`` counts nuclei, so summing
+its elemental masses requires subtracting one electron mass per positive
+charge to compare with ``mass()``. Upstream tabulated ion offsets are rounded,
+so numerical comparisons should allow approximately one microdalton.
+Formula ions already describe the charged species' atoms. Their adducts label
+charge carriers without adding atoms. Other supported ions add the specified
+adduct atoms, or implicit hydrogens when no adduct is given.
+
+A generic ``+i`` uses the carbon-13 minus carbon-12 mass shift. In compositions,
+isotope substitutions consume ordinary or explicit monoisotopic atoms when
+available. Genuine deficits remain visible when context is incomplete.
+Average-isotopomer masses remain undefined and raise ``ValueError``.
+SMILES isotope labels are retained during calculation.
+Charged SMILES molecules are rejected. Charge carriers belong in mzPAF adducts.
+
+Precursor conversion with ``to_mzpaf()`` retains sequence context when
+``include_annotation=True``. This context is preserved by structured export,
+while the mzPAF string remains ``p`` with its ordinary modifiers and charge.
+
+There is a known convention difference between the internal-cleavage table in
+mzPAF 1.0.1 section 4.4.4 and the physical ion definitions in tacular and
+peptacular. ``make_internal(ion_type=...)`` and the public correction tables
+retain the specification convention for compatibility. Explicit
+``InternalFragment`` cleavage fields and ``to_mzpaf()`` preserve the source
+ion's physical composition using explicit neutral gains and losses. For
+example, a physical ``ax`` fragment is represented as ``m2:4-H2``. The mass
+of an existing mzPAF string is never reinterpreted based on an inferred series.
+
+Numeric output uses decimal notation compatible with the grammar and retains
+float precision. Mass-based losses retain at least five decimal places for
+compatibility, adding more when necessary. Round trips preserve meaning, not
+necessarily the original spelling or redundant zero-isotope annotations.

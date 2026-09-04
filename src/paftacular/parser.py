@@ -1,4 +1,6 @@
 import re
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
 from typing import ClassVar
 
 from .annotation import PafAnnotation
@@ -27,6 +29,8 @@ from .constants import (
     AminoAcids,
     IonSeries,
 )
+from .errors import PafParseError
+from .syntax import annotation_spans
 
 
 class mzPAFParser:
@@ -39,10 +43,7 @@ class mzPAFParser:
 
     def parse(self, annotation_str: str) -> PafAnnotation:
         """Parse a single annotation string"""
-        match = FULL_PAF_PATTERN.match(annotation_str)
-        if not match:
-            raise ValueError(f"Invalid mzPAF annotation: '{annotation_str}'")
-        return self._build_annotation(match)
+        return parse_single(annotation_str)
 
     def _build_annotation(self, match: re.Match[str]) -> PafAnnotation:
         """Build a PafAnnotation from a match against FULL_PAF_PATTERN/PARTIAL_PAF_PATTERN"""
@@ -55,7 +56,7 @@ class mzPAFParser:
             neutral_losses=self._parse_neutral_losses(groups.get("neutral_losses")),
             isotopes=self._parse_isotopes(groups.get("isotope")),
             adducts=self._parse_adducts(groups.get("adducts")),
-            charge=self._parse_int(groups, "charge") or 1,
+            charge=1 if groups.get("charge") is None else self._require_int(groups, "charge"),
             mass_error=self._parse_mass_error(groups),
             confidence=self._parse_float(groups, "confidence"),
         )
@@ -137,12 +138,17 @@ class mzPAFParser:
         # Parse each isotope component
         isotopes: list[IsotopeSpecification] = []
         for match_groups in isotope_matches:
-            # Reconstruct the isotope string from regex groups
+            # The outer annotation pattern has already validated these tokens.
             sign_str, count_str, element_or_avg = match_groups
 
-            # Build the isotope string: sign + count + 'i' + element_or_avg
-            isotope_string = f"{sign_str or '+'}{count_str}i{element_or_avg or ''}"
-            isotopes.append(IsotopeSpecification.parse(isotope_string))
+            count = int(count_str) if count_str else 1
+            isotopes.append(
+                IsotopeSpecification(
+                    count=-count if sign_str == "-" else count,
+                    element=None if element_or_avg == "A" else element_or_avg or None,
+                    is_average=element_or_avg == "A",
+                )
+            )
 
         return tuple(isotopes)
 
@@ -188,10 +194,10 @@ class mzPAFParser:
         # Parse each adduct component
         adducts: list[Adduct] = []
         for match_groups in adduct_strings:
-            # Reconstruct the adduct string from regex groups
+            # Construct directly from the validated token groups.
             sign_str, count_str, formula = match_groups
-            adduct_string = f"{sign_str}{count_str}{formula}"
-            adducts.append(Adduct.parse(adduct_string))
+            count = int(count_str) if count_str else 1
+            adducts.append(Adduct(count=-count if sign_str == "-" else count, base_formula=formula))
 
         return tuple(adducts)
 
@@ -252,38 +258,21 @@ class mzPAFParser:
             raise ValueError(f"Field '{key}' must be a number, got '{value}'") from e
 
     def parse_multi(self, annotation_str: str) -> list[PafAnnotation]:
-        """Parse potentially multiple comma-separated annotations
-
-        Follows the mzPAF spec's Appendix A strategy: from the current position, greedily match
-        one annotation; if the next unmatched character is a comma, skip it and continue; if the
-        match reached the end of the string, parsing is complete; otherwise it's a parse error.
-        This (rather than a naive comma split) is required because commas may legitimately appear
-        inside bracketed content, e.g. a reference or named-compound label.
-        """
-        if not annotation_str:
-            return []
-
-        n = len(annotation_str)
-
-        def skip_whitespace(pos: int) -> int:
-            while pos < n and annotation_str[pos].isspace():
-                pos += 1
-            return pos
-
+        """Parse annotations separated by commas outside labels and sequences."""
         annotations: list[PafAnnotation] = []
-        i = skip_whitespace(0)
-        while i < n:
-            match = PARTIAL_PAF_PATTERN.match(annotation_str, i)
-            if not match:
-                raise ValueError(f"Invalid mzPAF annotation starting at position {i}: '{annotation_str[i:]}'")
-            annotations.append(self._build_annotation(match))
-            i_end = skip_whitespace(match.end())
-            if i_end < n:
-                if annotation_str[i_end] != ",":
-                    raise ValueError(f"Unparsed content following annotation at position {i_end}: '{annotation_str[i_end:]}'")
-                i_end = skip_whitespace(i_end + 1)
-            i = i_end
-
+        for index, (start, end) in enumerate(annotation_spans(annotation_str)):
+            segment = annotation_str[start:end]
+            offset = start + len(segment) - len(segment.lstrip())
+            segment = segment.strip()
+            match = FULL_PAF_PATTERN.fullmatch(segment)
+            if match is None:
+                partial = PARTIAL_PAF_PATTERN.match(segment)
+                position = offset + (partial.end() if partial else 0)
+                raise PafParseError(annotation_str, position, index, "Unexpected or missing annotation content")
+            try:
+                annotations.append(self._build_annotation(match))
+            except ValueError as error:
+                raise PafParseError(annotation_str, offset, index, str(error)) from error
         return annotations
 
 
@@ -304,8 +293,40 @@ def parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]:
 
 
 def parse_single(annotation_str: str) -> PafAnnotation:
-    """backward compatibility alias for parse()"""
+    """Parse exactly one annotation."""
     annots = parse_multi(annotation_str)
     if len(annots) != 1:
-        raise ValueError(f"Expected single annotation, got {len(annots)}: '{annotation_str}'")
+        raise PafParseError(annotation_str, 0, 0, f"Expected single annotation, got {len(annots)}")
     return annots[0]
+
+
+@dataclass(frozen=True, slots=True)
+class ParseResult:
+    """One input record and either its annotations or a structured error."""
+
+    index: int
+    text: str
+    annotations: tuple[PafAnnotation, ...] = ()
+    error: PafParseError | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
+
+
+def iter_parse(records: Iterable[str]) -> Iterator[ParseResult]:
+    """Parse records lazily, retaining one error per failed input record."""
+    if isinstance(records, str):
+        raise TypeError("Expected an iterable of records, not one string")
+    for index, text in enumerate(records):
+        try:
+            annotations = tuple(parse_multi(text))
+        except PafParseError as error:
+            yield ParseResult(index, text, error=error)
+        else:
+            yield ParseResult(index, text, annotations)
+
+
+def parse_batch(records: Iterable[str]) -> list[ParseResult]:
+    """Collect batch results without discarding malformed input records."""
+    return list(iter_parse(records))

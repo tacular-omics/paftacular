@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections import Counter
+from dataclasses import fields, is_dataclass
 
 from tacular import ElementInfo
 
@@ -15,6 +16,12 @@ class Serializable(ABC):
 
     def __str__(self) -> str:
         return self.serialize()
+
+    def __reduce__(self):
+        """Reconstruct dataclass components through their normal constructors."""
+        if not is_dataclass(self):
+            raise TypeError("Component reconstruction requires a dataclass")
+        return type(self), tuple(getattr(self, field.name) for field in fields(self))
 
 
 class MassProvider(ABC):
