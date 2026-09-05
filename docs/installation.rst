@@ -16,13 +16,18 @@ Installing from PyPI
    pip install paftacular
    pip install paftacular[peptacular] # with peptacular integration
    pip install paftacular[smiles]     # with SMILES support
+   pip install 'paftacular[mcp]'      # with the local MCP server and peptide support
    pip install paftacular[all]        # with all optional dependencies
+
+MCP support requires paftacular 1.3.0 or newer. See :doc:`mcp` for client
+configuration. The ``all`` extra includes MCP and its dependencies.
 
 Optional Dependencies
 ---------------------
 
 * ``pysmiles`` - For SMILES notation support
 * ``peptacular`` - For Mass/Composition calculations via included sequence
+* ``mcp`` extra - Official MCP SDK and peptacular for local AI client connections
 
 Installing from Source
 ----------------------

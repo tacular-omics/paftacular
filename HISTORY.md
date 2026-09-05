@@ -1,5 +1,13 @@
 # History
 
+## 1.3.0 (2026-09-04)
+
+- Added an optional local MCP server with nine tools, four resources, and two analysis prompts
+- Added peptide-context calculations, annotation construction, fragment-series generation, and candidate m/z matching through MCP
+- Added typed MCP input and output schemas, scientific context labels, partial results, and bounded batches
+- Added the `mcp` extra and `paftacular-mcp` command, with peptide support included and MCP included in `all`
+- Added MCP protocol, isolated installation, and Windows connection checks
+
 ## 1.2.0 (2026-09-04)
 
 ### Correctness and maintenance

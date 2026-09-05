@@ -65,6 +65,7 @@ computing masses/compositions, and round-tripping to mzPAF strings.
 
    installation
    usage
+   mcp
    api
    citation
 

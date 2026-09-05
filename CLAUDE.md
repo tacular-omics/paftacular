@@ -19,6 +19,7 @@ source overrides.
 - `comps/modifiers.py`: neutral losses, isotopes, adducts, mass errors
 - `comps/base.py`: composition and serialization interfaces, pickle reconstruction
 - `util.py` and `comps/util.py`: decimal formatting and formula conversion
+- `mcp/`: optional local MCP server, typed contracts, public-API adapters, resources, and prompts
 
 ## Commands
 
@@ -98,6 +99,24 @@ locations, resolution, interchange, and optional installations. CI runs locked
 Python 3.12/3.13/3.14 environments plus built-wheel installations with minimum
 and newer dependencies for each extra. The full suite requires all extras.
 The dedicated installation and public-API suites run with optional skips.
+
+## Optional MCP integration
+
+`paftacular[mcp]` includes the official SDK v2 and peptacular. `all` includes MCP.
+Keep SDK and Pydantic imports inside `mcp/`, loaded only when creating the server.
+The CLI and importing `paftacular.mcp` must work without SDK imports. The server
+runs on stdio, with protocol output on stdout and diagnostics on stderr.
+
+MCP exposes tools, static reference resources, and prompts. Reuse core chemistry
+APIs. Complete peptide calculations require sequence context. Offset mode must
+be explicit. Monoisotopic results use charged-species mass in Da and m/z in Th.
+Preserve partial property errors and structured context across calls. Request
+and result contracts are versioned independently from core interchange.
+
+Tool wrappers are async with bounded synchronous handlers and no inner awaits.
+This serializes chemistry calls within a server event loop and avoids racing
+the core component caches. Test with the official MCP Client in memory and with
+real stdio subprocesses from outside the checkout.
 
 ## Release preparation
 

@@ -36,6 +36,19 @@ pip install paftacular[all]        # with all optional dependencies
 
 ## Quick Start
 
+### AI clients through MCP
+
+Install with `pip install 'paftacular[mcp]'`, then configure your MCP
+client to launch `paftacular-mcp`. The server provides nine tools for parsing,
+construction, sequence resolution, calculations, fragment generation, and m/z
+matching, plus scientific reference resources and analysis prompts.
+
+The `mcp` extra includes peptide support. Use `paftacular[mcp,smiles]` for SMILES as well.
+The base library needs no MCP dependencies. The `all` extra now includes MCP.
+See the [MCP guide](docs/mcp.rst) for configuration and examples.
+
+### Python API
+
 
 There are 3 parsing methods available:
 * ``parse``: Parses a single or multiple comma-separated mzPAF annotations. Returns a single ``PafAnnotation`` or a list of them.

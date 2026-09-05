@@ -1,3 +1,4 @@
 tacular==1.1.0
 peptacular==3.1.2
 pysmiles==2.0.1
+mcp==2.1.1

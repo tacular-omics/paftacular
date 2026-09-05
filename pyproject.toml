@@ -39,7 +39,11 @@ DOI = "https://doi.org/10.5281/zenodo.19076277"
 [project.optional-dependencies]
 smiles = ["pysmiles>=2.0.1"]
 peptacular = ["peptacular>=3.1.2"]
-all = ["pysmiles>=2.0.1", "peptacular>=3.1.2"]
+mcp = ["mcp>=2.1.1,<3", "peptacular>=3.1.2"]
+all = ["pysmiles>=2.0.1", "peptacular>=3.1.2", "mcp>=2.1.1,<3"]
+
+[project.scripts]
+paftacular-mcp = "paftacular.mcp.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -50,6 +54,7 @@ packages = ["src/paftacular"]
 
 [dependency-groups]
 dev = [
+    "mcp>=2.1.1,<3",
     "pysmiles>=2.0.1",
     "peptacular>=3.1.2",
     "pytest>=9.0.2",
