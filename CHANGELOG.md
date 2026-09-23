@@ -1,10 +1,18 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+## [1.3.1] (2026-09-23)
 
 - Capped sibling requirements below their next major version (`tacular>=1.1.0,<2`, `peptacular>=3.1.2,<5`). Verified against peptacular 4.0.0.
+- Publish from GitHub Actions with PyPI trusted publishing (`publish.yml`);
+  release metadata is checked against the tag.
+- Keep `__version__` and `CITATION.cff` in sync with `scripts/release_version.py`
+  (`just set-version X.Y.Z`).
+- CI tests Python 3.12-3.14 on Linux plus macOS and Windows, the lowest direct
+  dependency versions, and the built wheel.
 
-## 1.3.0 (2026-09-04)
+## [1.3.0] (2026-09-04)
 
 - Added an optional local MCP server with nine tools, four resources, and two analysis prompts
 - Added peptide-context calculations, annotation construction, fragment-series generation, and candidate m/z matching through MCP
@@ -12,7 +20,7 @@
 - Added the `mcp` extra and `paftacular-mcp` command, with peptide support included and MCP included in `all`
 - Added MCP protocol, isolated installation, and Windows connection checks
 
-## 1.2.0 (2026-09-04)
+## [1.2.0] (2026-09-04)
 
 ### Correctness and maintenance
 
@@ -33,7 +41,7 @@
 - Added versioned dictionary/JSON interchange with strict structural validation and preservation of resolved context
 - Kept the existing as_dict() representation and context-free mass behavior compatible
 
-## 1.1.1 (2026-08-15)
+## [1.1.1] (2026-08-15)
 
 - Added machine-readable citation metadata and publication guidance
 - Linked the existing Zenodo concept DOI for version-independent citation
@@ -41,7 +49,7 @@
 - Expanded CI coverage across supported Python versions and publication artifacts
 - Prepared the GitHub release for archival in Zenodo
 
-## 1.1.0 (2026-07-09)
+## [1.1.0] (2026-07-09)
 
 - Fixed `ImmoniumIon.mass()`/`.composition` reading the wrong tacular lookup key (the internal by-fragment shift, `0`) instead of the immonium-specific `-CO` shift, which had been masked by an equivalent bug in tacular<1.1.0
 - Fixed `ImmoniumIon.composition` silently dropping atom-removing modifications (e.g. Deamidated, Dehydrated): it now keeps net-negative element totals (stripping only exact zeros) so `.composition`/`.formula` stay consistent with `.mass()`
@@ -58,13 +66,13 @@
 - Bumped the `tacular` dependency floor to `>=1.1.0`, which fixes a systematic error in tacular's own internal-fragment-ion offset table
 - Bumped the optional `peptacular` dependency floor to `>=3.1.2`, which fixes upstream composition/mass consistency bugs (e.g. atom-removing modifications silently dropped from `comp()`)
 
-## 1.0.0 (2026-03-17)
+## [1.0.0] (2026-03-17)
 
 - Added `to_mzpaf()` function to convert `peptacular` Fragment objects to `PafAnnotation`
 - Added optional `peptacular` integration for sequence-aware calculations and fragment conversion
 - Improved mass calculation for immonium ions with modifications
 - Added caching for serialization and parsing results
 
-## 0.1.0 (2026-01-14)
+## [0.1.0] (2026-01-14)
 
 - First release on PyPI.
