@@ -7,6 +7,11 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+    # ci/minimum-dependencies.txt pins the declared pyproject floors for the
+    # "minimum" CI jobs. Dependabot must not bump it, or those jobs stop
+    # testing the floors users can actually install.
+    exclude-paths:
+      - "ci/**"
     # Sibling major versions are raised by the tacular-omics overseer under the
     # sibling pin policy (floor plus major cap). Dependabot reads peptacular's
     # current version from the pyproject floor (3.1.2), not uv.lock (already 4.x),
