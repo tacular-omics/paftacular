@@ -536,7 +536,7 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "2.1.1"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -554,22 +554,22 @@ dependencies = [
     { name = "typing-inspection" },
     { name = "uvicorn", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/6e/21fb8e5d579dbe21d96ea4d5034200d46d8bdf2261053b5bd041f3c2f612/mcp-2.1.1.tar.gz", hash = "sha256:50b7ba1ebbe117008ea7bdd288234043e69c20b403d6851d19661e6d431a75ef", size = 3984589, upload-time = "2026-08-25T16:14:02.376Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/31/ac54fb0fdd5b37de704486e288bba4fbbb463f24cfcfedbede407b854513/mcp-2.2.0.tar.gz", hash = "sha256:2dc37ecb1974becdcebdbf7561e7c15a07dbbf20ba21ba16c3593b3038b3afbd", size = 4084129, upload-time = "2026-09-07T16:06:23.439Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/50/af/8644cc5fa26a59afd2df2e98eeb19e72926887fa4b7441aba4ff661140db/mcp-2.1.1-py3-none-any.whl", hash = "sha256:1c6c31c5d6471c58db76af3af8af67f46d11d01f0a59077d0a308cbdb3d3e915", size = 357912, upload-time = "2026-08-25T16:13:59.024Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/ff/8e7eade68b8a28f7da0ed1085544341b51f9c935dbf6b95c76b7edfea6a0/mcp-2.2.0-py3-none-any.whl", hash = "sha256:bde982589473a060ae145e3406e9a5333fe538c97229ba841f5a7f92be004f81", size = 365656, upload-time = "2026-09-07T16:06:19.711Z" },
 ]
 
 [[package]]
 name = "mcp-types"
-version = "2.1.1"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6a/dd/1c4417dc0b722c23a1669032d5f044e41170fe5d4773b488a50fcce98c32/mcp_types-2.1.1.tar.gz", hash = "sha256:77dcbe48fba73cca71a673f2646a5f037a017b7a0a07ac89cec1113028890eda", size = 66674, upload-time = "2026-08-25T16:14:03.861Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/91/762d7755d971aff8a28d75f7961656148edf27875c8026e6385aaab08ae7/mcp_types-2.2.0.tar.gz", hash = "sha256:d3ed53703ddd10d9c6399f29d322bb66f3f67ab41348ac8556ba23e07fedefad", size = 65892, upload-time = "2026-09-07T16:06:25.187Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/d0/242e63c510f4a17381f55b1549a3f94f5687a0595984febd2b6f87a687a0/mcp_types-2.1.1-py3-none-any.whl", hash = "sha256:26f9f7f03f2a5730717a5b98e2ab7eb640ac352d05a00cdc725c311864778295", size = 69656, upload-time = "2026-08-25T16:14:00.667Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/d7/6ffba5d8cd5dd9b8a19478875c50e04945314ba5074e84d749283f27f62d/mcp_types-2.2.0-py3-none-any.whl", hash = "sha256:ea476b73ee86709ab5abc9452385ed36cc05907e582355622e294595c9a04f13", size = 69106, upload-time = "2026-09-07T16:06:21.461Z" },
 ]
 
 [[package]]
@@ -665,18 +665,6 @@ dev = [
     { name = "sphinx-autodoc-typehints", specifier = ">=1.25" },
     { name = "sphinx-rtd-theme", specifier = ">=2.0" },
     { name = "ty", specifier = ">=0.0.83" },
-]
-
-[[package]]
-name = "pbr"
-version = "7.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/ab/1de9a4f730edde1bdbbc2b8d19f8fa326f036b4f18b2f72cfbea7dc53c26/pbr-7.0.3.tar.gz", hash = "sha256:b46004ec30a5324672683ec848aed9e8fc500b0d261d40a3229c2d2bbfcedc29", size = 135625, upload-time = "2025-11-03T17:04:56.274Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/db/61efa0d08a99f897ef98256b03e563092d36cc38dc4ebe4a85020fe40b31/pbr-7.0.3-py2.py3-none-any.whl", hash = "sha256:ff223894eb1cd271a98076b13d3badff3bb36c424074d26334cd25aebeecea6b", size = 131898, upload-time = "2025-11-03T17:04:54.875Z" },
 ]
 
 [[package]]
@@ -824,20 +812,19 @@ crypto = [
 
 [[package]]
 name = "pysmiles"
-version = "2.0.1"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "networkx" },
-    { name = "pbr" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/0b/4877ab6084294d246f55b2d5a91fbda04cebd8775856efc0281460bd5520/pysmiles-2.0.1.tar.gz", hash = "sha256:cc78feca42d5b95dcb3033e0c89ade4886caabfefbe21d70e921815f2ddaf89b", size = 55496, upload-time = "2026-01-19T10:36:59.028Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/79/86ee8d242a0134db4c3b2a256dde5d36495b6bafb4e966019ac5194a250c/pysmiles-2.1.0.tar.gz", hash = "sha256:0ad8c06c37d0e64ac2af36551305f25b9713906405327b25c84729b5d5122c22", size = 39947, upload-time = "2026-07-06T09:07:37.121Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/67/1b4f61cc83ebe9365e9011d1bb3eb82515ac8710699928f80651ba65d11c/pysmiles-2.0.1-py2.py3-none-any.whl", hash = "sha256:e225eb4f81f02bed3aa8c01582f547b3311896c1b117710df3b65dadfe40883f", size = 37552, upload-time = "2026-01-19T10:36:58.065Z" },
+    { url = "https://files.pythonhosted.org/packages/66/64/b1b6a57c9c0b8e14aa3e31f2fed642162a18749d949e4e093ca324e74f0c/pysmiles-2.1.0-py3-none-any.whl", hash = "sha256:bc17e6358aedc0e8ccff626b780f0a1c4270f1173c77c04d3b7ca3144932d12a", size = 38159, upload-time = "2026-07-06T09:07:35.806Z" },
 ]
 
 [[package]]
 name = "pytest"
-version = "9.0.2"
+version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -846,23 +833,23 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
+    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
 ]
 
 [[package]]
 name = "pytest-cov"
-version = "7.0.0"
+version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage" },
     { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/51/a849f96e117386044471c8ec2bd6cfebacda285da9525c9106aeb28da671/pytest_cov-7.1.0.tar.gz", hash = "sha256:30674f2b5f6351aa09702a9c8c364f6a01c27aae0c1366ae8016160d1efc56b2", size = 55592, upload-time = "2026-03-21T20:11:16.284Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/7a/d968e294073affff457b041c2be9868a40c1c71f4a35fcc1e45e5493067b/pytest_cov-7.1.0-py3-none-any.whl", hash = "sha256:a0461110b7865f9a271aa1b51e516c9a95de9d696734a2f71e3e78f46e1d4678", size = 22876, upload-time = "2026-03-21T20:11:14.438Z" },
 ]
 
 [[package]]
@@ -1053,15 +1040,6 @@ wheels = [
 ]
 
 [[package]]
-name = "setuptools"
-version = "80.10.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/86/ff/f75651350db3cf2ef767371307eb163f3cc1ac03e16fdf3ac347607f7edb/setuptools-80.10.1.tar.gz", hash = "sha256:bf2e513eb8144c3298a3bd28ab1a5edb739131ec5c22e045ff93cd7f5319703a", size = 1229650, upload-time = "2026-01-21T09:42:03.061Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/76/f963c61683a39084aa575f98089253e1e852a4417cb8a3a8a422923a5246/setuptools-80.10.1-py3-none-any.whl", hash = "sha256:fc30c51cbcb8199a219c12cc9c281b5925a4978d212f84229c909636d9f6984e", size = 1099859, upload-time = "2026-01-21T09:42:00.688Z" },
-]
-
-[[package]]
 name = "snowballstemmer"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1100,14 +1078,14 @@ wheels = [
 
 [[package]]
 name = "sphinx-autodoc-typehints"
-version = "3.6.2"
+version = "3.13.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sphinx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/51/6603ed3786a2d52366c66f49bc8afb31ae5c0e33d4a156afcb38d2bac62c/sphinx_autodoc_typehints-3.6.2.tar.gz", hash = "sha256:3d37709a21b7b765ad6e20a04ecefcb229b9eb0007cb24f6ebaa8a4576ea7f06", size = 37574, upload-time = "2026-01-02T21:25:28.216Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2b/d1/69ddd9bad8965986d11f92f9526f81e0805936763d34aed5e5b1e80795d1/sphinx_autodoc_typehints-3.13.7.tar.gz", hash = "sha256:c090ee6cb2c9e0a86074be9c288915ea3519e0992c77c5fb3b00fbfe61d50d1f", size = 96990, upload-time = "2026-09-18T02:05:27.243Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/6a/877e8a6ea52fc86d88ce110ebcfe4f8474ff590d8a8d322909673af3da7b/sphinx_autodoc_typehints-3.6.2-py3-none-any.whl", hash = "sha256:9e70bee1f487b087c83ba0f4949604a4630bee396e263a324aae1dc4268d2c0f", size = 20853, upload-time = "2026-01-02T21:25:26.853Z" },
+    { url = "https://files.pythonhosted.org/packages/66/0c/3ee05b107b8c58b41e5df954a8354a9f1db5c334299be5167a5a77df6369/sphinx_autodoc_typehints-3.13.7-py3-none-any.whl", hash = "sha256:7367a6736a0d779bfee4533217fa784b6cadb4f5466b5ea47e722e9fcf0946e8", size = 49279, upload-time = "2026-09-18T02:05:25.708Z" },
 ]
 
 [[package]]
