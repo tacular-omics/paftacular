@@ -121,7 +121,7 @@ real stdio subprocesses from outside the checkout.
 ## Release preparation
 
 Version is in `src/paftacular/__init__.py`, sourced by hatchling. Maintain
-`HISTORY.md` under Unreleased until assigning a release version and date.
+`CHANGELOG.md` under Unreleased until assigning a release version and date.
 Run `just pre-release` and installation checks before publication. The publish
 workflow requires checks and a release tag matching the package version.
 

@@ -1,4 +1,4 @@
-# History
+# Changelog
 
 ## Unreleased
 
@@ -33,16 +33,13 @@
 - Added versioned dictionary/JSON interchange with strict structural validation and preservation of resolved context
 - Kept the existing as_dict() representation and context-free mass behavior compatible
 
-## 0.1.0 (2026-01-14)
+## 1.1.1 (2026-08-15)
 
-- First release on PyPI.
-
-## 1.0.0 (2026-03-17)
-
-- Added `to_mzpaf()` function to convert `peptacular` Fragment objects to `PafAnnotation`
-- Added optional `peptacular` integration for sequence-aware calculations and fragment conversion
-- Improved mass calculation for immonium ions with modifications
-- Added caching for serialization and parsing results
+- Added machine-readable citation metadata and publication guidance
+- Linked the existing Zenodo concept DOI for version-independent citation
+- Added complete PyPI project metadata, community guidelines, and third-party notices
+- Expanded CI coverage across supported Python versions and publication artifacts
+- Prepared the GitHub release for archival in Zenodo
 
 ## 1.1.0 (2026-07-09)
 
@@ -61,10 +58,13 @@
 - Bumped the `tacular` dependency floor to `>=1.1.0`, which fixes a systematic error in tacular's own internal-fragment-ion offset table
 - Bumped the optional `peptacular` dependency floor to `>=3.1.2`, which fixes upstream composition/mass consistency bugs (e.g. atom-removing modifications silently dropped from `comp()`)
 
-## 1.1.1 (2026-08-15)
+## 1.0.0 (2026-03-17)
 
-- Added machine-readable citation metadata and publication guidance
-- Linked the existing Zenodo concept DOI for version-independent citation
-- Added complete PyPI project metadata, community guidelines, and third-party notices
-- Expanded CI coverage across supported Python versions and publication artifacts
-- Prepared the GitHub release for archival in Zenodo
+- Added `to_mzpaf()` function to convert `peptacular` Fragment objects to `PafAnnotation`
+- Added optional `peptacular` integration for sequence-aware calculations and fragment conversion
+- Improved mass calculation for immonium ions with modifications
+- Added caching for serialization and parsing results
+
+## 0.1.0 (2026-01-14)
+
+- First release on PyPI.
