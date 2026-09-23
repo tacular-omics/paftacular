@@ -134,3 +134,25 @@ def test_generated_annotation_roundtrips():
 def test_component_cannot_swallow_two_sequences():
     with pytest.raises(ValueError):
         p.PeptideIon.parse("y2{PE},b2{PT}")
+
+
+@pytest.mark.parametrize("text", ["y3{PEPTIDE}", "y7{PEP}", "b2{PEP}", "m2:5{PEPTIDE}", "m3:7{PEP}"])
+def test_embedded_sequence_length_mismatch_warns(text):
+    pytest.importorskip("peptacular")
+    annotation = p.parse_single(text)
+    with pytest.warns(UserWarning, match="embedded sequence"):
+        annotation.mass()
+    with pytest.warns(UserWarning, match="embedded sequence"):
+        annotation.comp()
+
+
+@pytest.mark.parametrize("text", ["y3{IDE}", "b2{PE}", "m2:5{EPTI}", "y4{M[Oxidation]ACK}", "b1{[Acetyl]-M}", "y5", "m2:5"])
+def test_embedded_sequence_length_match_is_silent(text):
+    pytest.importorskip("peptacular")
+    import warnings
+
+    annotation = p.parse_single(text)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        annotation.mass()
+        annotation.comp()

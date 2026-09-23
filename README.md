@@ -117,7 +117,7 @@ Install with `pip install "paftacular[mcp]"`, then configure your MCP client
 to launch `paftacular-mcp`. The server provides nine tools for parsing,
 construction, sequence resolution, calculations, fragment generation, and m/z
 matching, plus scientific reference resources and analysis prompts. The `mcp`
-extra includes peptide support (`peptacular[mcp,smiles]` adds SMILES too); the
+extra includes peptide support (`paftacular[mcp,smiles]` adds SMILES too); the
 base library needs no MCP dependencies. See the
 [MCP guide](https://github.com/tacular-omics/paftacular/blob/main/docs/mcp.rst)
 for configuration and examples.

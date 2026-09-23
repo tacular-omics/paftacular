@@ -283,7 +283,8 @@ print(pft.parse_single("p^2").formula())  # H4O
 ```
 
 **Embedded sequence.** The `{...}` is the fragment's own sequence (ProForma, may carry
-modifications). It is used as written. It is not checked against the position.
+modifications). It is used as written. When its residue count differs from the position
+(`y3{PEPTIDE}`), `mass()` and `comp()` emit a `UserWarning` and still use every residue.
 
 ```python
 import paftacular as pft
