@@ -7,6 +7,16 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+    # Sibling major versions are raised by the tacular-omics overseer under the
+    # sibling pin policy (floor plus major cap). Dependabot reads peptacular's
+    # current version from the pyproject floor (3.1.2), not uv.lock (already 4.x),
+    # so its major-update attempt leaves the lockfile unchanged and fails the job
+    # with "Expected lockfile to change!".
+    ignore:
+      - dependency-name: "peptacular"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tacular"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

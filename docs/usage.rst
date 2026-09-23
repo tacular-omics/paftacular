@@ -407,12 +407,12 @@ With Sequences
 .. testcode::
 
    # Internal fragment with sequence
-   ann = PafAnnotation.make_internal(2, 5, sequence="PEPTIDE")
+   ann = PafAnnotation.make_internal(2, 5, sequence="EPTI")
    print(ann.serialize())
 
 .. testoutput::
 
-   m2:5{PEPTIDE}
+   m2:5{EPTI}
 
 .. testcode::
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -224,6 +225,30 @@ class PafAnnotation:
         """Create a PafAnnotation for an unknown/unannotated ion"""
         return PafAnnotation._create_annotation(UnknownIon(label=label), **kwargs)
 
+    def _parse_sequence(self, sequence: str) -> pt.ProFormaAnnotation:
+        """Parse the fragment sequence and warn when its length disagrees with the ion position."""
+        _require_peptacular()
+        annot = pt.parse(sequence)
+        if annot.has_charge:
+            raise ValueError("Sequence in annotation should not have charge for mass calculation")
+        ion = self.ion_type
+        if isinstance(ion, PeptideIon):
+            expected = ion.position
+        elif isinstance(ion, InternalFragment):
+            expected = ion.end_position - ion.start_position + 1
+        else:
+            return annot
+        residues = len(annot)
+        if residues != expected:
+            # mzPAF 1.0.1 section 4.4.3: the sequence length MUST NOT be less than, and SHOULD NOT be greater than, the ordinal.
+            warnings.warn(
+                f"The embedded sequence {sequence!r} has {residues} residues but {ion.serialize(include_sequence=False)} spans {expected}. "
+                f"The calculation uses all {residues} residues.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return annot
+
     def mass(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the mass of the annotated ion including modifications"""
         base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
@@ -254,12 +279,7 @@ class PafAnnotation:
             base_mass += isotope.mass(monoisotopic=monoisotopic)
 
         if calculate_sequence is True and self.sequence is not None:
-            _require_peptacular()
-            annot = pt.parse(self.sequence)
-
-            if annot.has_charge:
-                raise ValueError("Sequence in annotation should not have charge for mass calculation")
-
+            annot = self._parse_sequence(self.sequence)
             sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
             base_mass += sequence_mass
 
@@ -302,13 +322,7 @@ class PafAnnotation:
             comp.update(isotope.composition)
 
         if calculate_sequence is True and self.sequence is not None:
-            _require_peptacular()
-            # Additional composition calculations based on sequence can be added here
-            annot = pt.parse(self.sequence)
-
-            if annot.has_charge:
-                raise ValueError("Sequence in annotation should not have charge for mass calculation")
-
+            annot = self._parse_sequence(self.sequence)
             seq_comp = annot.comp(ion_type="n")
             comp.update(seq_comp)
 

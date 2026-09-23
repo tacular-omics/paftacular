@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `mass()`, `mz()`, `comp()` and the formula methods now emit a `UserWarning` when an embedded
+  sequence's residue count differs from the ion position (`y3{PEPTIDE}`, `m2:5{PEPTIDE}`).
+  mzPAF 1.0.1 section 4.4.3 says it MUST NOT be shorter and SHOULD NOT be longer. The
+  calculation is unchanged and still uses every residue.
+- README: the MCP-with-SMILES install extra is `paftacular[mcp,smiles]`, not `peptacular[...]`.
+- `docs/usage.rst`: the `make_internal(2, 5, sequence=...)` example now embeds the four-residue
+  `EPTI` instead of `PEPTIDE`.
+- CI: removed the redundant `windows-mcp` job (the `test` matrix already runs the full suite
+  with all extras on Windows). Dependabot ignores major updates of the sibling packages
+  `tacular` and `peptacular`, which stopped its uv job failing with "Expected lockfile to change!".
+
 ## [1.3.1] (2026-09-23)
 
 - Capped sibling requirements below their next major version (`tacular>=1.1.0,<2`, `peptacular>=3.1.2,<5`). Verified against peptacular 4.0.0.

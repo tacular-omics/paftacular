@@ -127,8 +127,9 @@ Scientific conventions:
 - Without an embedded or resolved sequence, peptide, internal and precursor calculations
   return only the ion offset and modifiers (`y5` gives 19.0178, `b5` gives 1.0073). Preserve
   this. Use `resolve()` to select the complete fragment sequence from an analyte.
-- The `{...}` in `y3{PEP}` is the fragment's own sequence. It is used verbatim and is not
-  checked against the position: `y3{PEPTIDE}` computes the mass of all seven residues.
+- The `{...}` in `y3{PEP}` is the fragment's own sequence. It is used verbatim. A length
+  that differs from the position (`y3{PEPTIDE}`) makes `mass()`/`comp()` emit a `UserWarning`
+  (mzPAF 4.4.3: MUST NOT be shorter, SHOULD NOT be longer) and still uses all seven residues.
 - Embedded sequences contribute residue mass and composition through peptacular
   `ion_type="n"`, because the default precursor composition would add an extra water on top
   of paftacular's own ion offset.
