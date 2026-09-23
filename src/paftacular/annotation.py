@@ -3,12 +3,15 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal, TypedDict, Unpack
+from typing import TYPE_CHECKING, Literal, TypedDict, Unpack
 
-try:
+if TYPE_CHECKING:
     import peptacular as pt
-except ImportError:
-    pt = None  # type: ignore[assignment]
+else:
+    try:
+        import peptacular as pt
+    except ImportError:
+        pt = None
 from tacular import ELEMENT_LOOKUP, ElementInfo
 
 from .comps import (

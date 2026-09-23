@@ -4,12 +4,15 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
-try:
+if TYPE_CHECKING:
     import peptacular as pt
-except ImportError:
-    pt = None  # type: ignore[assignment]
+else:
+    try:
+        import peptacular as pt
+    except ImportError:
+        pt = None
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
 
 from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries

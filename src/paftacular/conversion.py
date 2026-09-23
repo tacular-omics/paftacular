@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-try:
+if TYPE_CHECKING:
     import peptacular as pt
-except ImportError:
-    pt = None  # type: ignore[assignment]
+else:
+    try:
+        import peptacular as pt
+    except ImportError:
+        pt = None
 
 from paftacular import IonSeries
 

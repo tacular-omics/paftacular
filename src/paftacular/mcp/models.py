@@ -19,6 +19,14 @@ Property = Literal["mass", "mz", "formula", "composition"]
 BackboneSeries = Literal["a", "b", "c", "x", "y", "z"]
 
 
+def _default_properties() -> list[Property]:
+    return ["mass", "mz"]
+
+
+def _default_series() -> list[BackboneSeries]:
+    return ["b", "y"]
+
+
 class Model(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
 
@@ -43,7 +51,7 @@ class ContextRequest(Model):
 
 
 class CalculationRequest(ContextRequest):
-    properties: Annotated[list[Property], Field(min_length=1, max_length=4)] = Field(default_factory=lambda: ["mass", "mz"])
+    properties: Annotated[list[Property], Field(min_length=1, max_length=4)] = Field(default_factory=_default_properties)
     mode: Literal["complete", "offsets"] = "complete"
 
     @model_validator(mode="after")
@@ -80,10 +88,10 @@ class BuildRequest(Model):
 
 class FragmentRequest(Model):
     analyte: Text
-    series: Annotated[list[BackboneSeries], Field(min_length=1, max_length=6)] = Field(default_factory=lambda: ["b", "y"])
+    series: Annotated[list[BackboneSeries], Field(min_length=1, max_length=6)] = Field(default_factory=_default_series)
     charges: Annotated[list[PositiveInt], Field(min_length=1, max_length=10)] = Field(default_factory=lambda: [1])
     positions: Annotated[list[PositiveInt], Field(min_length=1, max_length=MAX_RECORDS)] | None = None
-    properties: Annotated[list[Property], Field(min_length=1, max_length=4)] = Field(default_factory=lambda: ["mass", "mz"])
+    properties: Annotated[list[Property], Field(min_length=1, max_length=4)] = Field(default_factory=_default_properties)
 
 
 class MatchRequest(Model):
