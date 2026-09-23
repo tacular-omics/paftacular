@@ -25,7 +25,7 @@ peptide calculations require context. See [MCP guide](docs/mcp.rst).
 
 - [README](README.md): installation, quick start, mzPAF format overview
 - [CLAUDE.md](CLAUDE.md): architecture and command reference for AI coding agents, including the frozen-dataclass instance-caching pattern and fragment-ion-lookup-key gotchas
-- [HISTORY.md](HISTORY.md): changelog
+- [CHANGELOG.md](CHANGELOG.md): changelog
 - [Read the Docs](https://paftacular.readthedocs.io/en/latest/): full usage guide and API reference (Sphinx)
 
 ## Source

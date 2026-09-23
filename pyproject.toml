@@ -33,7 +33,7 @@ Homepage = "https://github.com/tacular-omics/paftacular"
 Documentation = "https://paftacular.readthedocs.io/"
 Repository = "https://github.com/tacular-omics/paftacular"
 Issues = "https://github.com/tacular-omics/paftacular/issues"
-Changelog = "https://github.com/tacular-omics/paftacular/blob/main/HISTORY.md"
+Changelog = "https://github.com/tacular-omics/paftacular/blob/main/CHANGELOG.md"
 DOI = "https://doi.org/10.5281/zenodo.19076277"
 
 [project.optional-dependencies]
@@ -58,8 +58,8 @@ dev = [
     "pysmiles>=2.0.1",
     "peptacular>=3.1.2,<5",
     "pytest>=9.0.2",
-    "ruff>=0.14.11",
-    "ty>=0.0.11",
+    "ruff>=0.16.8",
+    "ty>=0.0.83",
     "pytest-cov>=6.0.0",
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",

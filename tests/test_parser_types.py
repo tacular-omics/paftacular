@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from tacular import ELEMENT_LOOKUP
 
@@ -1055,6 +1057,7 @@ class TestMzPafSpecComplianceRegressions:
         # A mixed-sign composition can't be written as a plain formula, but ProForma allows negatives.
         assert ann.proforma_formula() == "C5H11N2O-1"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="uses signal.SIGALRM, which Windows lacks")
     def test_parser_no_catastrophic_backtracking_on_long_atom_run(self):
         """Regression (ReDoS): `_ATOM_TOKEN+` over the overlapping `[A-Z]`/`[A-Za-z0-9]` classes was
         a `(a+)+`-style catastrophic-backtracking shape -- an anchored non-match on a long single-
