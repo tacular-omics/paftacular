@@ -1,8 +1,6 @@
 # AGENTS.md
 
-See [`CLAUDE.md`](CLAUDE.md) for the architecture and command reference for AI
-coding agents working in this repo (commands, module layout, and hard-won
-gotchas around fragment-ion mass/composition lookups, the instance-caching
-pattern used throughout `comps/`, and the optional-`peptacular` dependency
-pattern). That file is kept as the canonical version; this one exists because
-some tools look for `AGENTS.md` specifically rather than `CLAUDE.md`.
+The canonical guide for AI coding agents in this repo is [`CLAUDE.md`](CLAUDE.md). It
+covers commands, module layout, the public API, conventions, and mzPAF mass and parser gotchas.
+Read it first. This file exists only for tools that look for `AGENTS.md`.
+For *using* paftacular as a library, see [`llms-full.txt`](llms-full.txt).

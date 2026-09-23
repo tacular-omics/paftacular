@@ -1,0 +1,527 @@
+# paftacular
+
+> Python library for HUPO-PSI mzPAF, the Peak Annotation Format for mass spectrometry
+> fragment ions (`y5-H2O^2/1.2ppm*0.95`, `b2{PE}`, `IK[Acetyl]`, `p^2`): strict parsing and
+> round-trip serialization, plus ion mass, m/z and elemental composition.
+
+This is the complete usage guide for tools and agents that *use* paftacular. It is
+self-contained: the public names, their signatures, and working examples (every `python`
+block below was run against the version described, with the `peptacular` and `smiles`
+extras installed). To work *on* paftacular itself, read CLAUDE.md in the repository.
+
+- Repository: https://github.com/tacular-omics/paftacular
+- Docs: https://paftacular.readthedocs.io/en/latest/
+- PyPI: https://pypi.org/project/paftacular/
+- Version described: 1.3.x
+- mzPAF specification (1.0.1): https://www.psidev.info/mzpaf
+
+## Install
+
+```bash
+pip install paftacular                # core: parse, serialize, offsets and formula ions
+pip install "paftacular[peptacular]"  # sequence masses, resolve(), to_mzpaf()
+pip install "paftacular[smiles]"      # s{...} SMILES ions (pysmiles)
+pip install "paftacular[mcp]"         # local MCP server paftacular-mcp (includes peptacular)
+pip install "paftacular[all]"         # everything
+```
+
+Requires Python >= 3.12. The one required dependency is `tacular` (`>=1.1.0,<2`), which
+supplies element, amino-acid, modification and ion-offset data. `peptacular` is pinned
+`>=3.1.2,<5`. Ships `py.typed`. Importing and parsing never needs an extra. A feature that
+needs a missing extra raises `ImportError` with the pip command to fix it.
+
+Import it as `pft`. Every public name is on the top-level namespace.
+
+## mzPAF in one screen
+
+```
+[&][analyte_ref@]ion[neutral losses/gains][isotopes][adducts][^charge][/mass_error][*confidence]
+```
+
+| part | examples | meaning |
+|---|---|---|
+| `&` | `&y5` | auxiliary annotation |
+| `N@` | `2@b2` | analyte reference (default 1) |
+| peptide ion | `b2`, `y5`, `y3{PEP}`, `da3`, `wa4` | series + position, optional fragment sequence |
+| internal | `m2:5`, `m2:5{EPTI}` | residues 2..5 (1-based, inclusive) |
+| immonium | `IK`, `IM[Oxidation]` | `I` + amino acid, optional modification |
+| precursor | `p`, `p^2` | the whole analyte |
+| reference | `r[TMT126]` | named reference ion |
+| formula | `f{C6H12O6}` | explicit composition |
+| SMILES | `s{CN=C=O}` | needs the `smiles` extra |
+| named | `_{Urocanic Acid}` | named compound (no mass) |
+| unknown | `?`, `?42` | unannotated peak, optional label |
+| loss/gain | `-H2O`, `+NH3`, `-17.03`, `-[Adenine]` | formula, mass, or reference |
+| isotope | `+i`, `+2i13C`, `+iA` | generic 13C shift, element-specific, average isotopomer |
+| adducts | `[M+Na]`, `[M+2H+Na]` | charge carriers (default: protons) |
+| charge | `^2` | integer >= 1 (default 1) |
+| mass error | `/1.2ppm`, `/-0.003` | ppm or Da (Da when no unit) |
+| confidence | `*0.95` | score |
+
+Several annotations for one peak are separated by commas: `b2,y3-H2O`.
+
+## Core idea
+
+Parsing returns a frozen, hashable `PafAnnotation`. Its `ion_type` is one of nine ion
+component classes, and its modifiers are tuples of small frozen objects. `serialize()` writes
+mzPAF back. Calculations work on the annotation.
+
+```python
+import paftacular as pft
+
+ann = pft.parse_single("&2@y5-H2O+i13C[M+H+Na]^2/-0.55ppm*0.85")
+print(type(ann.ion_type).__name__, ann.ion_type.series, ann.ion_type.position)  # PeptideIon y 5
+print(ann.is_auxiliary, ann.analyte_reference, ann.charge)  # True 2 2
+print(ann.neutral_losses)  # (NeutralLoss(count=-1, base_formula='H2O', base_mass=None, base_reference=None),)
+print(ann.isotopes)        # (IsotopeSpecification(count=1, element='13C', is_average=False),)
+print(ann.adducts)         # (Adduct(count=1, base_formula='H'), Adduct(count=1, base_formula='Na'))
+print(ann.mass_error.value, ann.mass_error.unit, ann.confidence)  # -0.55 ppm 0.85
+print(ann.serialize())     # &2@y5-H2O+i13C[M+H+Na]^2/-0.55ppm*0.85
+print(str(ann) == ann.serialize())  # True
+```
+
+## Parsing
+
+```text
+parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]
+parse_single(annotation_str: str) -> PafAnnotation      # exactly one, else PafParseError
+parse_multi(annotation_str: str) -> list[PafAnnotation] # always a list
+iter_parse(records: Iterable[str]) -> Iterator[ParseResult]  # lazy, one result per record
+parse_batch(records: Iterable[str]) -> list[ParseResult]     # list(iter_parse(records))
+PafAnnotation.parse(annotation_str) -> PafAnnotation         # same as parse_single
+mzPAFParser().parse(s) / .parse_multi(s)                     # the class behind these
+```
+
+Prefer `parse_single` or `parse_multi`: `parse` changes its return type with the input.
+
+```python
+import paftacular as pft
+
+print(pft.parse("y5").serialize())        # y5
+print(len(pft.parse("b2, y3-H2O, p^2")))  # 3
+print(pft.parse(""))                      # []
+print([a.serialize() for a in pft.parse_multi("b2,y3-H2O")])  # ['b2', 'y3-H2O']
+
+try:
+    pft.parse_single("b2,y3")
+except pft.PafParseError as e:
+    print(e.reason)  # Expected single annotation, got 2
+```
+
+Commas inside `{...}` and named labels do not split annotations:
+
+```python
+import paftacular as pft
+
+anns = pft.parse_multi("_{A, B},y2{PE[Phospho]P}")
+print([a.serialize() for a in anns])  # ['_{A, B}', 'y2{PE[Phospho]P}']
+```
+
+### Errors
+
+`PafParseError(text, position, annotation_index, reason)` is a `ValueError` subclass.
+`position` is a zero-based character offset into `text` and `annotation_index` is the
+zero-based annotation within the record. Syntax errors point at the unexpected content.
+Semantic errors (zero charge, reversed ranges) point at the start of the annotation.
+
+```python
+import paftacular as pft
+
+try:
+    pft.parse_multi("b2,y3!")
+except pft.PafParseError as e:
+    print(e.position, e.annotation_index, e.reason)  # 5 1 Unexpected or missing annotation content
+
+try:
+    pft.parse_single("y5^0")
+except ValueError as e:
+    print(e.reason)  # Charge must be an integer >= 1, got 0
+```
+
+### Batch parsing
+
+`iter_parse` and `parse_batch` never raise for bad input. Each `ParseResult` has `index`,
+`text`, `annotations` (a tuple), `error` (`PafParseError | None`) and `ok`. A record with any
+bad annotation has an error and no partial annotations. Empty records succeed with `()`.
+Non-string records are programming errors and still raise.
+
+```python
+import paftacular as pft
+
+results = pft.parse_batch(["y2,b3", "y2,b3!", "p", ""])
+print([r.ok for r in results])  # [True, False, True, True]
+bad = results[1]
+print(bad.index, bad.text, bad.error.annotation_index, bad.error.position)  # 1 y2,b3! 1 5
+print(len(results[0].annotations), results[3].annotations)  # 2 ()
+
+for r in pft.iter_parse(["y2", "zz"]):
+    print(r.index, r.ok)
+# 0 True
+# 1 False
+```
+
+## Ion types
+
+`ann.ion_type` is one of these frozen classes (the `IonType` union alias). Each has
+`parse(s)`, `serialize()`, and, where defined, `mass(monoisotopic=True)` and `composition`.
+
+| class | fields | example |
+|---|---|---|
+| `PeptideIon` | `series: IonSeries`, `position: int`, `sequence: str or None` | `y3{PEP}` |
+| `InternalFragment` | `start_position`, `end_position`, `sequence`, `nterm_ion_type`, `cterm_ion_type` | `m2:5` |
+| `ImmoniumIon` | `amino_acid: AminoAcids`, `modification: str or None` | `IM[Oxidation]` |
+| `PrecursorIon` | none | `p` |
+| `ReferenceIon` | `name` | `r[TMT126]` |
+| `ChemicalFormula` | `formula` | `f{C13H9}` |
+| `SMILESCompound` | `smiles` | `s{CN=C=O}` |
+| `NamedCompound` | `name` | `_{Urocanic Acid}` |
+| `UnknownIon` | `label: int or None` | `?42` |
+
+```python
+import paftacular as pft
+
+for s in ["p^2", "IK", "IK[Acetyl]", "r[TMT126]", "f{C6H12O6}", "s{CN=C=O}", "m2:5{PEPTIDE}", "?42"]:
+    print(s, type(pft.parse_single(s).ion_type).__name__)
+# p^2 PrecursorIon
+# IK ImmoniumIon
+# IK[Acetyl] ImmoniumIon
+# r[TMT126] ReferenceIon
+# f{C6H12O6} ChemicalFormula
+# s{CN=C=O} SMILESCompound
+# m2:5{PEPTIDE} InternalFragment
+# ?42 UnknownIon
+```
+
+`UnknownIon` and `NamedCompound` have no chemistry: `mass()` and `formula()` raise
+`NotImplementedError`.
+
+## Modifiers
+
+- `NeutralLoss(count, base_formula=None, base_mass=None, base_reference=None)`: `-H2O` is
+  `count=-1, base_formula="H2O"`. `.loss_type` is `"formula"`, `"mass"` or `"reference"`.
+  `.serialize(loss_type=None, monoisotopic=True)` can rewrite a loss as a mass.
+- `IsotopeSpecification(count=0, element=None, is_average=False)`: `+i`, `-2i13C`, `+iA`.
+- `Adduct(count, base_formula)`: one term of `[M+2H+Na]`. `.parse("+2Na")`.
+- `MassError(value, unit="da")`: `unit` is `"da"` or `"ppm"`.
+
+Each has a `parse(s)` static method and `serialize()`. `NeutralLoss`, `IsotopeSpecification`
+and `Adduct` also have `as_dict()`.
+
+```python
+import paftacular as pft
+
+print(pft.NeutralLoss.parse("-2H2O"))  # -2H2O
+print(pft.NeutralLoss.parse("-17.03").loss_type)  # mass
+print(pft.Adduct.parse("+2Na").count)  # 2
+print(pft.MassError.parse("1.2ppm").unit)  # ppm
+print(pft.parse_single("y5-17.03").serialize())  # y5-17.03000
+```
+
+Mass losses print at least five decimals. Scientific notation is not part of the grammar:
+`y5/1e-3` is rejected. A leading `+` on a mass error is accepted and dropped.
+
+## Building annotations
+
+`PafAnnotation` has one factory per ion type. All accept the same keyword arguments
+(`CommonAnnotationParams`): `neutral_losses`, `isotopes`, `adducts` (lists of strings such as
+`"-H2O"`, `"+i13C"`, `"+Na"`), `charge`, `mass_error`, `mass_error_unit` (`"da"` or
+`"ppm"`), `confidence`, `is_auxiliary`, `analyte_reference`.
+
+```text
+PafAnnotation.make_peptide(ion_type: str | IonSeries, position: int, sequence: str | None = None, **kw)
+PafAnnotation.make_internal(start_position: int, end_position: int, ion_type: str | InternalSeries = "by", sequence: str | None = None, **kw)
+PafAnnotation.make_immonium(amino_acid: str | AminoAcids, modification: str | None = None, **kw)
+PafAnnotation.make_precursor(**kw)
+PafAnnotation.make_reference(name: str, **kw)
+PafAnnotation.make_formula(formula: str, **kw)
+PafAnnotation.make_smiles(smiles: str, **kw)
+PafAnnotation.make_named_compound(name: str, **kw)
+PafAnnotation.make_unknown(label: int | None = None, **kw)
+```
+
+```python
+from paftacular import PafAnnotation
+
+print(PafAnnotation.make_peptide("y", 5, neutral_losses=["-H2O", "-NH3"]).serialize())  # y5-H2O-NH3
+print(PafAnnotation.make_peptide("b", 3, isotopes=["+i13C", "+i15N"]).serialize())     # b3+i13C+i15N
+print(PafAnnotation.make_precursor(adducts=["+H", "+Na"], charge=2).serialize())         # p[M+H+Na]^2
+print(PafAnnotation.make_peptide("y", 5, mass_error=1.2, mass_error_unit="ppm", confidence=0.95).serialize())  # y5/1.2ppm*0.95
+print(PafAnnotation.make_peptide("y", 3, sequence="PEP").serialize())                    # y3{PEP}
+print(PafAnnotation.make_internal(2, 5, sequence="EPTI").serialize())                    # m2:5{EPTI}
+print(PafAnnotation.make_immonium("M", modification="Oxidation").serialize())            # IM[Oxidation]
+print(PafAnnotation.make_formula("C6H12O6").serialize())                                 # f{C6H12O6}
+print(PafAnnotation.make_named_compound("Urocanic Acid").serialize())                    # _{Urocanic Acid}
+print(PafAnnotation.make_unknown(label=42).serialize())                                  # ?42
+print(PafAnnotation.make_peptide("y", 5, is_auxiliary=True, analyte_reference=2, charge=2).serialize())  # &2@y5^2
+```
+
+`PafAnnotation` is frozen. Use `dataclasses.replace(ann, charge=3)` to change a field.
+
+## Mass, m/z and composition
+
+```text
+ann.mass(monoisotopic: bool = True, calculate_sequence: bool = True) -> float   # charged species, Da
+ann.mz(monoisotopic: bool = True, calculate_sequence: bool = True) -> float     # mass / charge, Th
+ann.comp(calculate_sequence: bool = True) -> Counter[ElementInfo]               # nuclei, signed
+ann.dict_composition(calculate_sequence: bool = True) -> dict[str, int]
+ann.formula(calculate_sequence: bool = True) -> str                             # Hill-style, e.g. C9H15N2O7
+ann.proforma_formula(calculate_sequence: bool = True) -> str                    # allows negatives, e.g. C5H11N2O-1
+ann.sequence -> str | None             # embedded or resolved fragment sequence
+ann.peptacular_ion_type -> str | None  # peptacular ion key, e.g. "y", or "i" for immonium
+```
+
+**Offsets without sequence context.** A peptide, internal or precursor ion with no embedded or
+resolved sequence gives only the ion-type offset plus modifiers. `y5` is H2O + H+, not a
+five-residue fragment:
+
+```python
+import paftacular as pft
+
+print(pft.parse_single("y5").mass())      # 19.017841466812
+print(pft.parse_single("b5").mass())      # 1.007276466812
+print(pft.parse_single("p^2").formula())  # H4O
+```
+
+**Embedded sequence.** The `{...}` is the fragment's own sequence (ProForma, may carry
+modifications). It is used as written. It is not checked against the position.
+
+```python
+import paftacular as pft
+
+y2 = pft.parse_single("y2{DE}")
+print(round(y2.mass(), 6), round(y2.mz(), 6))  # 263.087378 263.087378
+print(round(pft.parse_single("y2{DE}^2").mz(), 6))  # 132.047327
+print(y2.formula(), y2.dict_composition())  # C9H15N2O7 {'H': 15, 'O': 7, 'C': 9, 'N': 2}
+print(round(pft.parse_single("y2{PE[Phospho]P}").mass(), 6))  # 422.132293
+print(round(pft.parse_single("y3{PEPTIDE}").mass(), 4))  # 800.3672
+```
+
+**Other ion types** need no sequence:
+
+```python
+import paftacular as pft
+
+print(round(pft.parse_single("IK").mass(), 6), pft.parse_single("IK").formula())  # 101.107324 C5H13N2
+print(round(pft.parse_single("r[TMT126]").mass(), 6))  # 126.127726
+print(round(pft.parse_single("f{C6H12O6}").mass(), 6))  # 180.06284
+print(round(pft.parse_single("s{CN=C=O}").mass(), 6))  # 58.02874
+```
+
+**Modifiers and charge carriers.** Adducts replace the default protons. Formula ions
+(`f{...}`) already list every atom of the charged species, so their adducts add no atoms.
+
+```python
+import paftacular as pft
+
+print(round(pft.parse_single("y2{DE}-H2O[M+Na]").mz(), 6))  # 267.058757
+print(pft.parse_single("y2{DE}-H2O[M+Na]").formula())  # C9H12N2NaO6
+print(pft.parse_single("f{C6H12O6}[M+Na]").mass() == pft.parse_single("f{C6H12O6}").mass())  # True
+print(round(pft.parse_single("y2{DE}").mass(monoisotopic=False), 4))  # 263.2243
+```
+
+**Formula edge cases.** `formula()` raises `ValueError` for a mixed-sign composition, which
+happens with isotope or reference losses on an unresolved ion. Use `dict_composition()` or
+`proforma_formula()`. A mass-based loss has no composition, so `formula()` raises while
+`mass()` works. `+iA` (average isotopomer) raises on both.
+
+```python
+import paftacular as pft
+
+print(pft.parse_single("y5-[Adenine]").dict_composition())  # {'H': -2, 'O': 1, 'C': -5, 'N': -5}
+try:
+    pft.parse_single("y5-17.03").formula()
+except ValueError as e:
+    print("ValueError")  # ValueError
+print(round(pft.parse_single("y5-17.03").mass(), 6))  # 1.987841
+try:
+    pft.parse_single("y5+iA").mass()
+except ValueError as e:
+    print(e)  # Cannot calculate mass shift for average isotopomer specification
+```
+
+A generic `+i` adds the 13C minus 12C mass difference. To check `mass()` against summed element
+masses from `comp()`, subtract `charge` times the electron mass, and use an absolute tolerance
+of about 1e-6 Da because the upstream ion offsets are rounded.
+
+## Resolving against the full analyte
+
+`resolve()` needs the `peptacular` extra. It returns a new annotation whose `sequence` is the
+fragment selected from the full ProForma analyte. The original is unchanged. It supports
+a/b/c/x/y/z peptide ions, internal fragments and precursors.
+
+```text
+PafAnnotation.resolve(self, analytes: str | Mapping[int, str]) -> PafAnnotation
+resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> PafAnnotation
+```
+
+A string is the analyte for this annotation. A mapping is keyed by the mzPAF analyte reference
+(`2@...`), and a missing reference selects key 1. The analyte's own charge is ignored: the
+annotation's charge and adducts decide the charged species.
+
+```python
+import paftacular as pft
+
+original = pft.parse_single("y2")
+resolved = original.resolve("PEPTIDE")
+print(resolved.sequence, round(resolved.mz(), 4), original.sequence)  # DE 263.0874 None
+print(resolved.serialize())  # y2
+
+print(pft.resolve(pft.parse_single("m2:4"), "PEPTIDE").sequence)  # EPT
+print(pft.parse_single("2@b2").resolve({1: "AAAA", 2: "PEPTIDE"}).sequence)  # PE
+print(round(pft.parse_single("p^2").resolve("PEM[Oxidation]TIDE/3").mz(), 4))  # 425.6786
+```
+
+Errors are `ValueError`:
+
+```python
+import paftacular as pft
+
+for s in ["y9", "IK", "y2{AA}"]:
+    try:
+        pft.parse_single(s).resolve("PEPTIDE")
+    except ValueError as e:
+        print(e)
+# Fragment position 9 exceeds analyte length 7
+# Analyte resolution supports peptide, internal, and precursor ions
+# Embedded or resolved sequence disagrees with the selected analyte fragment
+```
+
+Resolved context is not written by `serialize()` (it stays `y2`). Persist it with `to_dict()`.
+
+## Serialization and interchange
+
+- `serialize(include_sequence=True)` writes mzPAF. Round trips keep meaning, not necessarily
+  the original spelling.
+- `to_dict()` exports the versioned, reversible structure (`schema_version` 1), including
+  resolved context. `PafAnnotation.from_dict(data)` validates and rebuilds it. It rejects
+  unknown versions, missing or extra fields, wrong types and non-finite numbers, and needs no
+  optional dependency.
+- `as_dict()` is a compact display format. `from_dict()` does not accept it.
+- Annotations are hashable and compare by value. They pickle and deep-copy.
+
+```python
+import json, pickle
+import paftacular as pft
+
+ann = pft.parse_single("y2/1.5ppm").resolve("PEPTIDE")
+data = ann.to_dict()
+print(data["schema_version"], data["ion"]["type"], data["resolved_sequence"])  # 1 PeptideIon DE
+restored = pft.PafAnnotation.from_dict(json.loads(json.dumps(data)))
+print(restored == ann, restored.sequence)  # True DE
+print(pickle.loads(pickle.dumps(ann)) == ann)  # True
+print(pft.parse_single("y5-H2O").as_dict()["neutral_losses"])  # ['-H2O']
+print(pft.parse_single("y3{PEP}").serialize(include_sequence=False))  # y3
+```
+
+## peptacular integration
+
+```text
+to_mzpaf(frag: peptacular.Fragment, confidence: float | None = None, mass_error: float | None = None,
+         mass_error_type: Literal["ppm", "da"] = "ppm", include_annotation: bool = True) -> PafAnnotation
+```
+
+Converts a peptacular `Fragment` to a `PafAnnotation`. With `include_annotation=True` the
+fragment sequence is embedded (or kept as resolved context for precursors), so masses are
+complete. peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
+
+```python
+import peptacular as pt
+import paftacular as pft
+
+frags = pt.fragment("PEPTIDE", ion_types=["b", "y"], charges=[1])
+print([pft.to_mzpaf(f).serialize() for f in frags[:3]])  # ['b1{P}', 'b2{PE}', 'b3{PEP}']
+ann = pft.to_mzpaf(frags[1], confidence=0.95, mass_error=1.2)
+print(ann.serialize())  # b2{PE}/1.2ppm*0.95
+print(abs(ann.mz() - frags[1].mz) < 1e-6)  # True
+print(pft.to_mzpaf(frags[1], include_annotation=False).serialize())  # b2
+print(pft.parse_single(frags[1].to_mzpaf()).ion_type.position)  # 2
+```
+
+## Internal fragments and the specification table
+
+`m2:4` is residues 2 to 4. Plain `m` ions use the b/y convention. The specification's
+section 4.4.4 table of corrections for other cleavage pairs is exported as
+`INTERNAL_MASS_DIFFS` (keys `(nterm, cterm)`), and `make_internal(ion_type=...)` applies it:
+
+```python
+import paftacular as pft
+from paftacular import PafAnnotation
+
+print(pft.INTERNAL_MASS_DIFFS[("b", "x")], pft.INTERNAL_MASS_DIFFS[("b", "y")])  # +CO None
+print(PafAnnotation.make_internal(2, 4, ion_type="bx").serialize())  # m2:4+CO
+```
+
+That table disagrees with the physical ion definitions in tacular and peptacular for several
+pairs. `to_mzpaf()` and explicit `InternalFragment(nterm_ion_type=..., cterm_ion_type=...)`
+fields keep the physical composition and write it as signed gains and losses (a physical `ax`
+internal fragment serializes as `m2:4-H2`). The mass of an existing mzPAF string is never
+reinterpreted. Supply both cleavage fields together, one from a/b/c and one from x/y/z.
+
+## Enums and constants
+
+- `IonSeries`: `a b c d v w x y z da db wa wb` (StrEnum).
+- `BackboneCleavageType`: `a b c x y z`.
+- `AminoAcids`: the 20 standard one-letter codes.
+- `AnnotationName`: `precursor immonium reference named_compound formula smiles unannotated series internal`.
+- `INTERNAL_MASS_DIFFS`: `dict[tuple[str, str], str | None]`, see above.
+- `paftacular.constants.InternalSeries` (not exported): `ax bx cx ay by cy az bz cz`.
+- `paftacular.__version__`.
+
+## MCP server
+
+`pip install "paftacular[mcp]"` installs the console script `paftacular-mcp` (also
+`python -m paftacular.mcp`). It speaks MCP over stdio only, needs no API key and opens no
+network port. `--help` and `--version` work without the SDK. Host configuration:
+
+```json
+{"mcpServers": {"paftacular": {"command": "uvx", "args": ["--from", "paftacular[mcp]>=1.3,<2", "paftacular-mcp"]}}}
+```
+
+Tools (all read-only, each except `get_capabilities` takes one `request` object):
+
+| tool | purpose |
+|---|---|
+| `get_capabilities` | dependency versions, installed integrations, conventions, limits |
+| `parse_annotations` | parse and normalize a list of text records |
+| `build_annotation` | add modifiers, charge, reference, confidence, mass error to a bare ion |
+| `resolve_annotation` | select the fragment sequence from a ProForma analyte |
+| `serialize_annotation` | validate a `to_dict()` dictionary and return mzPAF |
+| `calculate_ion` | mass (`mass_da`), m/z (`mz_th`), formula, composition for one annotation |
+| `calculate_ions` | the same for a list, with per-item outcomes |
+| `generate_fragments` | a/b/c/x/y/z terminal fragments (default b/y, charge 1) |
+| `match_mz` | compare candidates to an observed m/z (default 10 ppm, or Th) |
+
+Example `calculate_ion` arguments:
+
+```json
+{"request": {"annotation": "y3^2", "analyte": "PEPTIDE", "properties": ["mass", "mz", "composition"]}}
+```
+
+Calculations default to `mode: "complete"`, which requires sequence context (`analyte`, or
+`analytes: [{"reference": 2, "sequence": "..."}]`). `mode: "offsets"` must be requested
+explicitly. Results with some failed properties come back with `status: "partial"` and
+per-property errors. Average mass is not exposed. Resources: `paftacular://guide`,
+`paftacular://conventions`, `paftacular://examples`, `paftacular://capabilities`. Prompts:
+`analyze_fragment(annotation, analyte)`, `review_annotations(records_json)`. Limits per call:
+100 records or fragments, 16 KiB per text, 256 KiB input JSON, 512 KiB output, 1000 parsed
+annotations. Oversized requests fail with advice to split. Nothing is silently truncated.
+
+## Gotchas
+
+1. `y5` alone is an offset (19.018 Da), not a fragment mass. Embed the fragment sequence
+   (`y5{PTIDE}`) or `resolve()` against the analyte first.
+2. `{...}` holds the fragment's sequence, not the analyte's. `y3{PEPTIDE}` silently computes
+   seven residues. Only `resolve()` checks positions against an analyte.
+3. `parse()` returns a list for comma input and for `""`. Use `parse_single` / `parse_multi`.
+4. `mass()` includes charge carriers. It is the charged species, not the neutral molecule.
+   `mz()` divides by `charge`.
+5. `formula()` fails on mixed-sign compositions and on mass-based losses. Use
+   `dict_composition()` or `proforma_formula()`.
+6. `?` ions, `_{...}` named compounds and `+iA` average isotopomers have no computable mass.
+7. `serialize()` drops resolved context. Use `to_dict()` to persist it. `as_dict()` is not
+   an interchange format.
+8. `make_internal(ion_type=...)` follows the specification's correction table, which differs
+   from physical ion chemistry for several pairs. `to_mzpaf()` keeps physical chemistry.
+9. Numbers never serialize in scientific notation, and mass losses keep five decimals
+   (`-17.03` becomes `-17.03000`).
+10. Everything is immutable. Use `dataclasses.replace` to derive a changed annotation.

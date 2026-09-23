@@ -1,40 +1,44 @@
 # paftacular
 
-> Python library for parsing and serializing mzPAF, the HUPO-PSI Peak
-> Annotation Format for mass spectrometry fragment-ion annotations (e.g.
-> `y5-H2O^2/1.2ppm*0.95`, `b2{PEP}`, `IK[Acetyl]`). Requires `tacular` for
-> element/amino-acid/fragment-ion-mass lookups. It optionally integrates with
-> `peptacular` for peptide-sequence-aware mass/composition calculations and
-> converting `peptacular` `Fragment` objects directly into mzPAF annotations.
+> Python library for HUPO-PSI mzPAF, the Peak Annotation Format for mass spectrometry
+> fragment ions (`y5-H2O^2/1.2ppm*0.95`, `b2{PE}`, `IK[Acetyl]`, `p^2`): strict parsing and
+> round-trip serialization, plus ion mass, m/z and elemental composition.
 
-Parse mzPAF with `parse_single()` or `parse_multi()`. `iter_parse()` and
-`parse_batch()` retain structured errors for individual input records.
-Build annotations with `PafAnnotation.make_*` factories. Use `resolve()` with
-a full analyte before calculating complete peptide or precursor masses.
-Without sequence context, these calculations return offsets and modifiers.
-Use `to_dict()` and `PafAnnotation.from_dict()` for versioned interchange,
-including resolved context. `as_dict()` remains a compact display format.
+Install with `pip install paftacular` (Python >= 3.12). Import as `pft`. Parse with
+`pft.parse_single()` (exactly one annotation) or `pft.parse_multi()` (comma-separated list).
+`pft.iter_parse()` and `pft.parse_batch()` keep a structured `PafParseError` per bad record.
+Build annotations with the `PafAnnotation.make_*` factories. `mass()` is the charged-species
+mass in Da and `mz()` is m/z.
 
-MCP integration is available in paftacular 1.3.0 and newer with
-`pip install 'paftacular[mcp]'`. Configure a local MCP host to launch `paftacular-mcp`.
-It provides parsing, construction, resolution, calculation, generation, and
-m/z matching tools, plus reference resources and analysis prompts. Complete
-peptide calculations require context. See [MCP guide](docs/mcp.rst).
+Without sequence context, peptide, internal and precursor ions give only the ion offset and
+modifiers (`y5` alone is 19.018 Da). Embed the fragment sequence (`y2{DE}`) or call
+`ann.resolve("PEPTIDE")` with the full ProForma analyte for complete masses. That needs the
+`peptacular` extra. `to_dict()` / `PafAnnotation.from_dict()` is versioned, lossless
+interchange. `as_dict()` is a display format only.
+
+Extras: `peptacular` (sequence masses, `resolve()`, `to_mzpaf()` from peptacular fragments),
+`smiles` (`s{...}` ions via pysmiles), `mcp` (local MCP server `paftacular-mcp` with nine
+tools), `all`. paftacular is part of tacular-omics: chemistry data comes from `tacular`, and
+peptacular fragments export mzPAF strings that paftacular parses.
 
 ## Docs
 
-- [README](README.md): installation, quick start, mzPAF format overview
-- [CLAUDE.md](CLAUDE.md): architecture and command reference for AI coding agents, including the frozen-dataclass instance-caching pattern and fragment-ion-lookup-key gotchas
-- [CHANGELOG.md](CHANGELOG.md): changelog
-- [Read the Docs](https://paftacular.readthedocs.io/en/latest/): full usage guide and API reference (Sphinx)
+- [llms-full.txt](https://raw.githubusercontent.com/tacular-omics/paftacular/main/llms-full.txt): self-contained usage guide for agents, covering every public name, verified examples, the MCP server and gotchas
+- [README](https://github.com/tacular-omics/paftacular/blob/main/README.md): overview, install, quick examples
+- [Quickstart](https://paftacular.readthedocs.io/en/latest/quickstart.html): parsing, mass and serialization in five minutes
+- [Usage guide](https://paftacular.readthedocs.io/en/latest/usage.html): the full grammar, factories, resolution, batch errors, interchange and calculation conventions
+- [Installation](https://paftacular.readthedocs.io/en/latest/installation.html): extras and optional dependencies
+- [Changelog](https://github.com/tacular-omics/paftacular/blob/main/CHANGELOG.md): release notes
 
-## Source
+## API
 
-- [GitHub repository](https://github.com/tacular-omics/paftacular)
-- [PyPI package](https://pypi.org/project/paftacular/)
+- [API reference](https://paftacular.readthedocs.io/en/latest/api.html): Sphinx autodoc for the public package
+- [MCP server](https://paftacular.readthedocs.io/en/latest/mcp.html): the nine `paftacular-mcp` tools, resources, prompts, client setup and limits
 
 ## Optional
 
-- [mzPAF specification](https://github.com/HUPO-PSI/mzPAF): the HUPO-PSI peak annotation format standard that paftacular parses and serializes
-- [tacular](https://github.com/tacular-omics/tacular): required dependency providing element/amino-acid/fragment-ion-mass lookups
-- [peptacular](https://github.com/tacular-omics/peptacular): optional dependency for peptide-sequence-aware mass/composition calculations and `to_mzpaf()` Fragment conversion
+- [CLAUDE.md](https://github.com/tacular-omics/paftacular/blob/main/CLAUDE.md): guide for coding agents working on paftacular itself
+- [mzPAF specification](https://www.psidev.info/mzpaf): the HUPO-PSI standard, also at [github.com/HUPO-PSI/mzPAF](https://github.com/HUPO-PSI/mzPAF)
+- [tacular](https://github.com/tacular-omics/tacular): required reference data (elements, amino acids, modifications, ion offsets)
+- [peptacular](https://github.com/tacular-omics/peptacular): optional ProForma library for sequence context and fragment generation
+- [GitHub](https://github.com/tacular-omics/paftacular) and [PyPI](https://pypi.org/project/paftacular/)
