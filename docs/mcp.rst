@@ -42,7 +42,8 @@ The host starts the process and connects automatically. Running the command
 in a terminal alone waits for MCP messages and does not open an interactive
 chat. ``--help`` and ``--version`` work without the SDK installed.
 
-Alternatively, hosts can launch an isolated, version-pinned installation with uv:
+Alternatively, hosts can launch an isolated installation with uv. Pin the
+version range so an update does not change the server under you:
 
 .. code-block:: json
 
@@ -50,7 +51,7 @@ Alternatively, hosts can launch an isolated, version-pinned installation with uv
      "mcpServers": {
        "paftacular": {
          "command": "uvx",
-         "args": ["--from", "paftacular[mcp]==1.3.0", "paftacular-mcp"]
+         "args": ["--from", "paftacular[mcp]>=1.3,<2", "paftacular-mcp"]
        }
      }
    }

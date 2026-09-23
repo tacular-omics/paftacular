@@ -8,7 +8,7 @@
 .. raw:: html
 
    <div style="text-align: center; margin-bottom: 5px;">
-      <a href="https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml"><img src="https://github.com/tacular-omics/paftacular/actions/workflows/python-package.yml/badge.svg" alt="Python package"></a>
+      <a href="https://github.com/tacular-omics/paftacular/actions/workflows/ci.yml"><img src="https://github.com/tacular-omics/paftacular/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
       <a href="https://codecov.io/github/tacular-omics/paftacular" > 
          <img src="https://codecov.io/github/tacular-omics/paftacular/graph/badge.svg?token=lZDTvRrnuq"/> 
       </a>
@@ -40,6 +40,15 @@ Features
 * **Caching**: serialization and parsing results are cached for performance (when applicable)
 * **Integrated**: Integrated with peptacular, such that peptacular can output mzPAF annotations for fragment ions
 
+Related packages
+----------------
+
+* `tacular <https://tacular.readthedocs.io/>`_ provides the element, amino acid and
+  reference-molecule lookups paftacular uses for masses.
+* `peptacular <https://peptacular.readthedocs.io/>`_ parses **ProForma** peptide
+  sequences. Install ``paftacular[peptacular]`` to compute masses of annotations
+  that carry a sequence, and to have peptacular emit mzPAF for its fragment ions.
+
 Quick Example
 -------------
 
@@ -56,6 +65,7 @@ Quick Example
    y
    19.017841466812
 
+New to paftacular? Start with :doc:`installation` and :doc:`quickstart`.
 See :doc:`usage` for the full guide, including creating annotations programmatically,
 computing masses/compositions, and round-tripping to mzPAF strings.
 
@@ -64,9 +74,11 @@ computing masses/compositions, and round-tripping to mzPAF strings.
    :caption: Contents:
 
    installation
+   quickstart
    usage
    mcp
    api
+   changelog
    citation
 
 Indices and tables

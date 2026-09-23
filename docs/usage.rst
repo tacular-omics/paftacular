@@ -9,41 +9,8 @@ Usage
 
    import paftacular as pft
 
-Quick Start
------------
-
-There are 3 parsing methods available:
-* ``parse``: Parses a single or multiple comma-separated mzPAF annotations. Returns a single ``PafAnnotation`` or a list of them.
-* ``parse_multi``: Parses multiple comma-separated mzPAF annotations. Always returns a list of ``PafAnnotation``.
-* ``parse_single``: Parses a single mzPAF annotation. Returns a single ``PafAnnotation``. Raises ValueError if multiple annotations are provided.
-
-.. testcode::
-
-   import paftacular as pft
-
-   # Parse a simple peptide ion
-   ann = pft.parse("y5")
-   print(ann.ion_type.series)
-   print(ann.ion_type.position)
-
-.. testoutput::
-
-   y
-   5
-
-.. testcode::
-
-   # Parse with modifications
-   ann = pft.parse_single("y5-H2O^2/1.2ppm*0.95")
-   print(ann.charge)
-   print(ann.mass_error.value)
-   print(ann.confidence)
-
-.. testoutput::
-
-   2
-   1.2
-   0.95
+This guide covers the full mzPAF grammar. For a five-minute introduction, see
+:doc:`quickstart`.
 
 Basic Peptide Ions
 ------------------
