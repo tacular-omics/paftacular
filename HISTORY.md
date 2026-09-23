@@ -1,5 +1,9 @@
 # History
 
+## Unreleased
+
+- Capped sibling requirements below their next major version (`tacular>=1.1.0,<2`, `peptacular>=3.1.2,<5`). Verified against peptacular 4.0.0.
+
 ## 1.3.0 (2026-09-04)
 
 - Added an optional local MCP server with nine tools, four resources, and two analysis prompts

@@ -644,19 +644,19 @@ dev = [
 requires-dist = [
     { name = "mcp", marker = "extra == 'all'", specifier = ">=2.1.1,<3" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.1.1,<3" },
-    { name = "peptacular", marker = "extra == 'all'", specifier = ">=3.1.2" },
-    { name = "peptacular", marker = "extra == 'mcp'", specifier = ">=3.1.2" },
-    { name = "peptacular", marker = "extra == 'peptacular'", specifier = ">=3.1.2" },
+    { name = "peptacular", marker = "extra == 'all'", specifier = ">=3.1.2,<5" },
+    { name = "peptacular", marker = "extra == 'mcp'", specifier = ">=3.1.2,<5" },
+    { name = "peptacular", marker = "extra == 'peptacular'", specifier = ">=3.1.2,<5" },
     { name = "pysmiles", marker = "extra == 'all'", specifier = ">=2.0.1" },
     { name = "pysmiles", marker = "extra == 'smiles'", specifier = ">=2.0.1" },
-    { name = "tacular", specifier = ">=1.1.0" },
+    { name = "tacular", specifier = ">=1.1.0,<2" },
 ]
 provides-extras = ["all", "mcp", "peptacular", "smiles"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "mcp", specifier = ">=2.1.1,<3" },
-    { name = "peptacular", specifier = ">=3.1.2" },
+    { name = "peptacular", specifier = ">=3.1.2,<5" },
     { name = "pysmiles", specifier = ">=2.0.1" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
@@ -681,14 +681,14 @@ wheels = [
 
 [[package]]
 name = "peptacular"
-version = "3.1.2"
+version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tacular" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/f2/5c352fc3fb7640c335870f341af54c33098c859a273ec8347790f6bce159/peptacular-3.1.2.tar.gz", hash = "sha256:d489112d3b0c5b77a9c7bbbbefa6d7e559868845795c8be2bb6b2e127d4afe63", size = 1088779, upload-time = "2026-07-10T00:59:57.637Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/55/9cd616fc0d9900bf24c8216e144285891d3cd5afefefbe98b94e9f85a669/peptacular-4.0.0.tar.gz", hash = "sha256:5698bcad2af6b097600fbaee16e10e660825988adebc19a7afdeb3e8e77a48e6", size = 1266710, upload-time = "2026-09-13T08:09:29.258Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/5a/664a5ddd40d8890b7bc835dad9462882676615fc53ebb171a012fd31e3f1/peptacular-3.1.2-py3-none-any.whl", hash = "sha256:4a6a82c1745153ec32577631ed90bc7ff5f056a6af7698013fb3a5f6a8889a9d", size = 172461, upload-time = "2026-07-10T00:59:56.392Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/16/6d081980498b5bac330ed74e5ce1165d6e35931b088a062ad97bcfd20fff/peptacular-4.0.0-py3-none-any.whl", hash = "sha256:cd08ed48bdf051f2202fa871c6cc308aa5c4b4e9f117f1113a86dcb3d8e88ba9", size = 213943, upload-time = "2026-09-13T08:09:27.734Z" },
 ]
 
 [[package]]
