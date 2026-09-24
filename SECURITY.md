@@ -2,10 +2,15 @@
 
 ## Supported versions
 
-Security fixes are applied to the latest released version of paftacular.
+Security fixes go into the latest release of paftacular on PyPI.
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities privately to Patrick Garrett at pgarrett@scripps.edu. Include a description, affected versions, reproduction steps, and the potential impact. Please do not open a public issue until a fix or disclosure plan has been agreed upon.
+Please report vulnerabilities privately through GitHub security advisories:
+open the repository's **Security** tab and choose **Report a vulnerability**
+(<https://github.com/tacular-omics/paftacular/security/advisories/new>).
+Do not open a public issue.
 
-You should receive an acknowledgement within seven days. The maintainer will investigate, coordinate a release when necessary, and credit reporters who wish to be identified.
+Include the affected version, steps to reproduce, and the impact you expect.
+You should get a reply within seven days. Once a fix is released, the advisory
+is published and reporters are credited if they wish.
