@@ -27,6 +27,9 @@ Every rename and removal, with the replacement, is in the
 
 #### Changed
 
+- MCP `match_mz`: `tolerance_unit` is tacular's `ToleranceUnit`, `"da"` or `"ppm"`
+  (default `"ppm"`). `"Th"` is now `"da"` (an absolute m/z difference) and is rejected.
+  The MCP `response_schema_version` is 2.
 - `parse(s)` returns exactly one `PafAnnotation` and raises `PafParseError` for comma input
   or empty text. `parse_multi(s)` always returns a list.
 - `get_mass(*, monoisotopic=True)` replaces `mass()`, matching tacular 2.0. Optional

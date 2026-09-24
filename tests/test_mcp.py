@@ -256,7 +256,7 @@ def test_generate_fragments():
     assert call("generate_fragments", {"analyte": "PEPTIDE", "positions": [7]}).is_error
 
 
-@pytest.mark.parametrize("unit,tolerance", [("ppm", 2.0), ("Th", 0.001)])
+@pytest.mark.parametrize("unit,tolerance", [("ppm", 2.0), ("da", 0.001)])
 def test_matching(unit, tolerance):
     theoretical = pft.parse("y3^2").resolve("PEPTIDE").mz()
     result = call(
@@ -274,6 +274,17 @@ def test_matching(unit, tolerance):
     assert data["candidates"][0]["delta_th"] == pytest.approx(0.0001)
     assert data["candidates"][0]["delta_ppm"] == pytest.approx(0.0001 / theoretical * 1e6)
     assert data["candidates"][2]["error"]["code"] == "parse_error"
+
+
+def test_matching_rejects_th_unit():
+    # 2.0 uses tacular's ToleranceUnit ("da" or "ppm"). "Th" was the 1.x spelling of "da".
+    result = call("match_mz", {"observed_mz": 100.0, "tolerance": 0.01, "tolerance_unit": "Th", "candidates": [{"annotation": "y3^2", "analyte": "PEPTIDE"}]})
+    assert result.is_error
+
+
+def test_response_schema_version_is_2():
+    result = call("match_mz", {"observed_mz": 100.0, "candidates": [{"annotation": "y3^2", "analyte": "PEPTIDE"}]})
+    assert result.structured_content["response_schema_version"] == 2
 
 
 @pytest.mark.parametrize(

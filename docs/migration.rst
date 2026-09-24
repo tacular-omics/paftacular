@@ -60,6 +60,10 @@ Renamed and removed names
        interning in ``__new__``
      - removed. Constructors build fresh objects. The parser shares components for repeated
        substrings through bounded caches.
+   * - MCP ``match_mz`` request ``"tolerance_unit": "Th"``
+     - ``"tolerance_unit": "da"`` (tacular's ``ToleranceUnit``, ``"da"`` or ``"ppm"``). The
+       value is still an absolute m/z difference. ``"Th"`` is rejected. MCP responses carry
+       ``response_schema_version`` 2.
 
 Keyword-only arguments
 ----------------------

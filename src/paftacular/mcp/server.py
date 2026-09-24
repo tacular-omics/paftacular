@@ -110,7 +110,7 @@ def create_server() -> MCPServer:
 
     @server.tool(annotations=annotations)
     async def match_mz(request: MatchRequest) -> Annotated[CallToolResult, Envelope[Matches]]:
-        """Compare observed m/z with explicit candidates in ppm or Th. Return signed errors and ranked matches. Matching does not prove identity."""
+        """Compare observed m/z with explicit candidates in ppm or Da. Return signed errors and ranked matches. Matching does not prove identity."""
         return respond(handlers.match_mz, request)
 
     def add_reference(uri: str, content: str) -> None:

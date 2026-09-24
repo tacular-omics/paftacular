@@ -504,7 +504,7 @@ Tools (all read-only, each except `get_capabilities` takes one `request` object)
 | `calculate_ion` | mass (`mass_da`), m/z (`mz_th`), formula, composition for one annotation |
 | `calculate_ions` | the same for a list, with per-item outcomes |
 | `generate_fragments` | a/b/c/x/y/z terminal fragments (default b/y, charge 1) |
-| `match_mz` | compare candidates to an observed m/z (default 10 ppm, or Th) |
+| `match_mz` | compare candidates to an observed m/z (`tolerance_unit` "ppm", the default at 10, or "da") |
 
 Example `calculate_ion` arguments:
 
