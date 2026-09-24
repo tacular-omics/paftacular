@@ -31,12 +31,10 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
     if isinstance(ion, PeptideIon):
         if ion.position > length:
             raise ValueError(f"Fragment position {ion.position} exceeds analyte length {length}")
-        if ion.series in (IonSeries.A, IonSeries.B, IonSeries.C):
+        if ion.series in (IonSeries.A, IonSeries.B, IonSeries.C, IonSeries.D, IonSeries.DA, IonSeries.DB):
             fragment = analyte.slice(0, ion.position)
-        elif ion.series in (IonSeries.X, IonSeries.Y, IonSeries.Z):
-            fragment = analyte.slice(length - ion.position, length)
         else:
-            raise ValueError(f"Analyte resolution is not supported for ion series {ion.series}")
+            fragment = analyte.slice(length - ion.position, length)
     elif isinstance(ion, InternalFragment):
         if ion.start_position <= 1 or ion.end_position >= length:
             raise ValueError("An internal fragment must exclude both analyte termini")

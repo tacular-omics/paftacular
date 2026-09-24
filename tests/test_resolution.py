@@ -7,7 +7,7 @@ pt = pytest.importorskip("peptacular")
 import paftacular as p  # noqa: E402
 
 
-@pytest.mark.parametrize("text,sequence", [("b2", "PE"), ("y2", "DE"), ("m2:4", "EPT"), ("p^2", "PEPTIDE")])
+@pytest.mark.parametrize("text,sequence", [("b2", "PE"), ("y2", "DE"), ("z2", "DE"), ("m2:4", "EPT"), ("p^2", "PEPTIDE")])
 def test_resolve_sequence_and_mass(text, sequence):
     original = p.parse_single(text)
     resolved = original.resolve("PEPTIDE/3")
@@ -28,6 +28,14 @@ def test_resolve_retains_modifications_and_isotopes():
     assert resolved.formula()
 
 
+@pytest.mark.parametrize(("text", "sequence"), [("d2", "PE"), ("v3", "IDE"), ("w2", "DE"), ("wa3", "IDE")])
+def test_resolve_side_chain_ions(text, sequence):
+    resolved = p.parse_single(text).resolve("PEPTIDE")
+    assert resolved.sequence == sequence
+    embedded = p.parse_single(f"{text}{{{sequence}}}")
+    assert resolved.mass() == pytest.approx(embedded.mass(), rel=0, abs=1e-9)
+
+
 def test_resolve_mapping_and_embedded_match():
     assert p.resolve(p.parse_single("2@y2{DE}"), {1: "AAAA", 2: "PEPTIDE"}).sequence == "DE"
     assert p.parse_single("b2").resolve({1: "PEPTIDE"}).sequence == "PE"
@@ -42,7 +50,6 @@ def test_resolve_mapping_and_embedded_match():
         ("m1:3", "PEPTIDE"),
         ("m2:7", "PEPTIDE"),
         ("?", "PEPTIDE"),
-        ("d2", "PEPTIDE"),
         ("p", ""),
         ("b2{PE/2}", "PEPTIDE"),
     ],

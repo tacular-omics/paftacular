@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `z` ions now follow mzPAF 1.0.1 section 4.4.3 (the z-dot radical, sum + H2O - NH2).
+  They were 1.007825 Da light. `peptacular_ion_type` maps `z` to `IonType.Z_RADICAL`, and
+  `to_mzpaf` writes peptacular `z`, `z+H` and `c-H` fragments as `z3-H`, `z3+H` and `c3-H`
+  (these used to raise or give the wrong mass).
+- `d`, `v` and `w` side-chain ions now use the section 4.4.3 formulas (the other n-1
+  residues plus the kept part of residue n). They were off by most of a residue.
+  `da`/`db`/`wa`/`wb` apply to T and I only. `d` and `w` raise `ValueError` for G, A, P,
+  for plain `d`/`w` on T or I, and for a modified residue n. `v` drops a modification on
+  residue n with its side chain. Analyte resolution now supports these series.
+- Reference names in `r[...]` and `-[...]` fall back to Unimod entry names (`r[Hex]`,
+  `r[HexNAc(2)]`, `p-[Hex]`) as sections 4.4.7 and 4.5 allow. Unknown names raise
+  `ValueError` instead of `KeyError`.
+- Tests: every worked example in the mzPAF 1.0.1 specification is parsed and round-tripped,
+  and 532 m/z values are checked against a frozen reference built with pyteomics
+  (`tests/reference/`).
+
 ## [1.3.2] (2026-09-23)
 
 ### Fixed
