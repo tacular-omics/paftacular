@@ -1,6 +1,7 @@
 """mzPAF text parsing: parse, parse_multi and iter_parse."""
 
 import re
+import threading
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 
@@ -40,6 +41,18 @@ _NEUTRAL_LOSS_TOKEN = re.compile(NEUTRAL_LOSS_REGEX_PATTERN)
 _ADDUCT_TOKEN = re.compile(ADDUCT_REGEX_PATTERN)
 
 
+# Guards eviction and insertion only. Lookups stay lock-free: a hit reads one dict entry.
+_CACHE_LOCK = threading.Lock()
+
+
+def _store[V](data: dict[str, V], key: str, value: V) -> None:
+    """Insert into a bounded cache, dropping the oldest entry when full. Safe under threads."""
+    with _CACHE_LOCK:
+        if key not in data and len(data) >= MAX_CACHE_SIZE:
+            del data[next(iter(data))]
+        data[key] = value
+
+
 class _BoundedCache[V]:
     """Substring -> component cache. Components are immutable, so equal text shares one object.
 
@@ -59,14 +72,12 @@ class _BoundedCache[V]:
         except KeyError:
             pass
         value = self._build(key)
-        data = self._data
-        if len(data) >= MAX_CACHE_SIZE:
-            del data[next(iter(data))]
-        data[key] = value
+        _store(self._data, key, value)
         return value
 
     def clear(self) -> None:
-        self._data.clear()
+        with _CACHE_LOCK:
+            self._data.clear()
 
     def __len__(self) -> int:
         return len(self._data)
@@ -139,7 +150,8 @@ _MASS_ERROR_CACHE: _BoundedCache[MassError] = _BoundedCache(_mass_error)
 
 def _clear_caches() -> None:
     """Empty every parser cache (for tests and memory measurements)."""
-    _ION_CACHE.clear()
+    with _CACHE_LOCK:
+        _ION_CACHE.clear()
     for cache in (_LOSS_CACHE, _ISOTOPE_CACHE, _ADDUCT_CACHE, _MASS_ERROR_CACHE):
         cache.clear()
 
@@ -151,9 +163,7 @@ def _build_annotation(match: re.Match[str]) -> PafAnnotation:
     ion_type = _ION_CACHE.get(ion)
     if ion_type is None:
         ion_type = _build_ion(groups)
-        if len(_ION_CACHE) >= MAX_CACHE_SIZE:
-            del _ION_CACHE[next(iter(_ION_CACHE))]
-        _ION_CACHE[ion] = ion_type
+        _store(_ION_CACHE, ion, ion_type)
 
     losses = groups["neutral_losses"]
     isotopes = groups["isotope"]

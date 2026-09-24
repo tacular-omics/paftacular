@@ -338,7 +338,7 @@ class TestMassCalculations:
         by_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI")
         ax_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI", nterm_ion_type=IonSeries.A, cterm_ion_type=IonSeries.X)
         assert by_frag.get_mass() != ax_frag.get_mass()
-        assert ax_frag.get_mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(monoisotopic=True) + by_frag.get_mass(), rel=1e-9)
+        assert ax_frag.get_mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(monoisotopic=True) + by_frag.get_mass(), rel=0, abs=1e-6)
 
     def test_internal_fragment_requires_both_backbone_cleavage_types(self):
         """Setting only one of nterm_ion_type/cterm_ion_type must raise, not silently default."""

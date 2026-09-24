@@ -57,7 +57,7 @@ def error_info(error: Exception) -> Error:
         return Error(code="parse_error", message=error.reason, position=error.position, annotation_index=error.annotation_index)
     if isinstance(error, ImportError):
         return Error(code="missing_dependency", message=f"{error}. For MCP with SMILES, install 'paftacular[mcp,smiles]'.")
-    if isinstance(error, NotImplementedError):
+    if isinstance(error, pft.PafUnsupportedCalculationError | NotImplementedError):
         return Error(code="unsupported_calculation", message=str(error) or "This calculation is not supported")
     if isinstance(error, pft.PafUnknownReferenceError):
         return Error(code="unknown_reference", message=str(error))

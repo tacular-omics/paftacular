@@ -181,6 +181,52 @@ def test_explicit_internal_fields_pickle():
     assert pickle.loads(pickle.dumps(ion)) == ion
 
 
-def test_internal_mass_diffs_is_read_only():
-    with pytest.raises(TypeError):
-        pft.INTERNAL_MASS_DIFFS[("b", "y")] = "+H"  # type: ignore[index]
+def test_internal_mass_diffs_is_private():
+    assert not hasattr(pft, "INTERNAL_MASS_DIFFS")
+    assert pft.PafAnnotation.make_internal(2, 4, ion_type="bx").serialize() == "m2:4+CO"
+
+
+# Error contract: user-input failures are PaftacularError, never a bare ValueError
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: pft.parse("y2{PE[Foo]}").get_mass(),
+        lambda: pft.parse("IK[+42.010565]").comp(),
+        lambda: pft.parse("m1:3{D[Formula:Zz2]IR}").comp(),
+        lambda: pft.parse("x6{NVZNAI}").get_mass(),
+        lambda: pft.parse("IT[B:Foo]").get_mass(),
+        lambda: pft.parse("b2{P[+79.966331]E}").comp(),
+        lambda: pft.ChemicalFormula("H²O").get_mass(),
+    ],
+    ids=["unknown-mod", "immonium-mass-mod", "bad-formula-mod", "bad-residue", "bad-immonium-mod", "mass-mod-comp", "superscript-digit"],
+)
+def test_calculation_errors_are_paftacular_errors(call):
+    with pytest.raises(PaftacularError):
+        call()
+
+
+@pytest.mark.parametrize("text", ["_{foo}", "?", "?42"])
+def test_unsupported_calculations_raise_paftacular_error(text):
+    annotation = pft.parse(text)
+    with pytest.raises(pft.PafUnsupportedCalculationError):
+        annotation.get_mass()
+    with pytest.raises(pft.PafUnsupportedCalculationError):
+        annotation.comp()
+    assert issubclass(pft.PafUnsupportedCalculationError, PaftacularError)
+
+
+@pytest.mark.parametrize("text", ["IK[M+K]", "IK[M+H+Na]^2", "IK[Acetyl][M+K]", "IM[Oxidation]", "IK"])
+def test_immonium_adducts_round_trip(text):
+    annotation = pft.parse(text)
+    assert annotation.serialize() == text
+    assert pft.parse(annotation.serialize()) == annotation
+
+
+def test_immonium_adduct_is_an_adduct_not_a_modification():
+    annotation = pft.parse("IK[M+K]")
+    assert annotation.ion_type.modification is None
+    assert len(annotation.adducts) == 1
+    with pytest.raises(PaftacularError):
+        pft.ImmoniumIon("K", modification="M+K")

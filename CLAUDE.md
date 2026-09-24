@@ -61,7 +61,7 @@ src/paftacular/
   resolution.py    resolve(): select the fragment sequence from a full ProForma analyte
   serialization.py versioned to_dict/from_dict (schema_version 1), strict field validation
   conversion.py    to_mzpaf(): peptacular Fragment -> PafAnnotation
-  constants.py     enums, grammar regexes (_ATOM_TOKEN, FULL_PAF_PATTERN), InternalSeries, INTERNAL_MASS_DIFFS, MAX_CACHE_SIZE
+  constants.py     enums, grammar regexes (_ATOM_TOKEN, FULL_PAF_PATTERN), InternalSeries, _INTERNAL_MASS_DIFFS, MAX_CACHE_SIZE
   util.py          validate_number, format_number, validate_integer, parse_formula, to_enum
   comps/base.py    Serializable (shared __reduce__), MassProvider, CompositionProvider, ScalableComposition
   comps/ions.py    PeptideIon, InternalFragment, ImmoniumIon, ReferenceIon, NamedCompound, ChemicalFormula, SMILESCompound, UnknownIon, PrecursorIon
@@ -96,7 +96,8 @@ Everything is exported from `paftacular/__init__.py`:
   `PrecursorIon`. `IonType` is their union type alias.
 - **Modifiers:** `NeutralLoss`, `IsotopeSpecification`, `Adduct`, `MassError`.
 - **Enums and tables:** `IonSeries` (a b c d v w x y z da db wa wb), `BackboneCleavageType`,
-  `AnnotationName`, `AminoAcids`, `INTERNAL_MASS_DIFFS` (spec section 4.4.4 table).
+  `AnnotationName`, `AminoAcids`. The spec section 4.4.4 table is private
+  (`constants._INTERNAL_MASS_DIFFS`).
   `InternalSeries` (ax..cz) lives in `paftacular.constants` and is not exported.
 - **Other:** `resolve(annotation, analytes)`, `to_mzpaf(fragment, ...)` (needs peptacular).
 
@@ -109,7 +110,7 @@ Everything is exported from `paftacular/__init__.py`:
 - Components and `PafAnnotation` are frozen dataclasses. Transformations return new objects.
 - Errors: every error from user input is a `PaftacularError` (a `ValueError`). Parse failures
   raise its subclass `PafParseError`. Wrap errors from tacular and peptacular. Unsupported calculations (unknown ions, named compounds) raise
-  `NotImplementedError`. Missing optional dependencies raise `ImportError` naming the extra.
+  `PafUnsupportedCalculationError`. Missing optional dependencies raise `ImportError` naming the extra.
 - No logging in the core. `mcp/handlers.py` logs unexpected failures to stderr only.
 - Tests live in `tests/test_*.py`, flat. Optional-dependency tests use
   `pytest.importorskip`, so run with all extras (`just install`) to exercise everything.
@@ -150,7 +151,7 @@ Scientific conventions:
   combinations. Their physical composition comes from their own tacular key. Serialize it as
   signed elemental gains or losses, preserving mass.
 - The mzPAF 1.0.1 section 4.4.4 correction table disagrees with the physical tacular
-  definitions for several combinations. `INTERNAL_MASS_DIFFS` and `make_internal(ion_type=)`
+  definitions for several combinations. `_INTERNAL_MASS_DIFFS` and `make_internal(ion_type=)`
   keep the specification convention (`bx` gives `m2:4+CO`). Conversion and explicit cleavage
   fields keep the source's physical composition (physical `ax` gives `m2:4-H2`). Do not
   silently equate the two. `docs/usage.rst` documents the difference.

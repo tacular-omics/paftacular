@@ -18,7 +18,9 @@ Every rename and removal, with the replacement, is in the
 - `mz(calculate_sequence=...)`. `mz()` now takes only `monoisotopic`.
 - The `hill_order` argument of `composition_to_proforma_formula_string`, which had no effect.
 - The class-level `_cache` dicts and `__new__` interning on ion components and modifiers.
-- `paftacular.constants.INTERNAL_SERIES_TO_DIFF` is now private.
+- `INTERNAL_MASS_DIFFS` (top level and `paftacular.constants`) and
+  `paftacular.constants.INTERNAL_SERIES_TO_DIFF` are now private. `make_internal(ion_type=)`
+  applies the table.
 
 #### Changed
 
@@ -29,6 +31,16 @@ Every rename and removal, with the replacement, is in the
   `formula`, `proforma_formula`, `serialize`, `NeutralLoss.serialize`, `format_number`,
   `validate_integer` and `to_mzpaf`.
 - `to_mzpaf(include_annotation=)` is renamed `include_sequence=`.
+- `to_mzpaf(mass_error_type=)` is renamed `mass_error_unit=`.
+- `PafAnnotation(...)` fields after `ion_type` are keyword-only.
+- The mass or composition of a `?` or `_{...}` ion raises the new
+  `PafUnsupportedCalculationError` (a `PaftacularError`) instead of `NotImplementedError`.
+- Formula parsing accepts ASCII digits only. `ChemicalFormula("H²O").get_mass()` raises
+  `PaftacularError`.
+- `IK[M+K]` parses as the K immonium ion with a K+ adduct, so `serialize()` round-trips.
+  1.x read `M+K` as the immonium modification. `ImmoniumIon(modification=)` rejects adduct text.
+- A negative-charge `to_dict()` keeps `schema_version` 1, and paftacular 1.4.0 `from_dict`
+  rejects it.
 - `mz()` raises `PaftacularError` for a peptide, internal or precursor ion without a sequence,
   instead of dividing the ion-type offset by the charge.
 - New `PaftacularError(ValueError)` base class. `PafParseError`, `PafUnknownReferenceError`
@@ -36,11 +48,16 @@ Every rename and removal, with the replacement, is in the
   peptacular that 1.x let escape.
 - Negative charge is allowed (`y2{DE}^-2`). `serialize()` writes `^-n`, and
   `serialize(signed_charge=False)` writes the magnitude only.
-- `INTERNAL_MASS_DIFFS` is a read-only mapping.
 - `to_mzpaf` output, for peptacular 5 fragments: negative charge is kept, known neutral
   deltas use canonical names (`-NH3`, `+HCOOH`, `-HCONH2`), equal mass deltas are folded
   and rounded to 6 decimals, charge carriers are sorted, and a terminal modification on an
   immonium residue becomes the immonium modification (`IP[Acetyl]`) so the mass is kept.
+  A global fixed modification is kept the same way (`<[Oxidation]@P>` gives `IP[Oxidation]`),
+  and a global isotope label becomes isotope shifts (`<13C>` gives `IP+4i13C`). Internal ion
+  offsets use canonical names too (`-NH3`, `-HCONH2`, not `-H3N`, `-CH3NO`). Labels match
+  peptacular 5 `Fragment.to_mzpaf()`.
+- Ion-type offsets (immonium, peptide ions without a sequence, internal, precursor) are summed
+  from exact element masses, not tacular's 6-decimal constants. Immonium m/z moves by 3.8e-7.
 - Requires `tacular>=2.0,<3`. The `peptacular`, `mcp` and `all` extras require
   `peptacular>=5.0,<6`.
 

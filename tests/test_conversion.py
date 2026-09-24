@@ -231,3 +231,38 @@ def test_terminal_modified_immonium_keeps_its_mass():
     annotation = paf.to_mzpaf(fragment)
     assert annotation.serialize() == "IP[Acetyl]"
     assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-5)
+
+
+@pytest.mark.parametrize(
+    ("sequence", "expected"),
+    [
+        ("<[Oxidation]@P>PEK", "IP[Oxidation]"),
+        ("<13C>PEK", "IP+4i13C"),
+        ("<13C><15N>PEK", "IP+4i13C+i15N"),
+        ("<13C>P[Acetyl]EK", "IP[Acetyl]+6i13C"),
+        ("<[Oxidation]@P><13C>PEK", "IP[Oxidation]+4i13C"),
+    ],
+)
+def test_immonium_keeps_global_mods_and_labels(sequence, expected):
+    fragment = pt.fragment(sequence, ion_types=("i",), charges=[1])[0]
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == expected
+    assert annotation.serialize() == fragment.to_mzpaf()
+    assert paf.parse(expected).mz() == pytest.approx(fragment.mz, rel=0, abs=1e-6)
+
+
+def test_immonium_mass_uses_exact_constants():
+    fragment = pt.fragment("PEK", ion_types=("i",), charges=[1])[0]
+    # Only the proton differs: tacular PROTON_MASS against peptacular's H minus electron.
+    assert paf.parse("IP").mz() == pytest.approx(fragment.mz, rel=0, abs=5e-8)
+
+
+@pytest.mark.parametrize(
+    ("ion_type", "loss"),
+    [("cy", "+NH3"), ("bz", "-NH3"), ("az", "-HCONH2"), ("ax", "-H2"), ("bx", "+CO-H2"), ("cx", "+CHNO"), ("ay", "-CO")],
+)
+def test_internal_offsets_use_canonical_names(ion_type, loss):
+    fragment = pt.fragment("PEPTIDEK", ion_types=(ion_type,), charges=[1])[0]
+    text = paf.to_mzpaf(fragment).serialize()
+    assert text == fragment.to_mzpaf()
+    assert text.endswith(loss)

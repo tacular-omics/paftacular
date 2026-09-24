@@ -77,7 +77,7 @@ def parse_formula(formula: str) -> Counter[str]:
 
             # Parse: isotope_number + element + optional_count
             # Pattern: digits followed by element (capital + optional lowercase) + optional digits
-            match = re.match(r"^(\d+)([A-Z][a-z]?)(\d*)$", content)
+            match = re.fullmatch(r"([0-9]+)([A-Z][a-z]?)([0-9]*)", content)
             if not match:
                 raise PaftacularError(f"Invalid isotope format: [{content}]")
 
@@ -91,17 +91,18 @@ def parse_formula(formula: str) -> Counter[str]:
             i = close + 1
 
         # Handle regular element: C2, Ca, H
-        elif formula[i].isupper():
+        elif "A" <= formula[i] <= "Z":
             # Get element symbol (capital + optional lowercase)
             element = formula[i]
             i += 1
-            if i < len(formula) and formula[i].islower():
+            if i < len(formula) and "a" <= formula[i] <= "z":
                 element += formula[i]
                 i += 1
 
             # Get optional count
             count_str = ""
-            while i < len(formula) and formula[i].isdigit():
+            # ASCII digits only: str.isdigit() also accepts superscripts that int() rejects.
+            while i < len(formula) and formula[i] in "0123456789":
                 count_str += formula[i]
                 i += 1
 

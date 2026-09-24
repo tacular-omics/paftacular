@@ -3,7 +3,7 @@
 import re
 from collections import Counter
 from dataclasses import KW_ONLY, dataclass
-from functools import cached_property
+from functools import cache, cached_property
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,8 +15,8 @@ else:
         pt = None
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, ElementInfo, RefMolInfo
 
-from ..constants import AminoAcids, IonSeries
-from ..errors import PaftacularError
+from ..constants import _ADDUCT_BODY, AminoAcids, IonSeries
+from ..errors import PaftacularError, PafUnsupportedCalculationError, reraise_as_paftacular
 from ..util import to_enum, validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
 from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition, lookup_reference
@@ -39,6 +39,16 @@ def _modification(text: str) -> "pt.ModificationTags":
         return pt.ModificationTags.from_string(text)
     except ValueError as error:
         raise PaftacularError(f"Invalid immonium modification {text!r}: {error}") from error
+
+
+@cache
+def _ion_offset_mass(key: str, monoisotopic: bool) -> float:
+    """The mass of a tacular ion-type offset, summed from its composition.
+
+    tacular stores the offset mass rounded to 6 decimals (``i`` is -27.994915). The exact element
+    masses keep paftacular within 1e-9 Da of peptacular.
+    """
+    return sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in FRAGMENT_ION_LOOKUP[key].composition.items())
 
 
 # tacular keys whose composition differs from the mzPAF 1.0.1 section 4.4.3 table.
@@ -70,7 +80,7 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
     def get_mass(self, *, monoisotopic: bool = True) -> float:
         if self.series in SIDE_CHAIN_SERIES:
             return sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in self.composition.items())
-        return FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].get_mass(monoisotopic=monoisotopic)
+        return _ion_offset_mass(_SERIES_LOOKUP_KEY.get(self.series, self.series), monoisotopic)
 
     @property
     def formula(self) -> str:
@@ -195,7 +205,7 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         raise PaftacularError("Neutral correction does not describe a supported internal cleavage")
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
-        return FRAGMENT_ION_LOOKUP[self._fragment_ion_key].get_mass(monoisotopic=monoisotopic)
+        return _ion_offset_mass(self._fragment_ion_key, monoisotopic)
 
     @property
     def formula(self) -> str:
@@ -225,6 +235,8 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
             object.__setattr__(self, "amino_acid", to_enum(AminoAcids, self.amino_acid, "immonium amino acid"))
         if self.modification is not None and (not isinstance(self.modification, str) or not self.modification):
             raise PaftacularError("Modification must be a nonempty string")
+        if self.modification is not None and re.fullmatch(_ADDUCT_BODY, self.modification):
+            raise PaftacularError(f"Immonium modification {self.modification!r} is adduct text. Put it in PafAnnotation.adducts")
 
     def serialize(self) -> str:
         result = f"I{self.amino_acid}"
@@ -243,6 +255,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         aa_str, modification = match.groups()
         return ImmoniumIon(to_enum(AminoAcids, aa_str, "immonium amino acid"), modification=modification)
 
+    @reraise_as_paftacular
     def get_mass(self, *, monoisotopic: bool = True) -> float:
         m = 0.0
         if self.modification is not None:
@@ -252,7 +265,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         if aa_mass is None:
             raise PaftacularError(f"Mass not available for amino acid: {self.amino_acid}")
         m += aa_mass
-        m += FRAGMENT_ION_LOOKUP["i"].get_mass(monoisotopic=monoisotopic)
+        m += _ion_offset_mass("i", monoisotopic)
         return m
 
     @property
@@ -260,6 +273,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         return composition_to_proforma_formula_string(self.composition)
 
     @property
+    @reraise_as_paftacular
     def composition(self) -> Counter[ElementInfo]:
         # Counter's `+`/`+=` (and unary `+`) drop any element whose total is <= 0, which would
         # make this composition silently disagree with mass() whenever a modification removes more
@@ -334,11 +348,11 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
             raise PaftacularError("Compound name must be a nonempty string")
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
-        raise NotImplementedError("Mass calculation for NamedCompound is not implemented")
+        raise PafUnsupportedCalculationError(f"{self.serialize()} has no mass: a named compound has no defined composition")
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        raise NotImplementedError("Composition calculation for NamedCompound is not implemented")
+        raise PafUnsupportedCalculationError(f"{self.serialize()} has no composition: a named compound has no defined composition")
 
     def serialize(self) -> str:
         return f"_{{{self.name}}}"
@@ -475,11 +489,11 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
             validate_integer(self.label, "Unknown ion label")
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
-        raise NotImplementedError("Mass calculation for UnknownIon is not implemented")
+        raise PafUnsupportedCalculationError(f"{self.serialize()} has no mass: the ion is unannotated")
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        raise NotImplementedError("Composition calculation for UnknownIon is not implemented")
+        raise PafUnsupportedCalculationError(f"{self.serialize()} has no composition: the ion is unannotated")
 
     def serialize(self) -> str:
         if self.label is not None:
@@ -514,7 +528,7 @@ class PrecursorIon(Serializable, CompositionProvider, MassProvider):
         return PrecursorIon()
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
-        return FRAGMENT_ION_LOOKUP["p"].get_mass(monoisotopic=monoisotopic)
+        return _ion_offset_mass("p", monoisotopic)
 
     @property
     def formula(self) -> str | None:

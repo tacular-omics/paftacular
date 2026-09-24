@@ -34,17 +34,22 @@ Renamed and removed names
        ``PaftacularError`` for a peptide, internal or precursor ion without a sequence.
        Call ``resolve()`` or embed the sequence first. For the old offset value use
        ``ann.get_mass(calculate_sequence=False) / abs(ann.charge)``.
-   * - ``ann.dict_composition()``, ``component.dict_composition()``
-     - ``{str(element): n for element, n in ann.comp().items()}``
+   * - ``ann.dict_composition()`` (a method), ``component.dict_composition`` (a property)
+     - ``{str(element): n for element, n in ann.comp().items()}``, and the same with
+       ``component.composition``
    * - ``ann.as_dict()``, ``NeutralLoss.as_dict()``, ``IsotopeSpecification.as_dict()``,
        ``Adduct.as_dict()``
      - ``ann.to_dict()`` (versioned and reversible with ``PafAnnotation.from_dict``)
    * - ``to_mzpaf(frag, include_annotation=...)``
      - ``to_mzpaf(frag, include_sequence=...)``
+   * - ``to_mzpaf(frag, mass_error_type=...)``
+     - ``to_mzpaf(frag, mass_error_unit=...)``, the name ``PafAnnotation.from_components``
+       and ``MassError.unit`` already use
    * - ``paftacular.constants.INTERNAL_SERIES_TO_DIFF``
-     - private. Use ``INTERNAL_MASS_DIFFS[(nterm, cterm)]``.
-   * - ``INTERNAL_MASS_DIFFS`` as a ``dict``
-     - a read-only mapping. Copy it with ``dict(INTERNAL_MASS_DIFFS)`` to change it.
+     - private.
+   * - ``INTERNAL_MASS_DIFFS`` (exported table of section 4.4.4 corrections)
+     - private. ``PafAnnotation.make_internal(start, end, ion_type="bx")`` applies the
+       correction (``m2:4+CO``). ``str(make_internal(2, 4, ion_type=key))`` shows it.
    * - ``composition_to_proforma_formula_string(comp, hill_order)``
      - ``composition_to_proforma_formula_string(comp)``. The ``hill_order`` argument had no
        effect and is gone.
@@ -64,6 +69,9 @@ Optional arguments must now be passed by name. Positional calls raise ``TypeErro
 
    * - 1.x
      - 2.0
+   * - ``PafAnnotation(ion, None, False, (loss,))``
+     - ``PafAnnotation(ion, neutral_losses=(loss,))``. Every field after ``ion_type`` is
+       keyword-only.
    * - ``PeptideIon("y", 3, "PEP")``
      - ``PeptideIon("y", 3, sequence="PEP")``
    * - ``InternalFragment(2, 4, "EPT", "a", "x")``
@@ -92,8 +100,8 @@ Optional arguments must now be passed by name. Positional calls raise ``TypeErro
      - ``ann.serialize(include_sequence=False)``
    * - ``loss.serialize("mass", True)``
      - ``loss.serialize(loss_type="mass", monoisotopic=True)``
-   * - ``format_number(x, 5)``, ``validate_integer(x, 1)``
-     - ``format_number(x, minimum_places=5)``, ``validate_integer(x, minimum=1)``
+   * - ``format_number(x, 5)``, ``validate_integer(x, "charge", 1)``
+     - ``format_number(x, minimum_places=5)``, ``validate_integer(x, "charge", minimum=1)``
    * - ``to_mzpaf(frag, 0.9, 1.2)``
      - ``to_mzpaf(frag, confidence=0.9, mass_error=1.2)``
 
@@ -104,8 +112,9 @@ Every error caused by user input is now a ``PaftacularError``, a new base class 
 subclasses ``ValueError``. ``PafParseError`` and ``PafUnknownReferenceError`` subclass it.
 Code that catches ``ValueError`` keeps working. Errors that 1.x let escape from tacular or
 peptacular (an unknown element in a formula, an invalid analyte in ``resolve()``) are now
-wrapped in ``PaftacularError`` too. ``NotImplementedError`` is still raised for the mass of
-``?`` and ``_{...}`` ions.
+wrapped in ``PaftacularError`` too. The mass or composition of a ``?`` or ``_{...}`` ion raises
+``PafUnsupportedCalculationError``, a ``PaftacularError``, where 1.x raised
+``NotImplementedError``.
 
 Behaviour changes
 -----------------
@@ -113,12 +122,20 @@ Behaviour changes
 - **Negative charge.** ``y2{DE}^-2`` parses, a negative charge removes protons, and
   ``mz()`` divides by the absolute charge. ``serialize()`` writes ``^-2``.
   ``serialize(signed_charge=False)`` writes ``^2`` for readers that only accept the mzPAF
-  1.0.1 positive form. Zero charge is still rejected.
+  1.0.1 positive form. Zero charge is still rejected. ``to_dict()`` output with a negative
+  charge keeps ``schema_version`` 1, but paftacular 1.4.0 ``from_dict`` rejects it, so
+  structured data is compatible forward only (1.x output loads in 2.0, not always the reverse).
+- **Immonium adducts.** ``IK[M+K]`` is the K immonium ion with a K+ adduct. 1.x read
+  ``M+K`` as the immonium modification, so ``serialize()`` output did not parse back.
+  ``ImmoniumIon("K", modification="M+K")`` now raises ``PaftacularError``.
 - **``to_mzpaf`` output** (with peptacular 5):
 
   - negative charges are kept (``b3{PEP}^-1``), where 1.x wrote ``^1`` or raised.
-  - known neutral deltas use their canonical mzPAF names (``-NH3``, ``+HCOOH``,
-    ``-HCONH2``). Other formula deltas are written in Hill order.
+  - known neutral deltas and internal ion offsets use their canonical mzPAF names (``-NH3``,
+    ``+HCOOH``, ``-HCONH2``). Other formula deltas are written in Hill order.
+  - an immonium ion keeps a global fixed modification (``<[Oxidation]@P>`` gives
+    ``IP[Oxidation]``) and a global isotope label (``<13C>`` gives ``IP+4i13C``). 1.x dropped
+    both, so the label was off by the modification or label mass.
   - mass deltas of the same value are folded into one term and rounded to 6 decimals, like
     peptacular's own label. A delta that rounds to zero is left out.
   - several charge carriers are sorted alphabetically (``[M+H+Na]``), as mzPAF 4.7 asks.

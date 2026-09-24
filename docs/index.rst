@@ -63,7 +63,7 @@ Quick Example
 .. testoutput::
 
    y
-   19.017841466621
+   19.017841150651
 
 New to paftacular? Start with :doc:`installation` and :doc:`quickstart`.
 See :doc:`usage` for the full guide, including creating annotations programmatically,

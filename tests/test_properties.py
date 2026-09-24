@@ -165,7 +165,6 @@ def test_multi_annotation_round_trip(items):
     assert pft.parse_multi(text) == items
 
 
-@pytest.mark.xfail(strict=True, reason="spec ambiguity: [M+H] after an unmodified immonium ion parses as its modification")
 def test_unmodified_immonium_with_adduct_round_trip():
     annotation = PafAnnotation(ion_type=ImmoniumIon("A"), adducts=(Adduct(count=1, base_formula="H"),))
     assert pft.parse(annotation.serialize()) == annotation
@@ -287,5 +286,5 @@ def test_mutated_annotation_parses_or_raises_parse_error(annotation, data):
 def test_mass_raises_only_documented_errors(annotation):
     try:
         _quiet(annotation.mz)
-    except (ValueError, NotImplementedError, ImportError):
+    except (ValueError, ImportError):
         pass

@@ -34,7 +34,7 @@ _INTERNAL_SERIES_TO_DIFF: MappingProxyType[InternalSeries, str | None] = Mapping
     }
 )
 
-INTERNAL_MASS_DIFFS: MappingProxyType[tuple[str, str], None | str] = MappingProxyType(
+_INTERNAL_MASS_DIFFS: MappingProxyType[tuple[str, str], None | str] = MappingProxyType(
     {
         ("a", "x"): None,  #  Default, no difference
         ("b", "x"): "+CO",
@@ -159,7 +159,10 @@ _ANALYTE_REF = r"(?:(?P<analyte_reference>\d+)@)?"
 _PEPTIDE_SERIES = r"(?:(?P<series>(?:da|db|wa|wb)|[axbyczdwv]\.?)(?P<ordinal>\d+)(?:\{(?P<sequence_ordinal>.+)\})?)"
 _INTERNAL = r"(?P<series_internal>m(?P<internal_start>\d+):(?P<internal_end>\d+)(?:\{(?P<sequence_internal>.+)\})?)"
 _PRECURSOR = r"(?P<precursor>p)"
-_IMMONIUM = r"(?:I(?P<immonium>[A-Z])(?:\[(?P<immonium_modification>(?:[^\]]+))\])?)"
+# Adduct text inside the brackets, ``M+H+Na``. An immonium modification never matches it, so
+# ``IK[M+K]`` is the K immonium ion with a K+ adduct.
+_ADDUCT_BODY = rf"M(?:[+-]\d*{_ATOM_TOKEN}+)+"
+_IMMONIUM = rf"(?:I(?P<immonium>[A-Z])(?:\[(?!{_ADDUCT_BODY}\])(?P<immonium_modification>(?:[^\]]+))\])?)"
 _REFERENCE = r"(?P<reference>r(?:(?:\[(?P<reference_label>[^\]]+)\])))"
 _FORMULA = r"(?:f\{(?P<formula>[A-Za-z0-9\[\]]+)\})"
 _NAMED = r"(?:_\{(?P<named_compound>[^\{\}/]+)\})"
@@ -172,7 +175,7 @@ _ION_TYPES = f"(?P<ion>{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_
 # Modifiers
 _NEUTRAL_LOSSES = rf"(?P<neutral_losses>(?:{NEUTRAL_LOSS_REGEX_PATTERN})+)?"
 _ISOTOPE = rf"(?P<isotope>(?:(?:[+-]\d*)i(?:{_ISOTOPE_ELEMENT})?)+)?"
-_ADDUCTS = rf"(?:\[(?P<adducts>M(?:[+-]\d*{_ATOM_TOKEN}+)+)\])?"
+_ADDUCTS = rf"(?:\[(?P<adducts>{_ADDUCT_BODY})\])?"
 _CHARGE = r"(?:\^(?P<charge>[+-]?\d+))?"
 _MASS_ERROR = r"(?:/(?P<mass_error>[+-]?\d+(?:\.\d+)?)(?P<mass_error_unit>ppm)?)?"
 _CONFIDENCE = r"(?:\*(?P<confidence>\d*(?:\.\d+)?))?"

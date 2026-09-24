@@ -31,7 +31,7 @@ from .comps import (
     PrecursorIon,
     UnknownIon,
 )
-from .constants import INTERNAL_MASS_DIFFS, AminoAcids, IonSeries
+from .constants import _INTERNAL_MASS_DIFFS, AminoAcids, IonSeries
 from .errors import PaftacularError
 from .util import parse_formula, to_enum
 
@@ -201,7 +201,8 @@ def _adducts(frag: pt.Fragment) -> tuple[Adduct, ...]:
     return tuple(adducts)
 
 
-def _immonium(frag: pt.Fragment) -> ImmoniumIon:
+def _immonium(frag: pt.Fragment) -> tuple[ImmoniumIon, tuple[IsotopeSpecification, ...]]:
+    """The immonium ion of a one-residue fragment and the isotope shifts of its global labels."""
     sequence = frag.sequence if frag.parent_sequence is not None else None
     if sequence is None:
         raise PaftacularError("An immonium fragment needs a parent sequence")
@@ -209,7 +210,9 @@ def _immonium(frag: pt.Fragment) -> ImmoniumIon:
     if len(annot.sequence) != 1:
         raise PaftacularError(f"Immonium ion sequence must be a single amino acid, got {annot.sequence}")
     # mzPAF allows one modification on an immonium ion. A terminal modification of the
-    # residue (for example an N-terminal acetyl) adds the same mass, so it is written there.
+    # residue (for example an N-terminal acetyl) or a global fixed modification that applies
+    # to it (<[Oxidation]@P>) adds the same mass, so it is written there. The order matches
+    # peptacular's Fragment.to_mzpaf().
     tags: list[str] = []
     for has_mods, get_mods in (
         (annot.has_internal_mods_at_index(0), lambda: annot.get_internal_mods_at_index(0)),
@@ -219,10 +222,41 @@ def _immonium(frag: pt.Fragment) -> ImmoniumIon:
         if has_mods:
             for mod in get_mods().mods:
                 tags.extend([str(mod.value)] * mod.count)
+    for static_mods in annot.map_static_mods_to_indexes().values():
+        for mod in static_mods:
+            tags.extend([str(mod.value)] * mod.count)
     if len(tags) > 1:
         raise PaftacularError(f"mzPAF allows one modification on an immonium ion, got {', '.join(tags)}")
     modification = tags[0] if tags else None
-    return ImmoniumIon(to_enum(AminoAcids, annot.sequence, "immonium amino acid"), modification=modification)
+    ion = ImmoniumIon(to_enum(AminoAcids, annot.sequence, "immonium amino acid"), modification=modification)
+    return ion, _immonium_label_isotopes(annot)
+
+
+def _immonium_label_isotopes(annot: pt.ProFormaAnnotation) -> tuple[IsotopeSpecification, ...]:
+    """A global isotope label (<13C>) as isotope shifts, one per labelled atom (<13C>P is +4i13C).
+
+    The label replaces every atom of its element in the neutral immonium ion, residue and
+    modification, not the charging proton.
+    """
+    if not annot.has_isotope_mods:
+        return ()
+    unlabelled = annot.copy()
+    unlabelled.set_isotope_mods(None, validate=False)
+    unlabelled.set_charge(None)
+    try:
+        comp = unlabelled.comp(ion_type="i")
+    except ValueError as error:
+        raise PaftacularError(f"Cannot write the isotope label of immonium ion {annot.serialize()} in mzPAF: {error}") from error
+    counts: Counter[str] = Counter()
+    for element, count in comp.items():
+        counts[element.symbol] += count
+    isotopes: list[IsotopeSpecification] = []
+    for mod in annot.isotope_mods.mods:
+        replacement = mod.value
+        symbol = replacement.element.value
+        if counts[symbol]:
+            isotopes.append(IsotopeSpecification(counts[symbol], element=f"{replacement.isotope}{symbol}"))
+    return tuple(isotopes)
 
 
 def to_mzpaf(
@@ -230,7 +264,7 @@ def to_mzpaf(
     *,
     confidence: float | None = None,
     mass_error: float | None = None,
-    mass_error_type: Literal["ppm", "da"] = "ppm",
+    mass_error_unit: Literal["ppm", "da"] = "ppm",
     include_sequence: bool = True,
 ) -> PafAnnotation:
     """Convert a peptacular Fragment to a PafAnnotation.
@@ -244,6 +278,7 @@ def to_mzpaf(
     _require_peptacular()
 
     sequence: str | None = None
+    label_isotopes: tuple[IsotopeSpecification, ...] = ()
     ion: IonType
     ion_type = frag.ion_type
     if ion_type is None:
@@ -259,7 +294,7 @@ def to_mzpaf(
             assert series is not None
             ion = _peptide_ion(series, position if isinstance(position, int) else -1, sequence)
         elif kind == _IMMONIUM:
-            ion = _immonium(frag)
+            ion, label_isotopes = _immonium(frag)
         elif kind == _INTERNAL:
             start, end = frag.position if isinstance(frag.position, tuple) and len(frag.position) == 2 else (-1, -1)
             if include_sequence:
@@ -284,10 +319,10 @@ def to_mzpaf(
     return PafAnnotation(
         ion,
         neutral_losses=losses,
-        isotopes=_isotopes(frag),
+        isotopes=(*label_isotopes, *_isotopes(frag)) if label_isotopes else _isotopes(frag),
         adducts=_adducts(frag),
         charge=charge,
-        mass_error=None if mass_error is None else MassError(mass_error, unit=mass_error_type),
+        mass_error=None if mass_error is None else MassError(mass_error, unit=mass_error_unit),
         confidence=confidence,
         resolved_sequence=sequence if kind == _PRECURSOR else None,
     )
@@ -311,7 +346,7 @@ def _plan(ion_type: str) -> tuple[int, IonSeries | None, tuple[NeutralLoss, ...]
         return _IMMONIUM, None, ()
     if info.is_internal:
         key = tuple(info.ion_type.value)
-        if len(key) != 2 or key not in INTERNAL_MASS_DIFFS:
+        if len(key) != 2 or key not in _INTERNAL_MASS_DIFFS:
             raise PaftacularError(f"Internal ion type {info.ion_type} is not supported in mzPAF")
         return _INTERNAL, None, _internal_losses(key[0], key[1])
     if info.is_intact and info.ion_type == TacularIonType.PRECURSOR:
@@ -333,4 +368,10 @@ def _internal_losses(nterm: str, cterm: str) -> tuple[NeutralLoss, ...]:
         return ()
     from .parser import _NEUTRAL_LOSS_TOKEN
 
-    return tuple(NeutralLoss.parse(token.group()) for token in _NEUTRAL_LOSS_TOKEN.finditer(correction))
+    losses = []
+    for token in _NEUTRAL_LOSS_TOKEN.finditer(correction):
+        loss = NeutralLoss.parse(token.group())
+        # The correction is in Hill order (H3N). Write known deltas by their canonical name (NH3).
+        name = _named_deltas().get(frozenset(parse_formula(loss.base_formula or "").items()))
+        losses.append(NeutralLoss(loss.count, base_formula=name) if name else loss)
+    return tuple(losses)

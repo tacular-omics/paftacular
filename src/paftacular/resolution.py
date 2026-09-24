@@ -4,9 +4,10 @@ from dataclasses import replace
 from .annotation import PafAnnotation, _require_peptacular, pt
 from .comps import InternalFragment, PeptideIon, PrecursorIon
 from .constants import IonSeries
-from .errors import PaftacularError
+from .errors import PaftacularError, reraise_as_paftacular
 
 
+@reraise_as_paftacular
 def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> PafAnnotation:
     """Attach the fragment sequence selected from a full ProForma analyte.
 

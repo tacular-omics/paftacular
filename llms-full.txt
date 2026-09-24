@@ -193,8 +193,8 @@ for s in ["p^2", "IK", "IK[Acetyl]", "r[TMT126]", "f{C6H12O6}", "s{CN=C=O}", "m2
 # ?42 UnknownIon
 ```
 
-`UnknownIon` and `NamedCompound` have no chemistry: `get_mass()` and `formula()` raise
-`NotImplementedError`.
+`UnknownIon` and `NamedCompound` have no chemistry: `get_mass()`, `comp()` and `formula()` raise
+`PafUnsupportedCalculationError`, a `PaftacularError`.
 
 ## Modifiers
 
@@ -278,7 +278,7 @@ five-residue fragment. `get_mass()` returns that offset, but `mz()` raises
 ```python
 import paftacular as pft
 
-print(pft.parse("y5").get_mass())      # 19.017841466621
+print(pft.parse("y5").get_mass())      # 19.017841150651
 print(pft.parse("b5").get_mass())      # 1.007276466621
 print(pft.parse("p^2").formula())  # H4O
 ```
@@ -291,7 +291,7 @@ modifications). It is used as written. When its residue count differs from the p
 import paftacular as pft
 
 y2 = pft.parse("y2{DE}")
-print(round(y2.get_mass(), 6), round(y2.mz(), 6))  # 263.087378 263.087378
+print(round(y2.get_mass(), 6), round(y2.mz(), 6))  # 263.087377 263.087377
 print(round(pft.parse("y2{DE}^2").mz(), 6))  # 132.047327
 print(y2.formula(), {str(e): n for e, n in y2.comp().items()})  # C9H15N2O7 {'H': 15, 'O': 7, 'C': 9, 'N': 2}
 print(round(pft.parse("y2{PE[Phospho]P}").get_mass(), 6))  # 422.132293
@@ -303,7 +303,7 @@ print(round(pft.parse("y3{PEPTIDE}").get_mass(), 4))  # 800.3672
 ```python
 import paftacular as pft
 
-print(round(pft.parse("IK").get_mass(), 6), pft.parse("IK").formula())  # 101.107324 C5H13N2
+print(round(pft.parse("IK").get_mass(), 6), pft.parse("IK").formula())  # 101.107325 C5H13N2
 print(round(pft.parse("r[TMT126]").get_mass(), 6))  # 126.127726
 print(round(pft.parse("f{C6H12O6}").get_mass(), 6))  # 180.06284
 print(round(pft.parse("s{CN=C=O}").get_mass(), 6))  # 58.02874
@@ -418,14 +418,15 @@ print(pft.parse("y3{PEP}").serialize(include_sequence=False))  # y3
 
 ```text
 to_mzpaf(frag: peptacular.Fragment, *, confidence: float | None = None, mass_error: float | None = None,
-         mass_error_type: Literal["ppm", "da"] = "ppm", include_sequence: bool = True) -> PafAnnotation
+         mass_error_unit: Literal["ppm", "da"] = "ppm", include_sequence: bool = True) -> PafAnnotation
 ```
 
 Converts a peptacular `Fragment` to a `PafAnnotation`. With `include_sequence=True` the
 fragment sequence is embedded (or kept as resolved context for precursors), so masses are
 complete. Negative charges are kept (`^-1`). Neutral deltas use canonical names and folded
-mass deltas. Terminal modifications on an immonium ion move into its modification
-(`IP[Acetyl]`), so the mass is kept. peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
+mass deltas. Terminal and global fixed modifications on an immonium ion move into its
+modification (`IP[Acetyl]`, `IP[Oxidation]`), and a global isotope label becomes isotope shifts
+(`<13C>` gives `IP+4i13C`), so the mass is kept. peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
 
 ```python
 import peptacular as pt
@@ -443,14 +444,14 @@ print(pft.parse(frags[1].to_mzpaf()).ion_type.position)  # 2
 ## Internal fragments and the specification table
 
 `m2:4` is residues 2 to 4. Plain `m` ions use the b/y convention. The specification's
-section 4.4.4 table of corrections for other cleavage pairs is exported as
-`INTERNAL_MASS_DIFFS` (keys `(nterm, cterm)`), and `make_internal(ion_type=...)` applies it:
+section 4.4.4 table of corrections for other cleavage pairs is applied by
+`make_internal(ion_type=...)`:
 
 ```python
 import paftacular as pft
 from paftacular import PafAnnotation
 
-print(pft.INTERNAL_MASS_DIFFS[("b", "x")], pft.INTERNAL_MASS_DIFFS[("b", "y")])  # +CO None
+print(PafAnnotation.make_internal(2, 4, ion_type="by").serialize())  # m2:4
 print(PafAnnotation.make_internal(2, 4, ion_type="bx").serialize())  # m2:4+CO
 ```
 
@@ -466,7 +467,6 @@ reinterpreted. Supply both cleavage fields together, one from a/b/c and one from
 - `BackboneCleavageType`: `a b c x y z`.
 - `AminoAcids`: the 20 standard one-letter codes.
 - `AnnotationName`: `precursor immonium reference named_compound formula smiles unannotated series internal`.
-- `INTERNAL_MASS_DIFFS`: read-only `Mapping[tuple[str, str], str | None]`, see above.
 - `paftacular.constants.InternalSeries` (not exported): `ax bx cx ay by cy az bz cz`.
 - `PaftacularError`, `PafParseError`, `PafUnknownReferenceError`: the error classes.
 - `paftacular.__version__`.

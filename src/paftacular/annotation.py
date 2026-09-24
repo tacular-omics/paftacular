@@ -38,7 +38,7 @@ from .comps import (
 )
 from .comps.ions import SIDE_CHAIN_SERIES
 from .constants import _INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
-from .errors import PaftacularError
+from .errors import PaftacularError, reraise_as_paftacular
 from .util import format_number, to_enum, validate_integer, validate_number
 
 # mzPAF 1.0.1 section 4.4.3 side-chain ions keep the other n-1 residues, the backbone
@@ -332,6 +332,7 @@ class PafAnnotation:
             return self._side_chain_sequence(annot)
         return annot, None
 
+    @reraise_as_paftacular
     def get_mass(self, *, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the charged-species mass of the annotated ion including modifications.
 
@@ -387,6 +388,7 @@ class PafAnnotation:
             )
         return self.get_mass(monoisotopic=monoisotopic) / abs(self.charge)
 
+    @reraise_as_paftacular
     def comp(self, *, calculate_sequence: bool = True) -> Counter[ElementInfo]:
         """Calculate the elemental composition of the annotated ion including modifications"""
         comp: Counter[ElementInfo] = Counter()

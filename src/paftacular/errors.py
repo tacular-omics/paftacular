@@ -3,6 +3,9 @@
 Every error caused by user input is a :class:`PaftacularError`, which is a ``ValueError``.
 """
 
+from collections.abc import Callable
+from functools import wraps
+
 
 class PaftacularError(ValueError):
     """Base class for paftacular errors: invalid annotations, components or calculations."""
@@ -20,6 +23,13 @@ class PafParseError(PaftacularError):
 
     def __reduce__(self):
         return type(self), (self.text, self.position, self.annotation_index, self.reason)
+
+
+class PafUnsupportedCalculationError(PaftacularError):
+    """A mass or composition that the annotation does not define.
+
+    Raised for ``?`` (unannotated) and ``_{...}`` (named compound) ions, which carry no chemistry.
+    """
 
 
 class PafUnknownReferenceError(PaftacularError, KeyError):
@@ -40,3 +50,22 @@ class PafUnknownReferenceError(PaftacularError, KeyError):
 
     def __reduce__(self):
         return type(self), (self.name, self.reason)
+
+
+def reraise_as_paftacular[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    """Re-raise a ValueError from tacular or peptacular as a PaftacularError.
+
+    peptacular parses sequences and modifications lazily, so its errors fire inside mass and
+    composition calls, not where the text is first read. Wrap those calls with this.
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            return func(*args, **kwargs)
+        except PaftacularError:
+            raise
+        except ValueError as error:
+            raise PaftacularError(f"{type(error).__name__}: {error}") from error
+
+    return wrapper

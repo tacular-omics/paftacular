@@ -537,7 +537,7 @@ Optional parameters let you attach a mass error and confidence score to each ann
        fragments[0],
        confidence=0.95,
        mass_error=1.2,
-       mass_error_type="ppm",
+       mass_error_unit="ppm",
    )
    print(ann.serialize())   # b1{P}/1.2ppm*0.95
 

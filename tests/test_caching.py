@@ -63,3 +63,32 @@ def test_clear_caches_empties_every_cache():
     assert len(parser._ION_CACHE) == 0
     for cache in (parser._LOSS_CACHE, parser._ISOTOPE_CACHE, parser._ADDUCT_CACHE, parser._MASS_ERROR_CACHE):
         assert len(cache) == 0
+
+
+def test_eviction_is_thread_safe():
+    # Several threads filling and evicting the same caches must never leak a KeyError.
+    import sys
+    import threading
+
+    errors: list[BaseException] = []
+
+    def work(thread: int) -> None:
+        try:
+            for index in range(4000):
+                pft.parse(f"y{index % 50 + 1}{{DE}}-{index}.{thread}5^{1 + index % 3}")
+        except BaseException as error:  # noqa: BLE001
+            errors.append(error)
+
+    interval = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)
+    try:
+        threads = [threading.Thread(target=work, args=(thread,)) for thread in range(4)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    finally:
+        sys.setswitchinterval(interval)
+    assert errors == []
+    assert len(parser._LOSS_CACHE) <= MAX_CACHE_SIZE
+    assert len(parser._ION_CACHE) <= MAX_CACHE_SIZE

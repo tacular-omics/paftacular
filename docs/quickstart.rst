@@ -53,7 +53,7 @@ ion offset only, and ``mz()`` needs a sequence (embedded or from ``resolve()``):
 
 .. testoutput::
 
-   19.017841466621
+   19.017841150651
 
 Serialize back to mzPAF:
 
