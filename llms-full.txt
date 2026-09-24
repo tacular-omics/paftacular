@@ -286,6 +286,10 @@ print(pft.parse("p^2").formula())  # H4O
 **Embedded sequence.** The `{...}` is the fragment's own sequence (ProForma, may carry
 modifications). It is used as written. When its residue count differs from the position
 (`y3{PEPTIDE}`), `get_mass()` and `comp()` emit a `UserWarning` and still use every residue.
+A named modification counts at the exact mass of its composition, not its 6-decimal Unimod
+mass. A global isotope label (`<13C>`) replaces its element in the whole neutral ion, ion
+offset and formula deltas included (`a2{<13C>RY}` has 14 13C). A global fixed modification
+counts like an explicit one: a v ion loses it with the side chain, and w and d ions raise.
 
 ```python
 import paftacular as pft
@@ -309,8 +313,10 @@ print(round(pft.parse("f{C6H12O6}").get_mass(), 6))  # 180.06284
 print(round(pft.parse("s{CN=C=O}").get_mass(), 6))  # 58.02874
 ```
 
-**Modifiers and charge carriers.** Adducts replace the default protons. Formula ions
-(`f{...}`) already list every atom of the charged species, so their adducts add no atoms.
+**Modifiers and charge carriers.** Adducts replace the default protons. An `H` carrier is a
+proton, so `y2{DE}[M+H]` equals `y2{DE}`. Monoisotopic charge uses CODATA `PROTON_MASS`, and
+average charge natural-abundance H less an electron. Formula ions (`f{...}`) already list
+every atom of the charged species, so their adducts add no atoms.
 
 ```python
 import paftacular as pft
@@ -318,7 +324,7 @@ import paftacular as pft
 print(round(pft.parse("y2{DE}-H2O[M+Na]").mz(), 6))  # 267.058757
 print(pft.parse("y2{DE}-H2O[M+Na]").formula())  # C9H12N2NaO6
 print(pft.parse("f{C6H12O6}[M+Na]").get_mass() == pft.parse("f{C6H12O6}").get_mass())  # True
-print(round(pft.parse("y2{DE}").get_mass(monoisotopic=False), 4))  # 263.2243
+print(round(pft.parse("y2{DE}").get_mass(monoisotopic=False), 4))  # 263.2244
 ```
 
 **Formula edge cases.** `formula()` raises `PaftacularError` for a mixed-sign composition,
@@ -426,7 +432,8 @@ fragment sequence is embedded (or kept as resolved context for precursors), so m
 complete. Negative charges are kept (`^-1`). Neutral deltas use canonical names and folded
 mass deltas. Terminal and global fixed modifications on an immonium ion move into its
 modification (`IP[Acetyl]`, `IP[Oxidation]`), and a global isotope label becomes isotope shifts
-(`<13C>` gives `IP+4i13C`), so the mass is kept. peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
+(`<13C>` gives `IP+4i13C`), so the mass is kept. The label is counted on the final ion, after
+formula deltas (`<15N>K` with `-NH3` gives `IK-NH3+i15N`). peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
 
 ```python
 import peptacular as pt

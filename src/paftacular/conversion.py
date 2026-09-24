@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from collections.abc import Sequence
 from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Literal
 
@@ -201,7 +202,7 @@ def _adducts(frag: pt.Fragment) -> tuple[Adduct, ...]:
     return tuple(adducts)
 
 
-def _immonium(frag: pt.Fragment) -> tuple[ImmoniumIon, tuple[IsotopeSpecification, ...]]:
+def _immonium(frag: pt.Fragment, deltas: Sequence[NeutralLoss]) -> tuple[ImmoniumIon, tuple[IsotopeSpecification, ...]]:
     """The immonium ion of a one-residue fragment and the isotope shifts of its global labels."""
     sequence = frag.sequence if frag.parent_sequence is not None else None
     if sequence is None:
@@ -229,14 +230,15 @@ def _immonium(frag: pt.Fragment) -> tuple[ImmoniumIon, tuple[IsotopeSpecificatio
         raise PaftacularError(f"mzPAF allows one modification on an immonium ion, got {', '.join(tags)}")
     modification = tags[0] if tags else None
     ion = ImmoniumIon(to_enum(AminoAcids, annot.sequence, "immonium amino acid"), modification=modification)
-    return ion, _immonium_label_isotopes(annot)
+    return ion, _immonium_label_isotopes(annot, deltas)
 
 
-def _immonium_label_isotopes(annot: pt.ProFormaAnnotation) -> tuple[IsotopeSpecification, ...]:
+def _immonium_label_isotopes(annot: pt.ProFormaAnnotation, deltas: Sequence[NeutralLoss] = ()) -> tuple[IsotopeSpecification, ...]:
     """A global isotope label (<13C>) as isotope shifts, one per labelled atom (<13C>P is +4i13C).
 
-    The label replaces every atom of its element in the neutral immonium ion, residue and
-    modification, not the charging proton.
+    The label replaces every atom of its element in the final neutral immonium ion: residue,
+    modification and formula deltas, not the charging proton. A delta that removes an atom
+    of the labelled element removes a labelled atom, so <15N>K with -NH3 is IK-NH3+i15N.
     """
     if not annot.has_isotope_mods:
         return ()
@@ -247,15 +249,14 @@ def _immonium_label_isotopes(annot: pt.ProFormaAnnotation) -> tuple[IsotopeSpeci
         comp = unlabelled.comp(ion_type="i")
     except ValueError as error:
         raise PaftacularError(f"Cannot write the isotope label of immonium ion {annot.serialize()} in mzPAF: {error}") from error
-    counts: Counter[str] = Counter()
-    for element, count in comp.items():
-        counts[element.symbol] += count
+    comp = Counter(comp)
+    for loss in deltas:
+        if loss.loss_type != "mass":
+            comp.update(loss.composition)
     isotopes: list[IsotopeSpecification] = []
-    for mod in annot.isotope_mods.mods:
-        replacement = mod.value
-        symbol = replacement.element.value
-        if counts[symbol]:
-            isotopes.append(IsotopeSpecification(counts[symbol], element=f"{replacement.isotope}{symbol}"))
+    for template, replaced in annot._map_isotopes().items():
+        if count := comp[template]:
+            isotopes.append(IsotopeSpecification(count, element=f"{replaced.mass_number}{template.symbol}"))
     return tuple(isotopes)
 
 
@@ -280,6 +281,7 @@ def to_mzpaf(
     sequence: str | None = None
     label_isotopes: tuple[IsotopeSpecification, ...] = ()
     ion: IonType
+    deltas = _losses(frag)
     ion_type = frag.ion_type
     if ion_type is None:
         ion = UnknownIon()
@@ -294,7 +296,7 @@ def to_mzpaf(
             assert series is not None
             ion = _peptide_ion(series, position if isinstance(position, int) else -1, sequence)
         elif kind == _IMMONIUM:
-            ion, label_isotopes = _immonium(frag)
+            ion, label_isotopes = _immonium(frag, deltas)
         elif kind == _INTERNAL:
             start, end = frag.position if isinstance(frag.position, tuple) and len(frag.position) == 2 else (-1, -1)
             if include_sequence:
@@ -308,7 +310,6 @@ def to_mzpaf(
     charge = frag.charge_state
     if charge == 0:
         raise PaftacularError("Cannot write an uncharged fragment in mzPAF")
-    deltas = _losses(frag)
     if kind == _INTERNAL:
         losses = (*deltas, *fixed_losses)
     elif fixed_losses:

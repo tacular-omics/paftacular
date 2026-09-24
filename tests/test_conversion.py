@@ -253,7 +253,7 @@ def test_immonium_keeps_global_mods_and_labels(sequence, expected):
 
 def test_immonium_mass_uses_exact_constants():
     fragment = pt.fragment("PEK", ion_types=("i",), charges=[1])[0]
-    # Only the proton differs: tacular PROTON_MASS against peptacular's H minus electron.
+    # Only the proton may differ: peptacular before 5.0 charged with H minus an electron.
     assert paf.parse("IP").mz() == pytest.approx(fragment.mz, rel=0, abs=5e-8)
 
 
@@ -266,3 +266,36 @@ def test_internal_offsets_use_canonical_names(ion_type, loss):
     text = paf.to_mzpaf(fragment).serialize()
     assert text == fragment.to_mzpaf()
     assert text.endswith(loss)
+
+
+@pytest.mark.parametrize(
+    ("sequence", "ion_type", "position", "deltas"),
+    [
+        ("<13C>RYK", "a", 2, None),
+        ("<13C>QDK", "x", 2, None),
+        ("<15N>PLK", "c", 2, None),
+        ("<15N>KSL", "z", 2, None),
+        ("<13C>KMIH", "v", 3, None),
+        ("<13C>PEPTIDE", "az", (2, 4), None),
+        ("<13C>PEPTIDE", "p", None, None),
+        ("<15N>KEK", "b", 2, "N-1H-3"),
+        ("<13C>PEK", "b", 2, "C-1O-2"),
+        ("<15N>KEK", "b", 2, {-17.026549: 1}),
+    ],
+)
+def test_global_label_covers_offset_and_formula_deltas(sequence, ion_type, position, deltas):
+    # The label replaces its element in the final ion: residues, ion offset and formula
+    # deltas. Mass-only deltas and the charge carrier stay unlabelled.
+    fragment = pt.parse(sequence).frag(ion_type=ion_type, position=position, charge=1, deltas=deltas)
+    annotation = paf.to_mzpaf(fragment)
+    if ion_type != "p":  # a precursor keeps its sequence outside the text
+        assert paf.parse(annotation.serialize()).get_mass() == pytest.approx(annotation.get_mass(), rel=0, abs=1e-9)
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-7)
+
+
+def test_immonium_label_counts_atoms_after_deltas():
+    # <15N>K immonium has two N. Losing NH3 removes one of them, so one 15N label remains.
+    fragment = pt.parse("<15N>K").frag(ion_type="i", position=1, charge=1, deltas="N-1H-3")
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == "IK-NH3+i15N"
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-7)

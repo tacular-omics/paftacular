@@ -230,3 +230,64 @@ def test_immonium_adduct_is_an_adduct_not_a_modification():
     assert len(annotation.adducts) == 1
     with pytest.raises(PaftacularError):
         pft.ImmoniumIon("K", modification="M+K")
+
+
+# Global isotope labels, fixed modifications on side-chain ions, charge carriers
+
+
+def test_global_label_covers_the_ion_offset():
+    # a2 of RY: 6 + 9 residue C, less the CO the a ion loses, is 14 labelled C.
+    annotation = pft.parse("a2{<13C>RY}")
+    assert annotation.formula() == "[13C14]H22N5O2"
+    assert annotation.get_mass() == pytest.approx(pft.parse("a2{RY}").get_mass() + 14 * 1.00335483507, rel=0, abs=1e-9)
+
+
+def test_global_label_covers_formula_deltas():
+    labelled = pft.parse("b2{<15N>KE}-NH3").get_mass() - pft.parse("b2{<15N>KE}").get_mass()
+    assert labelled == pytest.approx(-(15.00010889888 + 3 * 1.00782503223), rel=0, abs=1e-9)
+    # A mass-only delta has no atoms to label.
+    assert pft.parse("b2{<15N>KE}-17.026549").get_mass() == pytest.approx(pft.parse("b2{<15N>KE}").get_mass() - 17.026549, rel=0, abs=1e-9)
+
+
+def test_v_ion_drops_a_global_fixed_modification():
+    assert pft.parse("v3{<[Carbamidomethyl]@C>CFQ}").get_mass() == pytest.approx(pft.parse("v3{CFQ}").get_mass(), rel=0, abs=1e-9)
+    assert pft.parse("v3{<[Carbamidomethyl]@C>CFC}").get_mass() == pytest.approx(pft.parse("v3{CFC[Carbamidomethyl]}").get_mass(), rel=0, abs=1e-9)
+    assert pft.parse("v3{<[Carbamidomethyl]@C>CFQ}").formula() == pft.parse("v3{CFQ}").formula()
+
+
+@pytest.mark.parametrize("text", ["w3{<[Oxidation]@M>MFQ}", "d3{<[Oxidation]@M>FQM}"])
+def test_w_and_d_ions_refuse_a_global_fixed_modification(text):
+    with pytest.raises(PaftacularError, match="carries a modification"):
+        pft.parse(text).get_mass()
+
+
+@pytest.mark.parametrize(("adduct", "default"), [("y2{DE}[M+H]", "y2{DE}"), ("y2{DE}[M-H]^-1", "y2{DE}^-1"), ("y2{DE}[M+2H]^2", "y2{DE}^2")])
+def test_h_carrier_equals_the_default_charge(adduct, default):
+    for monoisotopic in (True, False):
+        assert pft.parse(adduct).get_mass(monoisotopic=monoisotopic) == pft.parse(default).get_mass(monoisotopic=monoisotopic)
+
+
+def test_average_charge_is_natural_hydrogen_less_an_electron():
+    from tacular import ELEMENT_LOOKUP
+    from tacular.constants import ELECTRON_MASS
+
+    carrier = pft.parse("y2{DE}^2").get_mass(monoisotopic=False) - pft.parse("y2{DE}").get_mass(monoisotopic=False)
+    assert carrier == pytest.approx(ELEMENT_LOOKUP["H"].get_mass(monoisotopic=False) - ELECTRON_MASS, rel=0, abs=1e-12)
+
+
+def test_modification_masses_are_full_precision():
+    # Unimod tabulates Oxidation as 15.994915. The exact mass of O is 15.99491461957.
+    delta = pft.parse("y2{M[Oxidation]K}").get_mass() - pft.parse("y2{MK}").get_mass()
+    assert delta == pytest.approx(15.99491461957, rel=0, abs=1e-10)
+
+
+@pytest.mark.parametrize("text", ["IK[M+Methyl]", "y2{DE}[M+Methyl]", "y2{DE}-Methyl", "y2{DE}[M+Xx]"])
+def test_non_element_formulas_fail_at_parse_time(text):
+    with pytest.raises(PafParseError, match="formula"):
+        pft.parse(text)
+
+
+@pytest.mark.parametrize("text", ["y\u0662{DE}", "y2{DE}^\u0662", "y2{DE}-\u0661\u0667.0", "m\u0661:2{DE}"])
+def test_non_ascii_digits_are_rejected(text):
+    with pytest.raises(PafParseError):
+        pft.parse(text)

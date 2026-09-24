@@ -128,8 +128,8 @@ _ATOM_TOKEN = r"(?:\[[0-9]+[A-Z][A-Za-z0-9]*+\]|[A-Z][A-Za-z0-9]*+)"
 # Isotope-nucleon-count is mandatory once an element is specified (mzPAF: "+iN" with no count is
 # invalid); at most one lowercase letter follows the element symbol (real element symbols are 1-2
 # letters). A bare "i" with nothing after it (generic isotope, no element) remains valid.
-_ISOTOPE_ELEMENT = r"(?:(?:\d+[A-Z][a-z]?)|A)"
-ISOTOPE_REGEX_PATTERN = rf"([+-]?)(\d*)i({_ISOTOPE_ELEMENT})?"
+_ISOTOPE_ELEMENT = r"(?:(?:[0-9]+[A-Z][a-z]?)|A)"
+ISOTOPE_REGEX_PATTERN = rf"([+-]?)([0-9]*)i({_ISOTOPE_ELEMENT})?"
 
 # A single signed neutral-loss/gain token. Order matters: try "count? + formula" (which may embed
 # isotope-bracket atoms) and "count? + [reference name]" before the bare-mass fallback, so a
@@ -143,8 +143,8 @@ ISOTOPE_REGEX_PATTERN = rf"([+-]?)(\d*)i({_ISOTOPE_ELEMENT})?"
 # start with different characters, so the repetition cannot backtrack catastrophically.
 _REFERENCE_NAME_CHAR = r"[A-Za-z0-9:\._\-]"
 _REFERENCE_NAME = rf"(?:{_REFERENCE_NAME_CHAR}|\({_REFERENCE_NAME_CHAR}*\))+"
-NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[{_REFERENCE_NAME}(?:\[[A-Za-z0-9\.:\-]+\])?\]|\d+(?:\.\d+)?(?!i))"
-ADDUCT_REGEX_PATTERN = rf"([+-])(\d*)({_ATOM_TOKEN}+)"
+NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:[0-9]*{_ATOM_TOKEN}+|[0-9]*\[{_REFERENCE_NAME}(?:\[[A-Za-z0-9\.:\-]+\])?\]|[0-9]+(?:\.[0-9]+)?(?!i))"
+ADDUCT_REGEX_PATTERN = rf"([+-])([0-9]*)({_ATOM_TOKEN}+)"
 
 
 # Bound for the parser's component caches (keyed by annotation substring).
@@ -153,32 +153,32 @@ MAX_CACHE_SIZE = 10_000
 
 # Regex components for better readability
 _AUXILIARY = r"(?P<is_auxiliary>&)?"
-_ANALYTE_REF = r"(?:(?P<analyte_reference>\d+)@)?"
+_ANALYTE_REF = r"(?:(?P<analyte_reference>[0-9]+)@)?"
 
 # Ion type patterns
-_PEPTIDE_SERIES = r"(?:(?P<series>(?:da|db|wa|wb)|[axbyczdwv]\.?)(?P<ordinal>\d+)(?:\{(?P<sequence_ordinal>.+)\})?)"
-_INTERNAL = r"(?P<series_internal>m(?P<internal_start>\d+):(?P<internal_end>\d+)(?:\{(?P<sequence_internal>.+)\})?)"
+_PEPTIDE_SERIES = r"(?:(?P<series>(?:da|db|wa|wb)|[axbyczdwv]\.?)(?P<ordinal>[0-9]+)(?:\{(?P<sequence_ordinal>.+)\})?)"
+_INTERNAL = r"(?P<series_internal>m(?P<internal_start>[0-9]+):(?P<internal_end>[0-9]+)(?:\{(?P<sequence_internal>.+)\})?)"
 _PRECURSOR = r"(?P<precursor>p)"
 # Adduct text inside the brackets, ``M+H+Na``. An immonium modification never matches it, so
 # ``IK[M+K]`` is the K immonium ion with a K+ adduct.
-_ADDUCT_BODY = rf"M(?:[+-]\d*{_ATOM_TOKEN}+)+"
+_ADDUCT_BODY = rf"M(?:[+-][0-9]*{_ATOM_TOKEN}+)+"
 _IMMONIUM = rf"(?:I(?P<immonium>[A-Z])(?:\[(?!{_ADDUCT_BODY}\])(?P<immonium_modification>(?:[^\]]+))\])?)"
 _REFERENCE = r"(?P<reference>r(?:(?:\[(?P<reference_label>[^\]]+)\])))"
 _FORMULA = r"(?:f\{(?P<formula>[A-Za-z0-9\[\]]+)\})"
 _NAMED = r"(?:_\{(?P<named_compound>[^\{\}/]+)\})"
 _SMILES = r"(?:s\{(?P<smiles>[^\}]+)\})"
-_UNKNOWN = r"(?:(?P<unannotated>\?)(?P<unannotated_label>\d+)?)"
+_UNKNOWN = r"(?:(?P<unannotated>\?)(?P<unannotated_label>[0-9]+)?)"
 
 # Combine all ion types
 _ION_TYPES = f"(?P<ion>{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_REFERENCE}|{_FORMULA}|{_NAMED}|{_SMILES}|{_UNKNOWN})"
 
 # Modifiers
 _NEUTRAL_LOSSES = rf"(?P<neutral_losses>(?:{NEUTRAL_LOSS_REGEX_PATTERN})+)?"
-_ISOTOPE = rf"(?P<isotope>(?:(?:[+-]\d*)i(?:{_ISOTOPE_ELEMENT})?)+)?"
+_ISOTOPE = rf"(?P<isotope>(?:(?:[+-][0-9]*)i(?:{_ISOTOPE_ELEMENT})?)+)?"
 _ADDUCTS = rf"(?:\[(?P<adducts>{_ADDUCT_BODY})\])?"
-_CHARGE = r"(?:\^(?P<charge>[+-]?\d+))?"
-_MASS_ERROR = r"(?:/(?P<mass_error>[+-]?\d+(?:\.\d+)?)(?P<mass_error_unit>ppm)?)?"
-_CONFIDENCE = r"(?:\*(?P<confidence>\d*(?:\.\d+)?))?"
+_CHARGE = r"(?:\^(?P<charge>[+-]?[0-9]+))?"
+_MASS_ERROR = r"(?:/(?P<mass_error>[+-]?[0-9]+(?:\.[0-9]+)?)(?P<mass_error_unit>ppm)?)?"
+_CONFIDENCE = r"(?:\*(?P<confidence>[0-9]*(?:\.[0-9]+)?))?"
 
 # Full pattern
 _ANNOTATION_PATTERN_BODY = f"{_AUXILIARY}{_ANALYTE_REF}{_ION_TYPES}{_NEUTRAL_LOSSES}{_ISOTOPE}{_ADDUCTS}{_CHARGE}{_MASS_ERROR}{_CONFIDENCE}"

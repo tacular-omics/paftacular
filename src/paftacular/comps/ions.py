@@ -506,7 +506,7 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         if s == "?":
             return UnknownIon(label=None)
-        match = re.fullmatch(r"\?(\d+)", s)
+        match = re.fullmatch(r"\?([0-9]+)", s)
         if not match:
             raise PaftacularError(f"Invalid unknown ion: '{s}'")
         return UnknownIon(label=int(match.group(1)))

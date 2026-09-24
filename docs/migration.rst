@@ -143,6 +143,30 @@ Behaviour changes
     (``[Acetyl]-P`` gives ``IP[Acetyl]``), so the mass is kept. More than one modification
     raises ``PaftacularError``.
 
+- **Exact offsets.** Every ion-type offset (all peptide series, immonium, internal,
+  precursor) is summed from exact element masses, not tacular's 6-decimal constants. Offset
+  masses move by up to ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
+- **Exact modification masses.** A named modification in an embedded sequence counts at the
+  exact mass of its composition, not its 6-decimal Unimod mass. A sequence with several
+  modifications moves by up to ~1.5e-6 Da. A sequence that also has a mass-only
+  modification keeps the tabulated masses.
+- **Charge carrier mass.** Monoisotopic charge is tacular's CODATA ``PROTON_MASS``, for the
+  default charge and for an ``H`` carrier alike, so ``y2{DE}[M+H]`` equals ``y2{DE}``.
+  Average charge is natural-abundance H less an electron, 1.16e-4 Da per charge heavier than
+  1.x.
+- **Global isotope labels** (``<13C>``) in an embedded sequence replace their element in
+  the ion offset and formula deltas too, like peptacular 5. ``a2{<13C>RY}`` has 14 13C,
+  where 1.x counted 15. Mass-only deltas, isotope shifts, adducts and the charge stay
+  unlabelled. ``to_mzpaf`` counts an immonium label after its deltas (``IK-NH3+i15N``).
+- **Global fixed modifications on side-chain ions.** A v ion loses one on its side-chain
+  residue (``v3{<[Carbamidomethyl]@C>CFQ}`` is 349.151, not 406.172), and w and d ions
+  raise ``PaftacularError``, as for explicit modifications.
+- **ASCII digits only.** Formulas and the annotation grammar accept ASCII digits only.
+  ``ChemicalFormula("H²O").get_mass()`` raises ``PaftacularError`` and ``y٢{DE}`` raises
+  ``PafParseError``.
+- **Formula tokens are checked at parse time.** ``IK[M+Methyl]``, ``y2{DE}[M+Methyl]`` and
+  ``y2{DE}-Methyl`` raise ``PafParseError`` from ``parse()``. 1.x parsed them and failed in
+  ``get_mass()``.
 - **Caching.** Parsing the same substring twice shares one immutable component
   (``parse("y5-H2O").neutral_losses is parse("b3-H2O").neutral_losses``). Constructors no
   longer return interned objects, so compare components with ``==``, never ``is``.

@@ -22,6 +22,7 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
+from .comps.util import _formula_items
 from .constants import (
     ADDUCT_REGEX_PATTERN,
     FULL_PAF_PATTERN,
@@ -109,7 +110,19 @@ def _build_ion(groups: dict[str, str | None]) -> IonType:
 
 
 def _neutral_losses(text: str) -> tuple[NeutralLoss, ...]:
-    return tuple(NeutralLoss.parse(token.group()) for token in _NEUTRAL_LOSS_TOKEN.finditer(text))
+    losses = tuple(NeutralLoss.parse(token.group()) for token in _NEUTRAL_LOSS_TOKEN.finditer(text))
+    for loss in losses:
+        if loss.base_formula is not None:
+            _check_formula(loss.base_formula, "neutral loss")
+    return losses
+
+
+def _check_formula(formula: str, what: str) -> None:
+    """Reject a formula with a token that is not an element (M+Methyl) when it is parsed, not when it is used."""
+    try:
+        _formula_items(formula)
+    except PaftacularError as error:
+        raise PaftacularError(f"Invalid {what} formula {formula!r}: {error}") from error
 
 
 def _isotopes(text: str) -> tuple[IsotopeSpecification, ...]:
@@ -130,6 +143,7 @@ def _adducts(text: str) -> tuple[Adduct, ...]:
     adducts: list[Adduct] = []
     for sign, count_text, formula in _ADDUCT_TOKEN.findall(text[1:]):
         count = int(count_text) if count_text else 1
+        _check_formula(formula, "adduct")
         adducts.append(Adduct(-count if sign == "-" else count, formula))
     return tuple(adducts)
 

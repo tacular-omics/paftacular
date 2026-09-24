@@ -58,6 +58,8 @@ _V_ION_RESIDUES = "ACDEFGHIKLMNOPQRSTUVWY"
 
 
 _HYDROGEN = ELEMENT_LOOKUP["H"]
+# The average charge carrier is a natural-abundance H atom less an electron.
+_AVERAGE_PROTON_MASS = _HYDROGEN.get_mass(monoisotopic=False) - ELECTRON_MASS
 
 
 def _require_peptacular() -> None:
@@ -80,6 +82,50 @@ def _parse_proforma(sequence: str) -> pt.ProFormaAnnotation:
     """
     _require_peptacular()
     return _parse_proforma_cached(sequence)
+
+
+def _drop_static_mods_at(annot: pt.ProFormaAnnotation, static_mods: Mapping[int, list], index: int) -> None:
+    """Write the global fixed modifications of ``annot`` in place at every site except ``index``."""
+    annot.set_static_mods(None, validate=False)
+    for site, mods in static_mods.items():
+        if site == index:
+            continue
+        for mod in mods:
+            for _ in range(mod.count):
+                if site == -1:
+                    annot.append_nterm_mod(mod.value)
+                elif site == -2:
+                    annot.append_cterm_mod(mod.value)
+                else:
+                    annot.append_internal_mod_at_index(site, mod.value)
+
+
+def _isotope_label_map(annot: pt.ProFormaAnnotation | None) -> dict[ElementInfo, ElementInfo]:
+    """The global isotope labels (<13C>) of a sequence as {ordinary element: isotope}."""
+    if annot is None or not annot.has_isotope_mods:
+        return {}
+    return annot._map_isotopes()
+
+
+def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
+    """The neutral mass of a sequence's residues and modifications, at full precision.
+
+    peptacular's fast mass path adds a Unimod modification by its tabulated mass, rounded to
+    6 decimals (Oxidation 15.994915, not 15.99491462). Summing the composition instead gives
+    the exact mass. A mass-only modification ([+42.010565]) has no composition, so it keeps the
+    fast path.
+    """
+    if annot.has_mods():
+        try:
+            return annot.mass(monoisotopic=monoisotopic, ion_type="n", calculate_with_composition=True)
+        except ValueError:
+            pass
+    return annot.mass(monoisotopic=monoisotopic, ion_type="n")
+
+
+@lru_cache(maxsize=4096)
+def _cached_sequence_mass(sequence: str, monoisotopic: bool) -> float:
+    return _sequence_mass(_parse_proforma(sequence), monoisotopic)
 
 
 class CommonAnnotationParams(TypedDict, total=False):
@@ -304,19 +350,24 @@ class PafAnnotation:
         index = len(annot) - 1 if series.startswith("d") else 0
         residue = annot.stripped_sequence[index]
         label = f"{series}{ion.position}"
+        # A global fixed modification (<[Carbamidomethyl]@C>) sits on the side chain just like
+        # an explicit one, so both follow the same rule.
+        static_mods = annot.map_static_mods_to_indexes() if annot.has_static_mods else {}
         if series == "v":
             if residue not in _V_ION_RESIDUES:
                 raise PaftacularError(f"{label} is not defined for residue {residue}")
             # The side chain leaves whole, so a modification on it leaves too.
             annot = annot.copy()
             annot.clear_internal_mod_at_index(index)
+            if index in static_mods:
+                _drop_static_mods_at(annot, static_mods, index)
             kept = formula_to_composition("C2H3NO2")
         else:
             substituent = _BETA_SUBSTITUENT.get((series, residue))
             if substituent is None:
                 hint = f" Use {series}a or {series}b." if residue in "TI" and len(series) == 1 else ""
                 raise PaftacularError(f"{label} is not defined for residue {residue}.{hint}")
-            if annot.has_internal_mods_at_index(index):
+            if annot.has_internal_mods_at_index(index) or index in static_mods:
                 raise PaftacularError(f"{label} is not defined when residue {residue} carries a modification")
             kept = formula_to_composition(_SIDE_CHAIN_BACKBONE[series[0]])
             kept.update(formula_to_composition(substituent))
@@ -331,6 +382,18 @@ class PafAnnotation:
         if isinstance(self.ion_type, PeptideIon) and self.ion_type.series in SIDE_CHAIN_SERIES:
             return self._side_chain_sequence(annot)
         return annot, None
+
+    def _offset_and_delta_comp(self, ion_comp: Counter[ElementInfo] | None, *, strict: bool = False) -> Counter[ElementInfo]:
+        """The composition of the ion offset (or side-chain remnant) plus formula and reference deltas.
+
+        Mass-only deltas have no atoms. They are skipped, or raise with ``strict``.
+        """
+        comp: Counter[ElementInfo] = Counter()
+        comp.update(self.ion_type.composition if ion_comp is None else ion_comp)
+        for loss in self.neutral_losses:
+            if strict or loss.loss_type != "mass":
+                comp.update(loss.composition)
+        return comp
 
     @reraise_as_paftacular
     def get_mass(self, *, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
@@ -350,28 +413,42 @@ class PafAnnotation:
         for loss in self.neutral_losses:
             base_mass += loss.get_mass(monoisotopic=monoisotopic)
 
+        # A global isotope label (<13C>) replaces its element everywhere in the neutral ion,
+        # the ion offset and formula deltas included, like peptacular.
+        if labels := _isotope_label_map(annot):
+            for element, count in self._offset_and_delta_comp(ion_comp).items():
+                if (isotope := labels.get(element)) is not None:
+                    base_mass += (isotope.get_mass(monoisotopic=monoisotopic) - element.get_mass(monoisotopic=monoisotopic)) * count
+
+        proton = PROTON_MASS if monoisotopic else _AVERAGE_PROTON_MASS
         if isinstance(self.ion_type, ChemicalFormula):
             # A ChemicalFormula's atom count already represents the fully charged species
             # (mzPAF section 4.4.9): any adduct only labels which atoms carry the charge and
             # MUST NOT add mass, and the theoretical m/z needs only an electron-mass correction
             # per charge, not a full proton per charge like the other (neutral-basis) ion types.
             base_mass -= self.charge * ELECTRON_MASS
-        else:
-            # Apply adducts
+        elif self.adducts:
+            # An H carrier is a proton, so [M+H] gives exactly the mass of the default charge.
+            protons = 0
             for adduct in self.adducts:
-                base_mass += adduct.get_mass(monoisotopic=monoisotopic)
-            if self.adducts:
-                base_mass -= self.charge * ELECTRON_MASS
-            else:
-                # Default protonation (positive charge) or deprotonation (negative charge)
-                base_mass += self.charge * PROTON_MASS
+                if adduct.base_formula == "H":
+                    protons += adduct.count
+                else:
+                    base_mass += adduct.get_mass(monoisotopic=monoisotopic)
+            base_mass += protons * proton - (self.charge - protons) * ELECTRON_MASS
+        else:
+            # Default protonation (positive charge) or deprotonation (negative charge)
+            base_mass += self.charge * proton
 
         # Apply isotopes
         for isotope in self.isotopes:
             base_mass += isotope.get_mass(monoisotopic=monoisotopic)
 
         if annot is not None:
-            base_mass += annot.mass(monoisotopic=monoisotopic, ion_type="n")
+            if ion_comp is None and self.sequence is not None:
+                base_mass += _cached_sequence_mass(self.sequence, monoisotopic)
+            else:
+                base_mass += _sequence_mass(annot, monoisotopic)
 
         return base_mass
 
@@ -394,12 +471,14 @@ class PafAnnotation:
         comp: Counter[ElementInfo] = Counter()
         annot, ion_comp = self._ion_parts(calculate_sequence)
 
-        # Base ion composition
-        comp.update(self.ion_type.composition if ion_comp is None else ion_comp)
-
-        # Apply neutral losses/gains
-        for loss in self.neutral_losses:
-            comp.update(loss.composition)
+        # Base ion composition and neutral losses/gains. A global isotope label (<13C>)
+        # replaces its element in both, like peptacular.
+        neutral = self._offset_and_delta_comp(ion_comp, strict=True)
+        if labels := _isotope_label_map(annot):
+            for element, count in neutral.items():
+                comp[labels.get(element, element)] += count
+        else:
+            comp.update(neutral)
 
         if isinstance(self.ion_type, ChemicalFormula):
             # A ChemicalFormula's atom count already represents the fully charged species

@@ -13,10 +13,10 @@ from ..util import format_number, validate_number
 from .base import CompositionProvider, MassProvider, ScalableComposition, Serializable
 from .util import composition_to_proforma_formula_string, formula_to_composition, lookup_reference
 
-_ISOTOPE_ELEMENT = re.compile(r"\d+[A-Z][a-z]?")
-_MASS_CONTENT = re.compile(r"\d+(?:\.\d+)?")
-_FORMULA_CONTENT = re.compile(rf"(\d*)({_ATOM_TOKEN}+)")
-_REFERENCE_CONTENT = re.compile(r"(\d*)\[([^\]]+)\]")
+_ISOTOPE_ELEMENT = re.compile(r"[0-9]+[A-Z][a-z]?")
+_MASS_CONTENT = re.compile(r"[0-9]+(?:\.[0-9]+)?")
+_FORMULA_CONTENT = re.compile(rf"([0-9]*)({_ATOM_TOKEN}+)")
+_REFERENCE_CONTENT = re.compile(r"([0-9]*)\[([^\]]+)\]")
 
 
 @dataclass(frozen=True, slots=True)
