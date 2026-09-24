@@ -1,7 +1,7 @@
 from collections import Counter
 
 import pytest
-from tacular import ELEMENT_LOOKUP
+from tacular import ELEMENT_LOOKUP, AminoAcid
 
 from paftacular import PafAnnotation, PaftacularError, parse, parse_multi
 from paftacular.comps import (
@@ -19,7 +19,7 @@ from paftacular.comps import (
     SMILESCompound,
     UnknownIon,
 )
-from paftacular.constants import AminoAcids, IonSeries
+from paftacular.constants import IonSeries
 
 
 class TestPafAnnotationBasics:
@@ -88,11 +88,11 @@ class TestIonTypes:
     def test_immonium_ion(self):
         """Test immonium ions"""
         # Simple immonium
-        annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=AminoAcids.A))
+        annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=AminoAcid.A))
         assert annotation.serialize() == "IA"
 
         # With modification
-        annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=AminoAcids.K, modification="Acetyl"))
+        annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=AminoAcid.K, modification="Acetyl"))
         assert annotation.serialize() == "IK[Acetyl]"
 
     def test_reference_ion(self):
@@ -295,14 +295,14 @@ class TestMassCalculations:
     @pytest.mark.parametrize(
         "amino_acid,literature_mz",
         [
-            (AminoAcids.G, 30.034),
-            (AminoAcids.A, 44.050),
-            (AminoAcids.P, 70.065),
-            (AminoAcids.V, 72.081),
-            (AminoAcids.L, 86.096),
-            (AminoAcids.F, 120.081),
-            (AminoAcids.Y, 136.076),
-            (AminoAcids.W, 159.092),
+            (AminoAcid.G, 30.034),
+            (AminoAcid.A, 44.050),
+            (AminoAcid.P, 70.065),
+            (AminoAcid.V, 72.081),
+            (AminoAcid.L, 86.096),
+            (AminoAcid.F, 120.081),
+            (AminoAcid.Y, 136.076),
+            (AminoAcid.W, 159.092),
         ],
     )
     def test_immonium_mass_matches_literature(self, amino_acid, literature_mz):
@@ -320,7 +320,7 @@ class TestMassCalculations:
 
         sequence = "PTI"
         proton_mass = 1.007276466812
-        residue_sum = sum(AA_LOOKUP[AminoAcids(c)].get_mass(monoisotopic=True) for c in sequence) + proton_mass
+        residue_sum = sum(AA_LOOKUP[AminoAcid(c)].get_mass(monoisotopic=True) for c in sequence) + proton_mass
         annotation = PafAnnotation(
             ion_type=InternalFragment(start_position=3, end_position=5, sequence=sequence),
             charge=1,
@@ -355,7 +355,7 @@ class TestMassCalculations:
         """
         pytest.importorskip("peptacular")
 
-        ion = ImmoniumIon(amino_acid=AminoAcids.A, modification="Deamidated")
+        ion = ImmoniumIon(amino_acid=AminoAcid.A, modification="Deamidated")
         mass_from_composition = sum(elem.mass for elem, count in ion.composition.items() for _ in range(count))
         assert mass_from_composition == pytest.approx(ion.get_mass(), abs=1e-6)
 

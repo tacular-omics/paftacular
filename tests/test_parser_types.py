@@ -1,7 +1,7 @@
 import sys
 
 import pytest
-from tacular import ELEMENT_LOOKUP
+from tacular import ELEMENT_LOOKUP, AminoAcid
 
 from paftacular import PafAnnotation, parse, parse_multi
 from paftacular.comps import (
@@ -15,7 +15,7 @@ from paftacular.comps import (
     SMILESCompound,
     UnknownIon,
 )
-from paftacular.constants import AminoAcids, IonSeries
+from paftacular.constants import IonSeries
 
 
 def parse_one(s: str) -> PafAnnotation:
@@ -93,7 +93,7 @@ class TestImmoniumIonParsing:
         """Test parsing simple immonium ion"""
         ann = parse_one("IA")
         assert isinstance(ann.ion_type, ImmoniumIon)
-        assert ann.ion_type.amino_acid == AminoAcids.A
+        assert ann.ion_type.amino_acid == AminoAcid.A
         assert ann.ion_type.modification is None
         assert ann.ion_type.serialize() == "IA"
 
@@ -101,7 +101,7 @@ class TestImmoniumIonParsing:
         """Test parsing immonium ion with modification"""
         ann = parse_one("IH[+16]")
         assert isinstance(ann.ion_type, ImmoniumIon)
-        assert ann.ion_type.amino_acid == AminoAcids.H
+        assert ann.ion_type.amino_acid == AminoAcid.H
         assert ann.ion_type.modification == "+16"
         assert ann.ion_type.serialize() == "IH[+16]"
 
@@ -751,7 +751,7 @@ def test_multiple_annotations_parse():
     assert isinstance(anns[2].ion_type, PrecursorIon)
 
     assert isinstance(anns[3].ion_type, ImmoniumIon)
-    assert anns[3].ion_type.amino_acid == AminoAcids.Y
+    assert anns[3].ion_type.amino_acid == AminoAcid.Y
 
 
 def test_multiple_annotations_complex():

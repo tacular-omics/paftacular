@@ -1,6 +1,7 @@
 """Tests for parse methods in comps.py classes"""
 
 import pytest
+from tacular import AminoAcid
 
 from paftacular.comps import (
     Adduct,
@@ -17,7 +18,7 @@ from paftacular.comps import (
     SMILESCompound,
     UnknownIon,
 )
-from paftacular.constants import AminoAcids, IonSeries
+from paftacular.constants import IonSeries
 
 
 class TestMassErrorParse:
@@ -169,13 +170,13 @@ class TestImmoniumIonParse:
     def test_parse_basic(self):
         """Test parsing basic immonium ion"""
         ion = ImmoniumIon.parse("IK")
-        assert ion.amino_acid == AminoAcids.K
+        assert ion.amino_acid == AminoAcid.K
         assert ion.modification is None
 
     def test_parse_with_modification(self):
         """Test parsing immonium ion with modification"""
         ion = ImmoniumIon.parse("IM[Oxidation]")
-        assert ion.amino_acid == AminoAcids.M
+        assert ion.amino_acid == AminoAcid.M
         assert ion.modification == "Oxidation"
 
     def test_parse_invalid(self):

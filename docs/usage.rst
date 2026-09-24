@@ -663,6 +663,12 @@ Calculation and Serialization Conventions
 its elemental masses requires subtracting one electron mass per positive
 charge to compare with ``get_mass()``. ``mz()`` divides by the absolute charge. Upstream tabulated ion offsets are rounded,
 so numerical comparisons should allow approximately one microdalton.
+
+A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass,
+exactly as peptacular does, so paftacular and peptacular agree on every ion m/z. The listed
+mass is rounded (Oxidation is 15.994915, its composition gives 15.99491462), so the mass of
+``comp()`` can differ from ``get_mass()`` by up to about 1e-6 Da for a named modification.
+Composition is used only for modifications with no listed mass, such as formulas.
 Formula ions already describe the charged species' atoms. Their adducts label
 charge carriers without adding atoms. Other supported ions add the specified
 adduct atoms, or implicit hydrogens when no adduct is given.

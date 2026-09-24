@@ -96,7 +96,7 @@ Everything is exported from `paftacular/__init__.py`:
   `PrecursorIon`. `IonType` is their union type alias.
 - **Modifiers:** `NeutralLoss`, `IsotopeSpecification`, `Adduct`, `MassError`.
 - **Enums and tables:** `IonSeries` (a b c d v w x y z da db wa wb), `BackboneCleavageType`,
-  `AnnotationName`, `AminoAcids`. The spec section 4.4.4 table is private
+  `AnnotationName`. Immonium amino acids are `tacular.AminoAcid` (20 standard codes only). The spec section 4.4.4 table is private
   (`constants._INTERNAL_MASS_DIFFS`).
   `InternalSeries` (ax..cz) lives in `paftacular.constants` and is not exported.
 - **Other:** `resolve(annotation, analytes)`, `to_mzpaf(fragment, ...)` (needs peptacular).
@@ -125,6 +125,10 @@ Scientific conventions:
   masses with `get_mass()`, subtract charge times the electron mass. Upstream ion offsets are
   rounded, so independent checks need an absolute tolerance near one microdalton, with
   relative tolerance disabled.
+- Named modifications (Unimod, PSI-MOD, ...) add their listed database mass through
+  peptacular's default mass path, never `calculate_with_composition=True`, so paftacular
+  matches peptacular to 1e-9 Da (`tests/test_peptacular_agreement.py`). Unimod reference
+  names in `lookup_reference` keep the listed mass too. Composition is only the fallback.
 - Without an embedded or resolved sequence, peptide, internal and precursor calculations
   return only the ion offset and modifiers (`y5` gives 19.0178, `b5` gives 1.0073). Preserve
   this. `mz()` raises for those instead, because an offset has no meaningful m/z. Use `resolve()` to select the complete fragment sequence from an analyte.
