@@ -660,8 +660,8 @@ Calculation and Serialization Conventions
 -----------------------------------------
 
 ``get_mass()`` is the charged species mass. ``comp()`` counts nuclei, so summing
-its elemental masses requires subtracting one electron mass per positive
-charge to compare with ``get_mass()``. ``mz()`` divides by the absolute charge. Upstream tabulated ion offsets are rounded,
+its elemental masses requires subtracting ``charge`` electron masses (a negative
+charge adds them) to compare with ``get_mass()``. ``mz()`` divides by the absolute charge. Upstream tabulated ion offsets are rounded,
 so numerical comparisons should allow approximately one microdalton.
 
 A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass,

@@ -519,7 +519,10 @@ Example `calculate_ion` arguments:
 Calculations default to `mode: "complete"`, which requires sequence context (`analyte`, or
 `analytes: [{"reference": 2, "sequence": "..."}]`). `mode: "offsets"` must be requested
 explicitly. Results with some failed properties come back with `status: "partial"` and
-per-property errors. Average mass is not exposed. Resources: `paftacular://guide`,
+per-property errors. Average mass is not exposed. `mz_th` is `mass_da` / |charge|, positive in
+negative mode. `build_annotation` `charge` and `generate_fragments` `charges` take any nonzero
+integer, negative for negative mode. Zero is rejected. Unknown arguments (top level or inside
+`request`) are rejected, not ignored. Resources: `paftacular://guide`,
 `paftacular://conventions`, `paftacular://examples`, `paftacular://capabilities`. Prompts:
 `analyze_fragment(annotation, analyte)`, `review_annotations(records_json)`. Limits per call:
 100 records or fragments, 16 KiB per text, 256 KiB input JSON, 512 KiB output, 1000 parsed

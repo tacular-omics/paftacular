@@ -65,6 +65,11 @@ Renamed and removed names
        value is still an absolute m/z difference. ``"Th"`` is rejected. The matched
        candidate field is still ``delta_th`` (observed minus theoretical m/z, in Th). MCP
        responses carry ``response_schema_version`` 2.
+   * - MCP ``build_annotation`` ``charge`` / ``generate_fragments`` ``charges``: positive only
+     - any nonzero integer, negative for negative mode (``-1`` writes ``^-1``). Zero is
+       rejected. ``mz_th`` is mass / \|charge\|.
+   * - MCP unknown top-level tool arguments silently ignored
+     - rejected with an error, as unknown fields inside ``request`` already were.
 
 Keyword-only arguments
 ----------------------

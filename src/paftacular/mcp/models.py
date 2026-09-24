@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 from tacular.types import ToleranceUnit
 
 from paftacular import __version__
@@ -15,6 +15,16 @@ MAX_RESULT_BYTES = 512 * 1024
 
 Text = Annotated[str, Field(min_length=1, max_length=MAX_TEXT_BYTES)]
 PositiveInt = Annotated[int, Field(ge=1, le=10000)]
+
+
+def _nonzero_charge(value: int) -> int:
+    if value == 0:
+        raise ValueError("Charge must be a nonzero integer. Use a negative charge for negative mode, e.g. -1")
+    return value
+
+
+# Like the library (PafAnnotation.charge): any nonzero integer, negative for negative mode.
+Charge = Annotated[int, Field(ge=-10000, le=10000, description="Nonzero charge, negative for negative mode."), AfterValidator(_nonzero_charge)]
 Reference = Annotated[int, Field(ge=0, le=10000)]
 Property = Literal["mass", "mz", "formula", "composition"]
 BackboneSeries = Literal["a", "b", "c", "x", "y", "z"]
@@ -76,7 +86,7 @@ class SerializeRequest(Model):
 
 class BuildRequest(Model):
     ion: Text = Field(description="Bare mzPAF ion such as y3, m2:4, p, IM[Oxidation], or f{C2H4}.")
-    charge: PositiveInt = 1
+    charge: Charge = 1
     analyte_reference: Reference | None = None
     is_auxiliary: bool = False
     neutral_losses: Annotated[list[Text], Field(max_length=32)] = Field(default_factory=list)
@@ -84,13 +94,14 @@ class BuildRequest(Model):
     adducts: Annotated[list[Text], Field(max_length=32)] = Field(default_factory=list)
     confidence: Annotated[float, Field(ge=0, le=1)] | None = None
     mass_error: float | None = None
+    # mzPAF mass-error notation (library MassError.unit), not a tolerance switch.
     mass_error_unit: Literal["da", "ppm"] = "da"
 
 
 class FragmentRequest(Model):
     analyte: Text
     series: Annotated[list[BackboneSeries], Field(min_length=1, max_length=6)] = Field(default_factory=_default_series)
-    charges: Annotated[list[PositiveInt], Field(min_length=1, max_length=10)] = Field(default_factory=lambda: [1])
+    charges: Annotated[list[Charge], Field(min_length=1, max_length=10)] = Field(default_factory=lambda: [1])
     positions: Annotated[list[PositiveInt], Field(min_length=1, max_length=MAX_RECORDS)] | None = None
     properties: Annotated[list[Property], Field(min_length=1, max_length=4)] = Field(default_factory=_default_properties)
 

@@ -256,6 +256,35 @@ def test_generate_fragments():
     assert call("generate_fragments", {"analyte": "PEPTIDE", "positions": [7]}).is_error
 
 
+def test_negative_mode_charges():
+    # Library 2.0 takes any nonzero charge. The MCP must too, with mz_th = mass / |charge|.
+    import peptacular as pt
+
+    analyte = "PEM[Oxidation]TIDE"
+    result = call("generate_fragments", {"analyte": analyte, "series": ["b", "y"], "charges": [-1, -2], "positions": [3]})
+    assert not result.is_error
+    rows = [row["result"] for row in result.structured_content["data"]["records"]]
+    assert [row["ion"]["canonical"] for row in rows] == ["b3^-1", "b3^-2", "y3^-1", "y3^-2"]
+    for row in rows:
+        core = pft.parse(row["ion"]["canonical"]).resolve(analyte)
+        assert row["charge"] == core.charge < 0
+        assert row["mz_th"] == core.mz() > 0
+        assert row["mz_th"] == pytest.approx(row["mass_da"] / abs(row["charge"]), abs=1e-12)
+    peptacular_y3 = next(f for f in pt.parse(analyte).fragment("y", charges=-2) if f.position == 3)
+    assert rows[3]["mz_th"] == pytest.approx(peptacular_y3.mz, abs=1e-9)
+
+    built = call("build_annotation", {"ion": "y3", "charge": -1})
+    assert not built.is_error
+    assert built.structured_content["data"]["canonical"] == "y3^-1"
+    matched = call("match_mz", {"observed_mz": rows[3]["mz_th"], "candidates": [{"annotation": "y3^-2", "analyte": analyte}]})
+    assert matched.structured_content["data"]["matching_indices"] == [0]
+
+    for name, request in (("build_annotation", {"ion": "y3", "charge": 0}), ("generate_fragments", {"analyte": "PEPTIDE", "charges": [1, 0]})):
+        rejected = call(name, request)
+        assert rejected.is_error
+        assert "nonzero" in rejected.content[0].text
+
+
 @pytest.mark.parametrize("unit,tolerance", [("ppm", 2.0), ("da", 0.001)])
 def test_matching(unit, tolerance):
     theoretical = pft.parse("y3^2").resolve("PEPTIDE").mz()
