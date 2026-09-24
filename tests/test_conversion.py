@@ -109,3 +109,20 @@ if __name__ == "__main__":
     import pytest
 
     pytest.main([__file__])
+
+
+@pytest.mark.parametrize(
+    ("ion_type", "expected"),
+    [
+        (pt.IonType.Z, "z3{IDE}-H^2"),
+        (pt.IonType.Z_RADICAL, "z3{IDE}^2"),
+        (pt.IonType.Z_PLUS_H, "z3{IDE}+H^2"),
+        (pt.IonType.C_MINUS_H, "c3{PEP}-H^2"),
+    ],
+)
+def test_conversion_z_and_c_variants(ion_type, expected):
+    # mzPAF 1.0.1 section 4.4.3: z is the z-dot radical (sum + H2O - NH2).
+    frag = pt.parse("PEPTIDE/2").frag(ion_type=ion_type, charge=2, position=3)
+    annotation = paf.to_mzpaf(frag)
+    assert str(annotation) == expected
+    assert annotation.mass() == pytest.approx(frag.mass, rel=0, abs=1e-6)

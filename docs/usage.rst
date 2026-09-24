@@ -566,10 +566,10 @@ new annotation and leaves the original unchanged.
 
 A mapping selects analytes by their mzPAF references. An omitted reference
 selects key 1. A supplied string is the full analyte for the current annotation.
-Resolution supports a/b/c/x/y/z peptide fragments, internal fragments, and
-precursors. It rejects missing references, out-of-range positions, internal
-fragments that include a terminus, and conflicting embedded sequences.
-Other ion types and side-chain series currently raise ``ValueError``.
+Resolution supports peptide fragments (including the d, v and w side-chain
+series), internal fragments, and precursors. It rejects missing references,
+out-of-range positions, internal fragments that include a terminus, and
+conflicting embedded sequences.
 The analyte's charge is excluded from the selected sequence. The annotation's
 own charge and adducts determine the final charged species.
 

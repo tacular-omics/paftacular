@@ -45,6 +45,7 @@ def to_mzpaf(
 
     ion = None
     internal_loss = None
+    series_loss: NeutralLoss | None = None
     if frag.ion_type is None:
         ion = UnknownIon()
     else:
@@ -71,6 +72,18 @@ def to_mzpaf(
                         ion_type = pt.IonType.DB
                     case pt.IonType.DA_ISOLEUCINE | pt.IonType.DA_THREONINE:
                         ion_type = pt.IonType.DA
+                    # mzPAF z is the z-dot radical, so the other z and c variants carry a hydrogen change.
+                    case pt.IonType.Z:
+                        ion_type = pt.IonType.Z
+                        series_loss = NeutralLoss(count=-1, base_formula="H")
+                    case pt.IonType.Z_RADICAL:
+                        ion_type = pt.IonType.Z
+                    case pt.IonType.Z_PLUS_H:
+                        ion_type = pt.IonType.Z
+                        series_loss = NeutralLoss(count=1, base_formula="H")
+                    case pt.IonType.C_MINUS_H:
+                        ion_type = pt.IonType.C
+                        series_loss = NeutralLoss(count=-1, base_formula="H")
                     case _:
                         ion_type = ion_info.ion_type
 
@@ -160,7 +173,7 @@ def to_mzpaf(
             raise TypeError(f"Invalid isotopes type: {type(frag.isotopes)}")
 
     # handle losses
-    losses: list[NeutralLoss] = []
+    losses: list[NeutralLoss] = [] if series_loss is None else [series_loss]
     match frag_losses := frag.losses:
         case dict():
             for loss, count in frag_losses.items():

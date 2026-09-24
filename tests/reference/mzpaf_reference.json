@@ -1,0 +1,4258 @@
+[
+ {
+  "annotation": "a1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 70.065125696,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 35.536201081,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 24.026559543,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 199.107718784,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 100.057497625,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 67.040757239,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 397.208161101,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 199.107718784,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 133.074238012,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 754.36176119,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 377.684518828,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 252.125438041,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 98.060040316,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 49.533658391,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 33.35819775,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 227.102633404,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 114.054954935,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 76.372395446,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 425.203075721,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 213.105176094,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 142.405876218,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 782.35667581,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 391.681976138,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 261.457076248,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 115.086589417,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 58.046932942,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 39.033714117,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 244.129182505,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 122.568229486,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 82.047911813,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 442.229624822,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 221.618450644,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 148.081392585,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 799.383224911,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 400.195250689,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 267.132592615,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 173.09206872,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 87.049672593,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 58.368873884,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 302.134661808,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 151.570969137,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 101.38307158,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 530.245668809,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 265.626472638,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 177.420073914,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 857.388704214,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 429.19799034,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 286.467752383,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 147.112804164,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 74.060040316,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 49.709119033,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 276.155397252,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 138.58133686,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 92.723316729,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 504.266404253,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 252.63684036,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 168.760319062,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 831.409439659,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 416.208358063,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 277.807997531,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 131.094080096,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 66.050678281,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 44.369544343,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 260.136673184,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 130.571974825,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 87.383742039,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 488.247680184,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 244.627478326,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 163.420744373,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 815.39071559,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 408.198996028,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 272.468422841,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 104.05284676,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 52.530061613,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 35.355799898,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 267.116175293,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 134.06172588,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 89.710242742,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 590.264296078,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 295.635786273,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 197.426283004,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1048.465574636,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 524.736425551,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 350.160042523,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 132.04776138,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 66.527518923,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 44.687438104,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 295.111089912,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 148.05918319,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 99.041880949,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 618.259210698,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 309.633243582,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 206.757921211,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1076.460489255,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 538.733882861,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 359.49168073,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 149.074310481,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 75.040793474,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 50.362954471,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 312.137639013,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 156.57245774,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 104.717397316,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 635.285759799,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 318.146518133,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 212.433437578,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1093.487038356,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 547.247157412,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 365.167197097,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 173.09206872,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 87.049672593,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 58.368873884,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 302.134661808,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 151.570969137,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 101.38307158,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 631.293347277,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 316.150311872,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 211.102633404,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1117.504796595,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 559.256036531,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 373.17311651,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 147.112804164,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 74.060040316,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 49.709119033,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 276.155397252,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 138.58133686,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 92.723316729,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 605.314082722,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 303.160679594,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 202.442878552,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1091.52553204,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 546.266404253,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 364.513361658,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 131.094080096,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 66.050678281,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 44.369544343,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 260.136673184,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 130.571974825,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 87.383742039,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 589.295358653,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 295.15131756,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 197.103303862,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z9",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 1075.506807971,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z9^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 538.257042219,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z9^3",
+  "analyte": "MYPEPTIDEK",
+  "charge": 3,
+  "mz": 359.173786968,
+  "tolerance": 1e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 162.058326063,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 81.532801265,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 54.690959666,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 325.121654596,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 163.064465531,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 109.04540251,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 648.269775382,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 324.638525924,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 216.761442772,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1273.469412864,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 637.238344665,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 425.161321933,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 190.053240683,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 95.530258575,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 64.022597872,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 353.116569216,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 177.061922841,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 118.377040716,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 676.264690001,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 338.635983234,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 226.093080978,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1301.464327484,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 651.235801975,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 434.492960139,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 207.079789784,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 104.043533125,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 69.698114239,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 370.143118317,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 185.575197392,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 124.052557083,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 693.291239102,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 347.149257785,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 231.768597345,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1318.490876585,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 659.749076526,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 440.168476506,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 173.09206872,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 87.049672593,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 58.368873884,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 302.134661808,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 151.570969137,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 101.38307158,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 631.293347277,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 316.150311872,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 211.102633404,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1284.50315552,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 642.755215994,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 428.839236151,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 147.112804164,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 74.060040316,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 49.709119033,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 276.155397252,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 138.58133686,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 92.723316729,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 605.314082722,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 303.160679594,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 202.442878552,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1258.523890965,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 629.765583716,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 420.1794813,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 131.094080096,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 66.050678281,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 44.369544343,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 260.136673184,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 130.571974825,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 87.383742039,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 589.295358653,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 295.15131756,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z5^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 197.103303862,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z10",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 1,
+  "mz": 1242.505166896,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z10^2",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 2,
+  "mz": 621.756221681,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z10^3",
+  "analyte": "[Acetyl]-M[Oxidation]YPEPS[Phospho]TIDEK",
+  "charge": 3,
+  "mz": 414.83990661,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 70.065125696,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 35.536201081,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 24.026559543,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 199.107718784,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 100.057497625,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 67.040757239,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 397.208161101,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 199.107718784,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 133.074238012,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 801.308345718,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 401.157811093,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "a7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 267.774299551,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 98.060040316,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 49.533658391,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 33.35819775,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 227.102633404,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 114.054954935,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 76.372395446,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 425.203075721,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 213.105176094,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 142.405876218,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 829.303260338,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 415.155268402,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "b7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 277.105937757,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 115.086589417,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 58.046932942,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 39.033714117,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 244.129182505,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 122.568229486,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 82.047911813,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 442.229624822,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 221.618450644,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 148.081392585,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 846.329809439,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 423.668542953,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "c7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 282.781454124,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 172.108053137,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 86.557664802,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 58.04086869,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 301.150646225,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 151.078961346,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 101.055066386,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 576.208237754,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 288.607757111,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 192.740930229,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 903.35127316,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 452.179274813,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "x7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 301.788608698,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 146.128788582,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 73.568032524,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 49.381113838,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 275.17138167,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 138.089329068,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 92.395311534,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 550.228973199,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 275.618124833,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 184.081175377,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 877.372008604,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 439.189642535,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "y7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 293.128853846,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 130.110064513,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 65.55867049,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z1^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 44.041539149,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 259.152657601,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 130.079967034,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z2^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 87.055736845,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 534.21024913,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 267.608762798,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z4^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 178.741600688,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 1,
+  "mz": 861.353284535,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7^2",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 2,
+  "mz": 431.180280501,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "z7^3",
+  "analyte": "PEPTC[Carbamidomethyl]DEK-[Amidated]",
+  "charge": 3,
+  "mz": 287.789279156,
+  "tolerance": 3e-06,
+  "note": "4.4.3 backbone series"
+ },
+ {
+  "annotation": "0@b2{LL}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 227.175404421,
+  "tolerance": 1e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "0@y1{K}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 147.112804164,
+  "tolerance": 1e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "0@y1{K}-NH3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 130.086255063,
+  "tolerance": 1e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "0@b2{LC[Carbamidomethyl]}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 274.121988949,
+  "tolerance": 3e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "0@b1{[Acetyl]-M}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 174.058326063,
+  "tolerance": 3e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "0@y4{M[Oxidation]ACK}-CH4OS[M+H+Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 213.592718602,
+  "tolerance": 3e-06,
+  "note": "4.4.3 embedded sequence example"
+ },
+ {
+  "annotation": "d3{PEL}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 269.137007537,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d3{PEL}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 135.072142002,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d3{PES}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 269.137007537,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d3{PES}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 135.072142002,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d3{PEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 269.137007537,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d3{PEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 135.072142002,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d2{GV}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 114.078764385,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d2{GV}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 57.543020426,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "da3{PET}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 285.131922156,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "da3{PET}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 143.069599312,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "db3{PET}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 283.152657601,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "db3{PET}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 142.079967034,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "da3{PEI}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 297.168307665,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "da3{PEI}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 149.087792066,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "db3{PEI}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 283.152657601,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "db3{PEI}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 142.079967034,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d1{[Acetyl]-L}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 85.052215284,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "d1{[Acetyl]-L}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 43.029745875,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{LEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 330.165961936,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{LEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 165.586619201,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{SEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 330.165961936,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{SEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 165.586619201,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{VEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 344.181612,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{VEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 172.594444234,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wa3{TEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 346.160876556,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wa3{TEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 173.584076511,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wb3{TEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 344.181612,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wb3{TEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 172.594444234,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wa3{IEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 358.197262064,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wa3{IEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 179.602269266,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wb3{IEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 344.181612,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "wb3{IEK}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 172.594444234,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{LEK-[Amidated]}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 329.181946353,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "w3{LEK-[Amidated]}^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 165.09461141,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "v3{LEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 331.161210909,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "v3{GEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 331.161210909,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "v3{S[Phospho]EK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 331.161210909,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "v3{PEK}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 331.161210909,
+  "tolerance": 1e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "v3{LEK-[Amidated]}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 330.177195326,
+  "tolerance": 3e-06,
+  "note": "4.4.3 side-chain ion"
+ },
+ {
+  "annotation": "m3:6",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 425.203075721,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "m3:6-CO",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 397.208161101,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "m3:6-CO-H2O^2",
+  "analyte": "MYPEPTIDEK",
+  "charge": 2,
+  "mz": 190.102436442,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "m3:4",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 227.102633404,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "m4:5",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 227.102633404,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "m5:8-H2O",
+  "analyte": "MYPEPTIDEK",
+  "charge": 1,
+  "mz": 409.208161101,
+  "tolerance": 1e-06,
+  "note": "4.4.4 internal fragment"
+ },
+ {
+  "annotation": "IA",
+  "analyte": null,
+  "charge": 1,
+  "mz": 44.049475632,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IC",
+  "analyte": null,
+  "charge": 1,
+  "mz": 76.021546632,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "ID",
+  "analyte": null,
+  "charge": 1,
+  "mz": 88.039304871,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IE",
+  "analyte": null,
+  "charge": 1,
+  "mz": 102.054954935,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IF",
+  "analyte": null,
+  "charge": 1,
+  "mz": 120.08077576,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IG",
+  "analyte": null,
+  "charge": 1,
+  "mz": 30.033825568,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IH",
+  "analyte": null,
+  "charge": 1,
+  "mz": 110.071273706,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "II",
+  "analyte": null,
+  "charge": 1,
+  "mz": 86.096425824,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IK",
+  "analyte": null,
+  "charge": 1,
+  "mz": 101.107324861,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IL",
+  "analyte": null,
+  "charge": 1,
+  "mz": 86.096425824,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IM",
+  "analyte": null,
+  "charge": 1,
+  "mz": 104.05284676,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IN",
+  "analyte": null,
+  "charge": 1,
+  "mz": 87.055289288,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IP",
+  "analyte": null,
+  "charge": 1,
+  "mz": 70.065125696,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IQ",
+  "analyte": null,
+  "charge": 1,
+  "mz": 101.070939352,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IR",
+  "analyte": null,
+  "charge": 1,
+  "mz": 129.113472871,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IS",
+  "analyte": null,
+  "charge": 1,
+  "mz": 60.044390251,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IT",
+  "analyte": null,
+  "charge": 1,
+  "mz": 74.060040316,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IV",
+  "analyte": null,
+  "charge": 1,
+  "mz": 72.08077576,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IW",
+  "analyte": null,
+  "charge": 1,
+  "mz": 159.091674797,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IY",
+  "analyte": null,
+  "charge": 1,
+  "mz": 136.07569038,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium"
+ },
+ {
+  "annotation": "IC[Carbamidomethyl]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 133.043010352,
+  "tolerance": 3e-06,
+  "note": "4.4.5 modified immonium"
+ },
+ {
+  "annotation": "IY[Phospho]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 216.042020901,
+  "tolerance": 3e-06,
+  "note": "4.4.5 modified immonium"
+ },
+ {
+  "annotation": "IM[Oxidation]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 120.04776138,
+  "tolerance": 3e-06,
+  "note": "4.4.5 modified immonium"
+ },
+ {
+  "annotation": "IL-CH2",
+  "analyte": null,
+  "charge": 1,
+  "mz": 72.08077576,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium loss"
+ },
+ {
+  "annotation": "IC[+58.005]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 134.026546632,
+  "tolerance": 1e-06,
+  "note": "4.4.5 immonium mass modification"
+ },
+ {
+  "annotation": "p^4",
+  "analyte": "PEPTIDEK",
+  "charge": 4,
+  "mz": 232.871008212,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+H^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 310.494860476,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p^3",
+  "analyte": "PEPTIDEK",
+  "charge": 3,
+  "mz": 310.158918799,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+2H^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 465.742565005,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 464.734739973,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+H^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 465.238652489,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+3H",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 931.485678589,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+2H",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 930.477853557,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p+H",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 929.470028525,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 928.462203493,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor table"
+ },
+ {
+  "annotation": "p-H3PO4^2",
+  "analyte": "PEPTIDEK",
+  "charge": 2,
+  "mz": 415.746292385,
+  "tolerance": 1e-06,
+  "note": "4.4.6 precursor loss"
+ },
+ {
+  "annotation": "p-[Hex]",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 766.409380089,
+  "tolerance": 3e-06,
+  "note": "4.5 reference group loss (Unimod)"
+ },
+ {
+  "annotation": "p-[TMT6plex]-2H2O-HPO3",
+  "analyte": "PEPTIDEK",
+  "charge": 1,
+  "mz": 583.311811485,
+  "tolerance": 3e-06,
+  "note": "4.5 loss chain"
+ },
+ {
+  "annotation": "r[TMT126]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 126.127725953,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT127N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 127.124760846,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT127C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 127.13108079,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT128N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 128.128115684,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT128C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 128.134435628,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT129N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 129.131470522,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT129C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 129.137790466,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT130N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 130.134825359,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT130C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 130.141145304,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT131N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 131.138180197,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT131C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 131.144500142,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT132N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 132.141535035,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT132C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 132.147854979,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT133N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 133.144889873,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT133C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 133.151209817,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT134N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 134.148244711,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT134C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 134.154564655,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT135N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 135.151599548,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMTzero]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 225.159754357,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMTpro_zero]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 296.196868142,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT2plex]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 226.163109195,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT6plex]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 230.170208601,
+  "tolerance": 3e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMTpro]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 305.214421793,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ113]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 113.107324861,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ114]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 114.110679699,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ115]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 115.107714592,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ116]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 116.11106943,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ117]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 117.114424268,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ118]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 118.111459161,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ119]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 119.114813999,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ121]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 121.121523675,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ4plex]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 145.109338888,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[iTRAQ8plex]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 305.212635872,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT126-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 114.127725953,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT127N-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 115.124760846,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT127C-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 114.127725953,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT128N-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 115.124760846,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT128C-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 116.134435628,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT129N-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 117.131470522,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT129C-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 116.134435628,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT130N-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 117.131470522,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT130C-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 118.141145304,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT131N-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 119.138180197,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[TMT131C-ETD]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 118.141145304,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_A]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 16.030751563,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_C]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 48.002822563,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_D]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 59.01275577,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_E]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 73.028405834,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_F]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 92.062051691,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_G]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 2.015101499,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_H]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 82.052549637,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_I]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 58.077701755,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_J]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 58.077701755,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_K]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 73.088600792,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_L]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 58.077701755,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_M]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 76.034122691,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_N]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 59.036565219,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_O]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 170.141364641,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_Q]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 73.052215284,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_R]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 101.094748802,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_S]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 32.025666183,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_T]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 46.041316247,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_U]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 95.947272863,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_V]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 44.062051691,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_W]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 131.072950728,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[sidechain_Y]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 108.056966311,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Cytosine]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 112.050538261,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Adenine]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 136.061771651,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Guanine]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 152.056686271,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Uracil]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 113.034553844,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Thymine]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 127.050203908,
+  "tolerance": 1e-06,
+  "note": "Appendix B formula"
+ },
+ {
+  "annotation": "r[Hex]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 163.060099885,
+  "tolerance": 3e-06,
+  "note": "4.4.7 Unimod reference name"
+ },
+ {
+  "annotation": "r[HexNAc(2)]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 407.166021506,
+  "tolerance": 3e-06,
+  "note": "4.4.7 Unimod reference name"
+ },
+ {
+  "annotation": "r[Phospho]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 80.973606988,
+  "tolerance": 3e-06,
+  "note": "4.4.7 Unimod reference name"
+ },
+ {
+  "annotation": "r[TMT127N][M+Na]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 149.10670508,
+  "tolerance": 1e-06,
+  "note": "4.4.7 reference adduct"
+ },
+ {
+  "annotation": "y1{K}-H",
+  "analyte": null,
+  "charge": 1,
+  "mz": 146.104979132,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+H",
+  "analyte": null,
+  "charge": 1,
+  "mz": 148.120629197,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-NH3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 130.086255063,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+NH3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 164.139353265,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-H2O",
+  "analyte": null,
+  "charge": 1,
+  "mz": 129.102239481,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+H2O",
+  "analyte": null,
+  "charge": 1,
+  "mz": 165.123368848,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-CO",
+  "analyte": null,
+  "charge": 1,
+  "mz": 119.117889545,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+CO",
+  "analyte": null,
+  "charge": 1,
+  "mz": 175.107718784,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-CO2",
+  "analyte": null,
+  "charge": 1,
+  "mz": 103.122974925,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+CO2",
+  "analyte": null,
+  "charge": 1,
+  "mz": 191.102633404,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-HCONH2",
+  "analyte": null,
+  "charge": 1,
+  "mz": 102.091340444,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+HCONH2",
+  "analyte": null,
+  "charge": 1,
+  "mz": 192.134267885,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-HCOOH",
+  "analyte": null,
+  "charge": 1,
+  "mz": 101.107324861,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+HCOOH",
+  "analyte": null,
+  "charge": 1,
+  "mz": 193.118283468,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-CH4OS",
+  "analyte": null,
+  "charge": 1,
+  "mz": 83.114518417,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+CH4OS",
+  "analyte": null,
+  "charge": 1,
+  "mz": 211.111089912,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-SO3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 67.155989306,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+SO3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 227.069619023,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-HPO3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 67.146473644,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+HPO3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 227.079134685,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-C2H5NOS",
+  "analyte": null,
+  "charge": 1,
+  "mz": 56.10361938,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+C2H5NOS",
+  "analyte": null,
+  "charge": 1,
+  "mz": 238.121988949,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-C2H4O2S",
+  "analyte": null,
+  "charge": 1,
+  "mz": 55.119603797,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+C2H4O2S",
+  "analyte": null,
+  "charge": 1,
+  "mz": 239.106004532,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-H3PO4",
+  "analyte": null,
+  "charge": 1,
+  "mz": 49.13590896,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral loss table"
+ },
+ {
+  "annotation": "y1{K}+H3PO4",
+  "analyte": null,
+  "charge": 1,
+  "mz": 245.089699369,
+  "tolerance": 1e-06,
+  "note": "4.5 neutral gain"
+ },
+ {
+  "annotation": "y1{K}-2H2O",
+  "analyte": null,
+  "charge": 1,
+  "mz": 111.091674797,
+  "tolerance": 1e-06,
+  "note": "4.5 multiplied loss"
+ },
+ {
+  "annotation": "y2{EK}+CO-H2O",
+  "analyte": null,
+  "charge": 1,
+  "mz": 286.139747188,
+  "tolerance": 1e-06,
+  "note": "4.5 loss chain"
+ },
+ {
+  "annotation": "y2{EK}-[2H1]-NH3",
+  "analyte": null,
+  "charge": 1,
+  "mz": 257.114746374,
+  "tolerance": 1e-06,
+  "note": "4.5 isotope loss"
+ },
+ {
+  "annotation": "y5{TIDEK}-H2[18O1][M+Na]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 607.281215892,
+  "tolerance": 5e-06,
+  "note": "4.5 isotope loss"
+ },
+ {
+  "annotation": "b3{PEP}-[Carbamidomethyl]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 267.133933532,
+  "tolerance": 3e-06,
+  "note": "4.4.4 Unimod loss"
+ },
+ {
+  "annotation": "y1{K}+i",
+  "analyte": null,
+  "charge": 1,
+  "mz": 148.116159002,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+i^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 74.561717735,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+2i",
+  "analyte": null,
+  "charge": 1,
+  "mz": 149.11951384,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+2i^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 75.063395153,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+3i",
+  "analyte": null,
+  "charge": 1,
+  "mz": 150.122868678,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+3i^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 75.565072572,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}-i",
+  "analyte": null,
+  "charge": 1,
+  "mz": 146.109449327,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}-i^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 73.558362897,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}-2i",
+  "analyte": null,
+  "charge": 1,
+  "mz": 145.106094489,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}-2i^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 73.056685478,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+i13C",
+  "analyte": null,
+  "charge": 1,
+  "mz": 148.116159002,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+i13C^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 74.561717735,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+i15N",
+  "analyte": null,
+  "charge": 1,
+  "mz": 148.109839058,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+i15N^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 74.558557762,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+3i15N",
+  "analyte": null,
+  "charge": 1,
+  "mz": 150.103908845,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+3i15N^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 75.555592656,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+i2H",
+  "analyte": null,
+  "charge": 1,
+  "mz": 148.11908091,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+i2H^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 74.563178688,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+2i18O",
+  "analyte": null,
+  "charge": 1,
+  "mz": 151.121296925,
+  "tolerance": 5e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+2i18O^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 76.064286696,
+  "tolerance": 5e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+6i13C+2i15N",
+  "analyte": null,
+  "charge": 1,
+  "mz": 155.127002978,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+6i13C+2i15N^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 78.067139722,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y1{K}+2i13C+i15N",
+  "analyte": null,
+  "charge": 1,
+  "mz": 150.116548733,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope"
+ },
+ {
+  "annotation": "y1{K}+2i13C+i15N^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 75.5619126,
+  "tolerance": 1e-06,
+  "note": "4.6 isotope with charge"
+ },
+ {
+  "annotation": "y4{PEPT}[M+Na]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 465.195584639,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+NH4]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 460.240189491,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+2Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 244.09240267,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+2H+Na]^3",
+  "analyte": null,
+  "charge": 3,
+  "mz": 155.736712514,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+H+Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 233.101430545,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+H]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 443.21364039,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+2H]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 222.110458421,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y5{TIDEK}-H2O[M+H+Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 305.146369362,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}[M+[2H2]]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 223.116735167,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y5{TIDEK}[M+[15N1]H4]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 623.337666702,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "y4{PEPT}-H2O+2i[M+H+Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 225.099503041,
+  "tolerance": 1e-06,
+  "note": "4.7 adduct"
+ },
+ {
+  "annotation": "f{C13H9}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 165.069876709,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C12H9N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 167.072950714,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C13H9N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 179.072950714,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C13H10N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 180.080775746,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C13H11N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 181.088600778,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C13H12N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 182.09642581,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C14H10N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 192.080775746,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C14H11N}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 193.088600778,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C14H10NO}",
+  "analyte": null,
+  "charge": 1,
+  "mz": 208.075690365,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C16H22O}+i^3",
+  "analyte": null,
+  "charge": 3,
+  "mz": 77.056258141,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C15[13C1]H22O}^3",
+  "analyte": null,
+  "charge": 3,
+  "mz": 77.056258141,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula"
+ },
+ {
+  "annotation": "f{C13H9}[M+H]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 165.069876709,
+  "tolerance": 1e-06,
+  "note": "4.4.9 formula adduct adds no atoms"
+ },
+ {
+  "annotation": "s{CN=C=O}[M+H]",
+  "analyte": null,
+  "charge": 1,
+  "mz": 58.028740173,
+  "tolerance": 1e-06,
+  "note": "4.4.10 smiles"
+ },
+ {
+  "annotation": "s{COc(c1)cccc1C#N}[M+H+Na]^2",
+  "analyte": null,
+  "charge": 2,
+  "mz": 78.524630501,
+  "tolerance": 1e-06,
+  "note": "4.4.10 smiles"
+ }
+]

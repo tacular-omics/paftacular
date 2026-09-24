@@ -5,14 +5,14 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import ClassVar, Literal
 
-from tacular import ELEMENT_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
+from tacular import ELEMENT_LOOKUP, ElementInfo, RefMolInfo
 
 from paftacular.constants import ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN
 
 from ..constants import _ATOM_TOKEN, MAX_CACHE_SIZE
 from ..util import format_number, validate_number
 from .base import CompositionProvider, MassProvider, ScalableComposition, Serializable
-from .util import composition_to_proforma_formula_string, formula_to_composition
+from .util import composition_to_proforma_formula_string, formula_to_composition, lookup_reference
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,9 +231,8 @@ class NeutralLoss(
         if self.base_reference is None:
             return None
         try:
-            val = REFMOL_LOOKUP[self.base_reference]
-            return val
-        except KeyError:
+            return lookup_reference(self.base_reference)
+        except ValueError:
             return self.base_reference
 
     @property
@@ -255,10 +254,7 @@ class NeutralLoss(
                     raise RuntimeError("Invalid state: formula is None")
                 return formula_to_composition(self.base_formula)
             case "reference":
-                refmol = self.reference
-                if not isinstance(refmol, RefMolInfo):
-                    raise ValueError(f"Unknown reference molecule '{self.base_reference}'. Check that it exists in REFMOL_LOOKUP.")
-                return refmol.composition
+                return lookup_reference(str(self.base_reference)).composition
             case "mass":
                 raise ValueError(f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). Use a formula or reference instead.")
 
@@ -275,11 +271,7 @@ class NeutralLoss(
                     raise RuntimeError("Formula is None for formula-based loss")
                 return self.base_formula
             case "reference":
-                refmol: RefMolInfo | str | None = self.reference
-                if isinstance(refmol, RefMolInfo):
-                    return refmol.chemical_formula
-                else:
-                    raise ValueError(f"Cannot get formula for unknown reference molecule '{refmol}' of type: {type(refmol)}")
+                return lookup_reference(str(self.base_reference)).chemical_formula
             case "mass":
                 raise ValueError(f"Cannot get formula for mass-based loss: {self.base_mass}")
             case _:
@@ -305,10 +297,7 @@ class NeutralLoss(
                     m += elem.get_mass(monoisotopic) * count
                 return m
             case "reference":
-                refmol: RefMolInfo | str | None = self.reference
-                if isinstance(refmol, str) or refmol is None:
-                    raise ValueError(f"Cannot get mass for unknown reference molecule '{refmol}'")
-                return refmol.get_mass(monoisotopic)
+                return lookup_reference(str(self.base_reference)).get_mass(monoisotopic)
 
     def mass(self, monoisotopic: bool = True) -> float:
         single_mass: float = self._mass_single(monoisotopic)

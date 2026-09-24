@@ -13,17 +13,28 @@ else:
         import peptacular as pt
     except ImportError:
         pt = None
-from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, REFMOL_LOOKUP, ElementInfo, RefMolInfo
+from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, ElementInfo, RefMolInfo
 
 from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries
 from ..util import validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
-from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition
+from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition, lookup_reference
 
 
 def _require_peptacular() -> None:
     if pt is None:
         raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
+
+
+# tacular keys whose composition differs from the mzPAF 1.0.1 section 4.4.3 table.
+# mzPAF z is the z-dot radical (sum + H2O - NH2), which tacular calls "z.".
+_SERIES_LOOKUP_KEY = {IonSeries.Z: "z."}
+
+# Section 4.4.3 side-chain ions. The offset is relative to the other n-1 residues
+# (the first n-1 for d, the last n-1 for v and w) and assumes a residue whose beta
+# carbon keeps one hydrogen. Residue-specific values need the sequence.
+SIDE_CHAIN_SERIES_FORMULA = {IonSeries.D: "C2H4N", IonSeries.V: "C2H3NO2", IonSeries.W: "C3H4O2"}
+SIDE_CHAIN_SERIES = frozenset({IonSeries.D, IonSeries.DA, IonSeries.DB, IonSeries.V, IonSeries.W, IonSeries.WA, IonSeries.WB})
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,18 +50,27 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
         IonSeries(self.series)
 
     def mass(self, monoisotopic: bool = True) -> float:
-        return FRAGMENT_ION_LOOKUP[self.series].get_mass(monoisotopic)
+        if self.series in SIDE_CHAIN_SERIES:
+            return sum(element.get_mass(monoisotopic) * count for element, count in self.composition.items())
+        return FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].get_mass(monoisotopic)
 
     @property
     def formula(self) -> str:
-        formula = FRAGMENT_ION_LOOKUP[self.series].formula
+        if self.series in SIDE_CHAIN_SERIES:
+            return composition_to_formula_string(self.composition)
+        formula = FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].formula
         if formula is None:
             raise ValueError(f"Formula not available for ion series: {self.series}")
         return formula
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self.series].composition
+        if self.series in SIDE_CHAIN_SERIES:
+            formula = SIDE_CHAIN_SERIES_FORMULA.get(self.series)
+            if formula is None:
+                raise ValueError(f"The {self.series} ion depends on the residue, so it needs a sequence")
+            return formula_to_composition(formula)
+        comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].composition
         if comp is None:
             raise ValueError(f"Composition not available for ion series: {self.series}")
         return comp
@@ -277,7 +297,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def reference(self) -> RefMolInfo:
-        return REFMOL_LOOKUP[self.name]
+        return lookup_reference(self.name)
 
     def mass(self, monoisotopic: bool = True) -> float:
         return self.reference.get_mass(monoisotopic)

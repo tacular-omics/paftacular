@@ -13,7 +13,7 @@ else:
         import peptacular as pt
     except ImportError:
         pt = None
-from tacular import ELEMENT_LOOKUP, ElementInfo
+from tacular import AA_LOOKUP, ELEMENT_LOOKUP, ElementInfo
 
 from .comps import (
     Adduct,
@@ -32,9 +32,26 @@ from .comps import (
     UnknownIon,
     composition_to_formula_string,
     composition_to_proforma_formula_string,
+    formula_to_composition,
 )
+from .comps.ions import SIDE_CHAIN_SERIES
 from .constants import INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
 from .util import format_number, validate_integer, validate_number
+
+# mzPAF 1.0.1 section 4.4.3 side-chain ions keep the other n-1 residues, the backbone
+# part of residue n and the beta-carbon substituent that is not lost. d keeps C2H3N,
+# w keeps C3H3O2 and v keeps C2H3NO2 (the whole side chain is lost).
+_SIDE_CHAIN_BACKBONE = {"d": "C2H3N", "w": "C3H3O2"}
+_BETA_SUBSTITUENT: dict[tuple[str, str], str] = {
+    **{(series, residue): "H" for series in ("d", "w") for residue in "CDEFHKLMNOQRSUWY"},
+    ("d", "V"): "CH3",
+    ("w", "V"): "CH3",
+    **{(f"{series}a", "T"): "OH" for series in ("d", "w")},
+    **{(f"{series}b", "T"): "CH3" for series in ("d", "w")},
+    **{(f"{series}a", "I"): "C2H5" for series in ("d", "w")},
+    **{(f"{series}b", "I"): "CH3" for series in ("d", "w")},
+}
+_V_ION_RESIDUES = "ACDEFGHIKLMNOPQRSTUVWY"
 
 
 def _require_peptacular() -> None:
@@ -104,7 +121,7 @@ class PafAnnotation:
                 IonSeries.C: pt.IonType.C,
                 IonSeries.X: pt.IonType.X,
                 IonSeries.Y: pt.IonType.Y,
-                IonSeries.Z: pt.IonType.Z,
+                IonSeries.Z: pt.IonType.Z_RADICAL,  # mzPAF z is the z-dot radical
             }
             return series_map.get(self.ion_type.series, None)
         elif isinstance(self.ion_type, PrecursorIon):
@@ -245,13 +262,57 @@ class PafAnnotation:
                 f"The embedded sequence {sequence!r} has {residues} residues but {ion.serialize(include_sequence=False)} spans {expected}. "
                 f"The calculation uses all {residues} residues.",
                 UserWarning,
-                stacklevel=3,
+                stacklevel=4,
             )
         return annot
 
+    def _side_chain_sequence(self, annot: pt.ProFormaAnnotation) -> tuple[pt.ProFormaAnnotation, Counter[ElementInfo]]:
+        """Split a side-chain ion into the residues it keeps whole and the composition of the rest.
+
+        Returns the sequence to sum (residue n included, and for v its modifications removed)
+        and the composition to add to it, which replaces residue n by the part the ion keeps.
+        """
+        ion = self.ion_type
+        assert isinstance(ion, PeptideIon)
+        series = str(ion.series)
+        index = len(annot) - 1 if series.startswith("d") else 0
+        residue = annot.stripped_sequence[index]
+        label = f"{series}{ion.position}"
+        if series == "v":
+            if residue not in _V_ION_RESIDUES:
+                raise ValueError(f"{label} is not defined for residue {residue}")
+            # The side chain leaves whole, so a modification on it leaves too.
+            annot = annot.copy()
+            annot.clear_internal_mod_at_index(index)
+            kept = formula_to_composition("C2H3NO2")
+        else:
+            substituent = _BETA_SUBSTITUENT.get((series, residue))
+            if substituent is None:
+                hint = f" Use {series}a or {series}b." if residue in "TI" and len(series) == 1 else ""
+                raise ValueError(f"{label} is not defined for residue {residue}.{hint}")
+            if annot.has_internal_mods_at_index(index):
+                raise ValueError(f"{label} is not defined when residue {residue} carries a modification")
+            kept = formula_to_composition(_SIDE_CHAIN_BACKBONE[series[0]])
+            kept.update(formula_to_composition(substituent))
+        kept.subtract(AA_LOOKUP[residue].composition)
+        return annot, kept
+
+    def _ion_parts(self, calculate_sequence: bool) -> tuple[pt.ProFormaAnnotation | None, Counter[ElementInfo] | None]:
+        """Return the sequence to add, and the ion composition when a side-chain ion replaces the ion offset."""
+        if calculate_sequence is not True or self.sequence is None:
+            return None, None
+        annot = self._parse_sequence(self.sequence)
+        if isinstance(self.ion_type, PeptideIon) and self.ion_type.series in SIDE_CHAIN_SERIES:
+            return self._side_chain_sequence(annot)
+        return annot, None
+
     def mass(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the mass of the annotated ion including modifications"""
-        base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
+        annot, ion_comp = self._ion_parts(calculate_sequence)
+        if ion_comp is not None:
+            base_mass = sum(element.get_mass(monoisotopic) * count for element, count in ion_comp.items())
+        else:
+            base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
 
         # Apply neutral losses/gains
         for loss in self.neutral_losses:
@@ -278,10 +339,8 @@ class PafAnnotation:
         for isotope in self.isotopes:
             base_mass += isotope.mass(monoisotopic=monoisotopic)
 
-        if calculate_sequence is True and self.sequence is not None:
-            annot = self._parse_sequence(self.sequence)
-            sequence_mass = annot.mass(monoisotopic=monoisotopic, ion_type="n")
-            base_mass += sequence_mass
+        if annot is not None:
+            base_mass += annot.mass(monoisotopic=monoisotopic, ion_type="n")
 
         return base_mass
 
@@ -293,9 +352,10 @@ class PafAnnotation:
     def comp(self, calculate_sequence: bool = True) -> Counter[ElementInfo]:
         """Calculate the elemental composition of the annotated ion including modifications"""
         comp: Counter[ElementInfo] = Counter()
+        annot, ion_comp = self._ion_parts(calculate_sequence)
 
         # Base ion composition
-        comp.update(self.ion_type.composition)
+        comp.update(self.ion_type.composition if ion_comp is None else ion_comp)
 
         # Apply neutral losses/gains
         for loss in self.neutral_losses:
@@ -321,10 +381,8 @@ class PafAnnotation:
         for isotope in self.isotopes:
             comp.update(isotope.composition)
 
-        if calculate_sequence is True and self.sequence is not None:
-            annot = self._parse_sequence(self.sequence)
-            seq_comp = annot.comp(ion_type="n")
-            comp.update(seq_comp)
+        if annot is not None:
+            comp.update(annot.comp(ion_type="n"))
 
         # Consume ordinary atoms when an isotope delta removes the monoisotope.
         # Keep genuine deficits when the annotation provides insufficient context.
