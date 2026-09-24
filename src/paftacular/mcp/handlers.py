@@ -137,7 +137,7 @@ def parse_annotations(request: ParseRequest) -> ParsedBatch:
 
 
 def contextualize(request: ContextRequest) -> pft.PafAnnotation:
-    annotation = pft.parse_single(request.annotation) if isinstance(request.annotation, str) else pft.PafAnnotation.from_dict(request.annotation)
+    annotation = pft.parse(request.annotation) if isinstance(request.annotation, str) else pft.PafAnnotation.from_dict(request.annotation)
     if request.analyte is not None:
         annotation = annotation.resolve(request.analyte)
     elif request.analytes is not None:
@@ -156,11 +156,11 @@ def serialize_annotation(request: SerializeRequest) -> AnnotationView:
 
 
 def build_annotation(request: BuildRequest) -> AnnotationView:
-    bare = pft.parse_single(request.ion)
+    bare = pft.parse(request.ion)
     if bare != pft.PafAnnotation(bare.ion_type):
         raise RequestError("invalid_input", "ion must be a bare ion. Supply modifiers through their separate fields.")
     annotation = pft.PafAnnotation(
-        ion_type=bare.ion_type,
+        bare.ion_type,
         charge=request.charge,
         analyte_reference=request.analyte_reference,
         is_auxiliary=request.is_auxiliary,
@@ -168,7 +168,7 @@ def build_annotation(request: BuildRequest) -> AnnotationView:
         isotopes=tuple(pft.IsotopeSpecification.parse(value) for value in request.isotopes),
         adducts=tuple(pft.Adduct.parse(value) for value in request.adducts),
         confidence=request.confidence,
-        mass_error=pft.MassError(request.mass_error, request.mass_error_unit) if request.mass_error is not None else None,
+        mass_error=pft.MassError(request.mass_error, unit=request.mass_error_unit) if request.mass_error is not None else None,
     )
     return view(pft.PafAnnotation.from_dict(annotation.to_dict()))
 
@@ -197,10 +197,11 @@ def calculate_ion(request: CalculationRequest) -> Calculation:
         mass_basis="charged_species" if complete else "offsets_and_modifiers",
     )
     operations: dict[str, tuple[str, Callable[[], Any]]] = {
-        "mass": ("mass_da", lambda: annotation.mass(calculate_sequence=complete)),
-        "mz": ("mz_th", lambda: annotation.mz(calculate_sequence=complete)),
+        "mass": ("mass_da", lambda: annotation.get_mass(calculate_sequence=complete)),
+        # Offset mode reports offset / |charge|. PafAnnotation.mz() needs a sequence and would raise.
+        "mz": ("mz_th", lambda: annotation.mz() if complete else annotation.get_mass(calculate_sequence=False) / abs(annotation.charge)),
         "formula": ("formula", lambda: annotation.formula(calculate_sequence=complete)),
-        "composition": ("composition", lambda: annotation.dict_composition(calculate_sequence=complete)),
+        "composition": ("composition", lambda: {str(element): count for element, count in annotation.comp(calculate_sequence=complete).items()}),
     }
     succeeded = 0
     for prop in dict.fromkeys(request.properties):

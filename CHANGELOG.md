@@ -2,6 +2,55 @@
 
 ## [Unreleased]
 
+### 2.0.0 (unreleased, breaking)
+
+Every rename and removal, with the replacement, is in the
+[migration guide](https://paftacular.readthedocs.io/en/latest/migration.html)
+(`docs/migration.rst`).
+
+#### Removed
+
+- `parse_single` (use `parse`), `parse_batch` (use `list(iter_parse(...))`), `mzPAFParser`
+  and `paftacular.parser.MZ_PAF_PARSER` (use the module functions).
+- `mass()` on `PafAnnotation`, every ion component and every modifier (use `get_mass()`).
+- `dict_composition()` (use `comp()`) and `as_dict()` on `PafAnnotation`, `NeutralLoss`,
+  `IsotopeSpecification` and `Adduct` (use `to_dict()`).
+- `mz(calculate_sequence=...)`. `mz()` now takes only `monoisotopic`.
+- The `hill_order` argument of `composition_to_proforma_formula_string`, which had no effect.
+- The class-level `_cache` dicts and `__new__` interning on ion components and modifiers.
+- `paftacular.constants.INTERNAL_SERIES_TO_DIFF` is now private.
+
+#### Changed
+
+- `parse(s)` returns exactly one `PafAnnotation` and raises `PafParseError` for comma input
+  or empty text. `parse_multi(s)` always returns a list.
+- `get_mass(*, monoisotopic=True)` replaces `mass()`, matching tacular 2.0. Optional
+  arguments are keyword-only on component constructors, the `make_*` factories, `comp`,
+  `formula`, `proforma_formula`, `serialize`, `NeutralLoss.serialize`, `format_number`,
+  `validate_integer` and `to_mzpaf`.
+- `to_mzpaf(include_annotation=)` is renamed `include_sequence=`.
+- `mz()` raises `PaftacularError` for a peptide, internal or precursor ion without a sequence,
+  instead of dividing the ion-type offset by the charge.
+- New `PaftacularError(ValueError)` base class. `PafParseError`, `PafUnknownReferenceError`
+  and every other error caused by user input use it, including errors from tacular and
+  peptacular that 1.x let escape.
+- Negative charge is allowed (`y2{DE}^-2`). `serialize()` writes `^-n`, and
+  `serialize(signed_charge=False)` writes the magnitude only.
+- `INTERNAL_MASS_DIFFS` is a read-only mapping.
+- `to_mzpaf` output, for peptacular 5 fragments: negative charge is kept, known neutral
+  deltas use canonical names (`-NH3`, `+HCOOH`, `-HCONH2`), equal mass deltas are folded
+  and rounded to 6 decimals, charge carriers are sorted, and a terminal modification on an
+  immonium residue becomes the immonium modification (`IP[Acetyl]`) so the mass is kept.
+- Requires `tacular>=2.0,<3`. The `peptacular`, `mcp` and `all` extras require
+  `peptacular>=5.0,<6`.
+
+#### Performance
+
+- Parsing is about 2x faster (a leaner parser, with components shared by
+  substring in bounded parser caches).
+- `to_mzpaf(...).serialize()` is about 11x faster with the sequence embedded and about 4x
+  faster without it (per-ion-type conversion plans, cached peptide ions and loss units).
+
 ## [1.4.0] (2026-09-23)
 
 ### Added

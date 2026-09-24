@@ -6,12 +6,13 @@ import time
 import tracemalloc
 
 import paftacular as p
+from paftacular import parser as paf_parser
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--count", type=int, default=10000)
-    args = parser.parse_args()
+    arg_parser = argparse.ArgumentParser(description=__doc__)
+    arg_parser.add_argument("--count", type=int, default=10000)
+    args = arg_parser.parse_args()
     cases = {
         "simple": "y5",
         "modified": "&2@y5-H2O+i13C[M+H+Na]^2/-0.55ppm*0.85",
@@ -28,10 +29,10 @@ def main():
         print(f"{name}: {statistics.median(samples):.2f} microseconds per record")
     tracemalloc.start()
     for index in range(args.count * 2):
-        p.parse_single(f"r[benchmark-{index}]")
+        p.parse(f"r[benchmark-{index}]")
     retained, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    print(f"Unique references: {len(p.ReferenceIon._cache)} cached, {retained / 1024:.0f} KiB retained, {peak / 1024:.0f} KiB peak")
+    print(f"Unique references: {len(paf_parser._ION_CACHE)} cached, {retained / 1024:.0f} KiB retained, {peak / 1024:.0f} KiB peak")
 
 
 if __name__ == "__main__":

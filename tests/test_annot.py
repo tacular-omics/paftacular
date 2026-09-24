@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 from tacular import ELEMENT_LOOKUP
 
-from paftacular import PafAnnotation, parse, parse_multi
+from paftacular import PafAnnotation, PaftacularError, parse, parse_multi
 from paftacular.comps import (
     Adduct,
     ChemicalFormula,
@@ -38,8 +38,8 @@ class TestPafAnnotationBasics:
         assert annotation.serialize() == "y3{PEP}"
 
     def test_charge_validation(self):
-        """Test that charge must be >= 1"""
-        with pytest.raises(ValueError, match="Charge must be an integer >= 1"):
+        """Charge must be a nonzero integer. Negative charge is allowed."""
+        with pytest.raises(PaftacularError, match="Charge must be a nonzero integer"):
             PafAnnotation(
                 ion_type=PeptideIon(series=IonSeries.B, position=2),
                 charge=0,
@@ -271,7 +271,7 @@ class TestMassCalculations:
         """Test basic mass calculation"""
         annotation = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
         # Should have some positive mass
-        assert annotation.mass() > 0
+        assert annotation.get_mass() > 0
 
     def test_mass_with_neutral_loss(self):
         """Test mass with neutral loss"""
@@ -281,7 +281,7 @@ class TestMassCalculations:
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
         )
         # Mass should be reduced by water
-        assert with_loss.mass() < base.mass()
+        assert with_loss.get_mass() < base.get_mass()
 
     def test_mass_with_charge(self):
         """Test mass calculation includes protonation"""
@@ -290,7 +290,7 @@ class TestMassCalculations:
             charge=2,
         )
         # Should add 2 protons
-        assert annotation.mass() > 0
+        assert annotation.get_mass() > 0
 
     @pytest.mark.parametrize(
         "amino_acid,literature_mz",
@@ -308,11 +308,11 @@ class TestMassCalculations:
     def test_immonium_mass_matches_literature(self, amino_acid, literature_mz):
         """ImmoniumIon mass must equal published immonium ion m/z values.
 
-        Regression test: ImmoniumIon.mass() previously (accidentally) used the
+        Regression test: ImmoniumIon.get_mass() previously (accidentally) used the
         internal by-fragment shift instead of the immonium-specific (-CO) shift.
         """
         annotation = PafAnnotation(ion_type=ImmoniumIon(amino_acid=amino_acid, modification=None), charge=1)
-        assert annotation.mass() == pytest.approx(literature_mz, abs=1e-3)
+        assert annotation.get_mass() == pytest.approx(literature_mz, abs=1e-3)
 
     def test_internal_by_fragment_mass_equals_residue_sum(self):
         """A 'by' internal fragment's mass shift must be zero (default, per mzPAF)."""
@@ -320,12 +320,12 @@ class TestMassCalculations:
 
         sequence = "PTI"
         proton_mass = 1.007276466812
-        residue_sum = sum(AA_LOOKUP[AminoAcids(c)].get_mass(True) for c in sequence) + proton_mass
+        residue_sum = sum(AA_LOOKUP[AminoAcids(c)].get_mass(monoisotopic=True) for c in sequence) + proton_mass
         annotation = PafAnnotation(
             ion_type=InternalFragment(start_position=3, end_position=5, sequence=sequence),
             charge=1,
         )
-        assert annotation.mass() == pytest.approx(residue_sum, rel=1e-9)
+        assert annotation.get_mass() == pytest.approx(residue_sum, rel=1e-9)
 
     def test_internal_fragment_respects_backbone_cleavage_type(self):
         """A non-default (e.g. 'ax') internal fragment must not silently reuse the 'by' shift.
@@ -337,8 +337,8 @@ class TestMassCalculations:
 
         by_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI")
         ax_frag = InternalFragment(start_position=3, end_position=5, sequence="PTI", nterm_ion_type=IonSeries.A, cterm_ion_type=IonSeries.X)
-        assert by_frag.mass() != ax_frag.mass()
-        assert ax_frag.mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(True) + by_frag.mass(), rel=1e-9)
+        assert by_frag.get_mass() != ax_frag.get_mass()
+        assert ax_frag.get_mass() == pytest.approx(FRAGMENT_ION_LOOKUP["ax"].get_mass(monoisotopic=True) + by_frag.get_mass(), rel=1e-9)
 
     def test_internal_fragment_requires_both_backbone_cleavage_types(self):
         """Setting only one of nterm_ion_type/cterm_ion_type must raise, not silently default."""
@@ -346,7 +346,7 @@ class TestMassCalculations:
             InternalFragment(start_position=1, end_position=2, nterm_ion_type=IonSeries.A)
 
     def test_immonium_composition_matches_mass_with_modification(self):
-        """A modified ImmoniumIon's composition-implied mass must match .mass().
+        """A modified ImmoniumIon's composition-implied mass must match .get_mass().
 
         Regression test: ImmoniumIon.composition accumulated the modification's
         composition into an empty Counter before the amino acid's own composition;
@@ -357,7 +357,7 @@ class TestMassCalculations:
 
         ion = ImmoniumIon(amino_acid=AminoAcids.A, modification="Deamidated")
         mass_from_composition = sum(elem.mass for elem, count in ion.composition.items() for _ in range(count))
-        assert mass_from_composition == pytest.approx(ion.mass(), abs=1e-6)
+        assert mass_from_composition == pytest.approx(ion.get_mass(), abs=1e-6)
 
 
 class TestComposition:
@@ -503,20 +503,19 @@ class TestSequenceProperty:
         assert annotation.sequence is None
 
 
-class TestAsDictMethod:
-    """Test as_dict method"""
+class TestToDictMethod:
+    """Test to_dict export"""
 
-    def test_as_dict_basic(self):
-        """Test as_dict returns proper dictionary"""
+    def test_to_dict_basic(self):
+        """to_dict returns a plain dictionary"""
         annotation = PafAnnotation(ion_type=PeptideIon(series=IonSeries.B, position=2))
-        result = annotation.as_dict()
+        result = annotation.to_dict()
         assert isinstance(result, dict)
         assert "ion" in result
-        assert "charge" in result
         assert result["charge"] == 1
 
-    def test_as_dict_with_all_fields(self):
-        """Test as_dict with all fields populated"""
+    def test_to_dict_with_all_fields(self):
+        """to_dict with all fields populated"""
         annotation = PafAnnotation(
             ion_type=PeptideIon(series=IonSeries.Y, position=5),
             analyte_reference=1,
@@ -525,10 +524,10 @@ class TestAsDictMethod:
             isotopes=(IsotopeSpecification(count=1),),
             adducts=(Adduct(count=1, base_formula="Na"),),
             charge=2,
-            mass_error=MassError(0.5, "ppm"),
+            mass_error=MassError(0.5, unit="ppm"),
             confidence=0.95,
         )
-        result = annotation.as_dict()
+        result = annotation.to_dict()
         assert result["analyte_reference"] == 1
         assert result["is_auxiliary"] is True
         assert len(result["neutral_losses"]) == 1
@@ -583,7 +582,7 @@ class TestCompositionMethods:
     def test_dict_composition(self):
         """Test dict_composition returns dict with string keys"""
         annotation = PafAnnotation(ion_type=PrecursorIon())
-        comp = annotation.dict_composition()
+        comp = {str(e): n for e, n in annotation.comp().items()}
         assert isinstance(comp, dict)
         for key in comp.keys():
             assert isinstance(key, str)
@@ -622,15 +621,15 @@ class TestMzMethod:
 
     def test_mz_basic(self):
         """Test m/z calculation"""
-        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=2)
+        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=2).resolve("PEPTIDE")
         mz = annotation.mz()
         assert isinstance(mz, float)
         assert mz > 0
 
     def test_mz_equals_mass_when_charge_one(self):
         """Test m/z equals mass when charge is 1"""
-        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=1)
-        mass = annotation.mass()
+        annotation = PafAnnotation(ion_type=PrecursorIon(), charge=1).resolve("PEPTIDE")
+        mass = annotation.get_mass()
         mz = annotation.mz()
         assert abs(mass - mz) < 0.01
 

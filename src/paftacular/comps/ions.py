@@ -2,9 +2,9 @@
 
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import peptacular as pt
@@ -15,8 +15,9 @@ else:
         pt = None
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, ElementInfo, RefMolInfo
 
-from ..constants import MAX_CACHE_SIZE, AminoAcids, IonSeries
-from ..util import validate_integer
+from ..constants import AminoAcids, IonSeries
+from ..errors import PaftacularError
+from ..util import to_enum, validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
 from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition, lookup_reference
 
@@ -24,6 +25,20 @@ from .util import composition_to_formula_string, composition_to_proforma_formula
 def _require_peptacular() -> None:
     if pt is None:
         raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
+
+
+def _validate_sequence(sequence: object) -> None:
+    if sequence is not None and (not isinstance(sequence, str) or not sequence):
+        raise PaftacularError("Sequence must be a nonempty string or None")
+
+
+def _modification(text: str) -> "pt.ModificationTags":
+    """Parse an immonium modification with peptacular, as a PaftacularError on failure."""
+    _require_peptacular()
+    try:
+        return pt.ModificationTags.from_string(text)
+    except ValueError as error:
+        raise PaftacularError(f"Invalid immonium modification {text!r}: {error}") from error
 
 
 # tacular keys whose composition differs from the mzPAF 1.0.1 section 4.4.3 table.
@@ -43,16 +58,19 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
 
     series: IonSeries
     position: int
+    _: KW_ONLY
     sequence: str | None = None  # ProForma sequence
 
     def __post_init__(self):
-        validate_integer(self.position, "Position", 1)
-        IonSeries(self.series)
+        validate_integer(self.position, "Position", minimum=1)
+        if type(self.series) is not IonSeries:
+            object.__setattr__(self, "series", to_enum(IonSeries, self.series, "ion series"))
+        _validate_sequence(self.sequence)
 
-    def mass(self, monoisotopic: bool = True) -> float:
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
         if self.series in SIDE_CHAIN_SERIES:
-            return sum(element.get_mass(monoisotopic) * count for element, count in self.composition.items())
-        return FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].get_mass(monoisotopic)
+            return sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in self.composition.items())
+        return FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].get_mass(monoisotopic=monoisotopic)
 
     @property
     def formula(self) -> str:
@@ -60,7 +78,7 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
             return composition_to_formula_string(self.composition)
         formula = FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].formula
         if formula is None:
-            raise ValueError(f"Formula not available for ion series: {self.series}")
+            raise PaftacularError(f"Formula not available for ion series: {self.series}")
         return formula
 
     @property
@@ -68,14 +86,14 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
         if self.series in SIDE_CHAIN_SERIES:
             formula = SIDE_CHAIN_SERIES_FORMULA.get(self.series)
             if formula is None:
-                raise ValueError(f"The {self.series} ion depends on the residue, so it needs a sequence")
+                raise PaftacularError(f"The {self.series} ion depends on the residue, so it needs a sequence")
             return formula_to_composition(formula)
         comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].composition
         if comp is None:
-            raise ValueError(f"Composition not available for ion series: {self.series}")
+            raise PaftacularError(f"Composition not available for ion series: {self.series}")
         return Counter(comp)  # tacular caches this Counter, so hand out a copy
 
-    def serialize(self, include_sequence: bool = True) -> str:
+    def serialize(self, *, include_sequence: bool = True) -> str:
         result = f"{self.series}{self.position}"
         if include_sequence and self.sequence:
             result += f"{{{self.sequence}}}"
@@ -85,14 +103,14 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "PeptideIon":
         """Parse peptide ion string like 'b5', 'y10{PEPTIDE}'"""
         from ..annotation import PafAnnotation
-        from ..parser import parse_single
+        from ..parser import parse
 
         try:
-            annotation = parse_single(s)
-        except ValueError as error:
-            raise ValueError(f"Invalid peptide ion: {s!r}") from error
+            annotation = parse(s)
+        except PaftacularError as error:
+            raise PaftacularError(f"Invalid peptide ion: {s!r}") from error
         if not isinstance(annotation.ion_type, PeptideIon) or annotation != PafAnnotation(annotation.ion_type):
-            raise ValueError(f"Invalid peptide ion component: {s!r}")
+            raise PaftacularError(f"Invalid peptide ion component: {s!r}")
         return annotation.ion_type
 
 
@@ -102,6 +120,7 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
 
     start_position: int
     end_position: int
+    _: KW_ONLY
     sequence: str | None = None
 
     # Optional backbone cleavage types.
@@ -112,16 +131,17 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
     def __post_init__(self):
         """Validate that backbone cleavage types are set together or not at all"""
         if (self.nterm_ion_type is None) != (self.cterm_ion_type is None):
-            raise ValueError(
+            raise PaftacularError(
                 "nterm_ion_type and cterm_ion_type must both be set or both be None, "
                 f"got nterm_ion_type={self.nterm_ion_type!r}, cterm_ion_type={self.cterm_ion_type!r}"
             )
-        validate_integer(self.start_position, "Start position", 1)
-        validate_integer(self.end_position, "End position", self.start_position)
+        validate_integer(self.start_position, "Start position", minimum=1)
+        validate_integer(self.end_position, "End position", minimum=self.start_position)
         if self.nterm_ion_type is not None and (
             self.nterm_ion_type not in (IonSeries.A, IonSeries.B, IonSeries.C) or self.cterm_ion_type not in (IonSeries.X, IonSeries.Y, IonSeries.Z)
         ):
-            raise ValueError("Internal cleavage types must be a/b/c and x/y/z")
+            raise PaftacularError("Internal cleavage types must be a/b/c and x/y/z")
+        _validate_sequence(self.sequence)
 
     @property
     def _fragment_ion_key(self) -> str:
@@ -130,7 +150,7 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         cterm = self.cterm_ion_type if self.cterm_ion_type is not None else IonSeries.Y
         return f"{nterm}{cterm}"
 
-    def serialize(self, include_sequence: bool = True) -> str:
+    def serialize(self, *, include_sequence: bool = True) -> str:
         # If using default yb cleavage, just use 'm'
         result = f"m{self.start_position}:{self.end_position}"
 
@@ -152,41 +172,43 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         """Parse internal fragment string like 'm5:10', 'm5:10{PEPTIDE}'"""
         from ..annotation import PafAnnotation
         from ..constants import InternalSeries
-        from ..parser import parse_single
+        from ..parser import parse
 
         try:
-            annotation = parse_single(s)
-        except ValueError as error:
-            raise ValueError(f"Invalid internal fragment: {s!r}") from error
+            annotation = parse(s)
+        except PaftacularError as error:
+            raise PaftacularError(f"Invalid internal fragment: {s!r}") from error
         ion = annotation.ion_type
         if not isinstance(ion, InternalFragment) or annotation != PafAnnotation(ion, neutral_losses=annotation.neutral_losses):
-            raise ValueError(f"Invalid internal fragment component: {s!r}")
+            raise PaftacularError(f"Invalid internal fragment component: {s!r}")
         if not annotation.neutral_losses:
             return ion
         correction: Counter[ElementInfo] = Counter()
         for loss in annotation.neutral_losses:
             correction.update(loss.composition)
         for series in InternalSeries:
-            candidate = InternalFragment(ion.start_position, ion.end_position, ion.sequence, IonSeries(series[0]), IonSeries(series[1]))
+            candidate = InternalFragment(
+                ion.start_position, ion.end_position, sequence=ion.sequence, nterm_ion_type=IonSeries(series[0]), cterm_ion_type=IonSeries(series[1])
+            )
             if candidate.composition == correction:
                 return candidate
-        raise ValueError("Neutral correction does not describe a supported internal cleavage")
+        raise PaftacularError("Neutral correction does not describe a supported internal cleavage")
 
-    def mass(self, monoisotopic: bool = True) -> float:
-        return FRAGMENT_ION_LOOKUP[self._fragment_ion_key].get_mass(monoisotopic)
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
+        return FRAGMENT_ION_LOOKUP[self._fragment_ion_key].get_mass(monoisotopic=monoisotopic)
 
     @property
     def formula(self) -> str:
         formula = FRAGMENT_ION_LOOKUP[self._fragment_ion_key].formula
         if formula is None:
-            raise ValueError("Formula not available for internal fragment")
+            raise PaftacularError("Formula not available for internal fragment")
         return formula
 
     @property
     def composition(self) -> Counter[ElementInfo]:
         comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self._fragment_ion_key].composition
         if comp is None:
-            raise ValueError("Composition not available for internal fragment")
+            raise PaftacularError("Composition not available for internal fragment")
         return Counter(comp)
 
 
@@ -195,23 +217,14 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     """Represents an immonium ion"""
 
     amino_acid: AminoAcids
+    _: KW_ONLY
     modification: str | None = None
 
-    _cache: ClassVar[dict[tuple, "ImmoniumIon"]] = {}
-
-    def __new__(cls, amino_acid: AminoAcids, modification: str | None = None):
-        """Create or retrieve cached instance"""
-        AminoAcids(amino_acid)
-        if modification is not None and (not isinstance(modification, str) or not modification):
-            raise ValueError("Modification must be a nonempty string")
-        key = (amino_acid, modification)
-        if key not in cls._cache:
-            # Evict oldest entry if cache is full
-            if len(cls._cache) >= MAX_CACHE_SIZE:
-                cls._cache.pop(next(iter(cls._cache)))
-            instance = object.__new__(cls)
-            cls._cache[key] = instance
-        return cls._cache[key]
+    def __post_init__(self):
+        if type(self.amino_acid) is not AminoAcids:
+            object.__setattr__(self, "amino_acid", to_enum(AminoAcids, self.amino_acid, "immonium amino acid"))
+        if self.modification is not None and (not isinstance(self.modification, str) or not self.modification):
+            raise PaftacularError("Modification must be a nonempty string")
 
     def serialize(self) -> str:
         result = f"I{self.amino_acid}"
@@ -225,26 +238,21 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         match = re.fullmatch(r"I([A-Z])(?:\[([^\]]+)\])?", s)
         if not match:
-            raise ValueError(f"Invalid immonium ion: '{s}'")
+            raise PaftacularError(f"Invalid immonium ion: '{s}'")
 
         aa_str, modification = match.groups()
-        return ImmoniumIon(amino_acid=AminoAcids(aa_str), modification=modification)
+        return ImmoniumIon(to_enum(AminoAcids, aa_str, "immonium amino acid"), modification=modification)
 
-    def mass(self, monoisotopic: bool = True) -> float:
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
         m = 0.0
         if self.modification is not None:
-            _require_peptacular()
-            mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
-            m += mod_tag.get_mass(monoisotopic)
+            m += _modification(self.modification).get_mass(monoisotopic=monoisotopic)
 
-        aa_mass = AA_LOOKUP[self.amino_acid].get_mass(monoisotopic)
+        aa_mass = AA_LOOKUP[self.amino_acid].get_mass(monoisotopic=monoisotopic)
         if aa_mass is None:
-            raise ValueError(f"Mass not available for amino acid: {self.amino_acid}")
-        else:
-            m += aa_mass
-
-        m += FRAGMENT_ION_LOOKUP["i"].get_mass(monoisotopic)
-
+            raise PaftacularError(f"Mass not available for amino acid: {self.amino_acid}")
+        m += aa_mass
+        m += FRAGMENT_ION_LOOKUP["i"].get_mass(monoisotopic=monoisotopic)
         return m
 
     @property
@@ -260,16 +268,14 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
         # exact-zero entries at the end -- negatives are kept so comp() stays consistent with mass().
         c: Counter[ElementInfo] = Counter()
         if self.modification is not None:
-            _require_peptacular()
-            mod_tag: pt.ModificationTags = pt.ModificationTags.from_string(self.modification)
-            mod_comp = mod_tag.get_composition()
+            mod_comp = _modification(self.modification).get_composition()
             if mod_comp is None:
-                raise ValueError(f"Composition not available for modification: {self.modification}")
+                raise PaftacularError(f"Composition not available for modification: {self.modification}")
             c.update(mod_comp)
 
         aa_comp = AA_LOOKUP[self.amino_acid].composition
         if aa_comp is None:
-            raise ValueError(f"Composition not available for amino acid: {self.amino_acid}")
+            raise PaftacularError(f"Composition not available for amino acid: {self.amino_acid}")
         c.update(aa_comp)
         c.update(FRAGMENT_ION_LOOKUP["i"].composition)
         return Counter({el: n for el, n in c.items() if n != 0})
@@ -281,30 +287,20 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
 
     name: str
 
-    _cache: ClassVar[dict[tuple, "ReferenceIon"]] = {}
-
-    def __new__(cls, name: str):
-        """Create or retrieve cached instance"""
-        if not isinstance(name, str) or not name:
-            raise ValueError("Reference name must be a nonempty string")
-        key = (name,)
-        if key not in cls._cache:
-            if len(cls._cache) >= MAX_CACHE_SIZE:
-                cls._cache.pop(next(iter(cls._cache)))
-            instance = object.__new__(cls)
-            cls._cache[key] = instance
-        return cls._cache[key]
+    def __post_init__(self):
+        if not isinstance(self.name, str) or not self.name:
+            raise PaftacularError("Reference name must be a nonempty string")
 
     @property
     def reference(self) -> RefMolInfo:
         return lookup_reference(self.name)
 
-    def mass(self, monoisotopic: bool = True) -> float:
-        return self.reference.get_mass(monoisotopic)
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
+        return self.reference.get_mass(monoisotopic=monoisotopic)
 
     @property
     def formula(self) -> str | None:
-        return self.reference.chemical_formula
+        return self.reference.formula
 
     @property
     def composition(self) -> Counter[ElementInfo]:
@@ -319,7 +315,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         match = re.fullmatch(r"r\[([^\]]+)\]", s)
         if not match:
-            raise ValueError(f"Invalid reference ion: '{s}'")
+            raise PaftacularError(f"Invalid reference ion: '{s}'")
         return ReferenceIon(name=match.group(1))
 
 
@@ -333,22 +329,11 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
 
     name: str
 
-    _cache: ClassVar[dict[tuple, "NamedCompound"]] = {}
+    def __post_init__(self):
+        if not isinstance(self.name, str) or not self.name:
+            raise PaftacularError("Compound name must be a nonempty string")
 
-    def __new__(cls, name: str):
-        """Create or retrieve cached instance"""
-        if not isinstance(name, str) or not name:
-            raise ValueError("Compound name must be a nonempty string")
-        key = (name,)
-        if key not in cls._cache:
-            # Evict oldest entry if cache is full
-            if len(cls._cache) >= MAX_CACHE_SIZE:
-                cls._cache.pop(next(iter(cls._cache)))
-            instance = object.__new__(cls)
-            cls._cache[key] = instance
-        return cls._cache[key]
-
-    def mass(self, monoisotopic: bool = True) -> float:
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
         raise NotImplementedError("Mass calculation for NamedCompound is not implemented")
 
     @property
@@ -364,7 +349,7 @@ class NamedCompound(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         match = re.fullmatch(r"_\{([^\}]+)\}", s)
         if not match:
-            raise ValueError(f"Invalid named compound: '{s}'")
+            raise PaftacularError(f"Invalid named compound: '{s}'")
         return NamedCompound(name=match.group(1))
 
 
@@ -387,6 +372,10 @@ class ChemicalFormula(Serializable, CompositionProvider, MassProvider):
 
     formula: str
 
+    def __post_init__(self):
+        if not isinstance(self.formula, str) or not self.formula:
+            raise PaftacularError("Formula must be a nonempty string")
+
     @property
     def proforma_formula(self) -> str:
         return self.formula
@@ -404,7 +393,7 @@ class ChemicalFormula(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         match = re.fullmatch(r"f\{([^\}]+)\}", s)
         if not match:
-            raise ValueError(f"Invalid chemical formula: '{s}'")
+            raise PaftacularError(f"Invalid chemical formula: '{s}'")
         return ChemicalFormula(formula=match.group(1))
 
 
@@ -420,6 +409,10 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
 
     smiles: str
 
+    def __post_init__(self):
+        if not isinstance(self.smiles, str) or not self.smiles:
+            raise PaftacularError("SMILES must be a nonempty string")
+
     def serialize(self) -> str:
         return f"s{{{self.smiles}}}"
 
@@ -429,7 +422,7 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
         s = s.strip()
         match = re.fullmatch(r"s\{([^\}]+)\}", s)
         if not match:
-            raise ValueError(f"Invalid SMILES compound: '{s}'")
+            raise PaftacularError(f"Invalid SMILES compound: '{s}'")
         return SMILESCompound(smiles=match.group(1))
 
     @cached_property
@@ -442,21 +435,24 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
         try:
             mol = pysmiles.read_smiles(self.smiles, explicit_hydrogen=True)
         except Exception as e:
-            raise ValueError(f"Invalid SMILES string '{self.smiles}': {e}") from e
+            raise PaftacularError(f"Invalid SMILES string '{self.smiles}': {e}") from e
 
         elem_counts: Counter[str] = Counter()
         if sum(mol.nodes[node_id].get("charge", 0) for node_id in mol.nodes()) != 0:
-            raise ValueError("mzPAF SMILES must describe a neutral molecule. Specify charge carriers using adducts")
+            raise PaftacularError("mzPAF SMILES must describe a neutral molecule. Specify charge carriers using adducts")
         for node_id in mol.nodes():
             elem = mol.nodes[node_id].get("element", "*")
             if elem == "*":
-                raise ValueError(f"Unknown element '*' in SMILES '{self.smiles}'. Ensure all atoms are properly specified.")
+                raise PaftacularError(f"Unknown element '*' in SMILES '{self.smiles}'. Ensure all atoms are properly specified.")
             isotope = mol.nodes[node_id].get("isotope")
             if isotope is not None:
                 elem = f"{isotope}{elem}"
             elem_counts[elem] += 1
 
-        return Counter({ELEMENT_LOOKUP[elem]: count for elem, count in elem_counts.items()})
+        try:
+            return Counter({ELEMENT_LOOKUP[elem]: count for elem, count in elem_counts.items()})
+        except KeyError as error:
+            raise PaftacularError(f"Unknown element in SMILES '{self.smiles}': {error}") from None
 
     @property
     def proforma_formula(self) -> str:
@@ -471,24 +467,14 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
 class UnknownIon(Serializable, CompositionProvider, MassProvider):
     """Represents an unknown/unannotated ion"""
 
+    _: KW_ONLY
     label: int | None = None
 
-    _cache: ClassVar[dict[tuple, "UnknownIon"]] = {}
+    def __post_init__(self):
+        if self.label is not None:
+            validate_integer(self.label, "Unknown ion label")
 
-    def __new__(cls, label: int | None = None):
-        """Create or retrieve cached instance"""
-        if label is not None:
-            validate_integer(label, "Unknown ion label")
-        key = (label,)
-        if key not in cls._cache:
-            # Evict oldest entry if cache is full
-            if len(cls._cache) >= MAX_CACHE_SIZE:
-                cls._cache.pop(next(iter(cls._cache)))
-            instance = object.__new__(cls)
-            cls._cache[key] = instance
-        return cls._cache[key]
-
-    def mass(self, monoisotopic: bool = True) -> float:
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
         raise NotImplementedError("Mass calculation for UnknownIon is not implemented")
 
     @property
@@ -508,26 +494,13 @@ class UnknownIon(Serializable, CompositionProvider, MassProvider):
             return UnknownIon(label=None)
         match = re.fullmatch(r"\?(\d+)", s)
         if not match:
-            raise ValueError(f"Invalid unknown ion: '{s}'")
+            raise PaftacularError(f"Invalid unknown ion: '{s}'")
         return UnknownIon(label=int(match.group(1)))
 
 
 @dataclass(frozen=True, slots=True)
 class PrecursorIon(Serializable, CompositionProvider, MassProvider):
     """Represents a precursor ion"""
-
-    _cache: ClassVar[dict[tuple, "PrecursorIon"]] = {}
-
-    def __new__(cls):
-        """Create or retrieve cached instance - singleton pattern"""
-        key = ()
-        if key not in cls._cache:
-            # Evict oldest entry if cache is full (won't happen for singleton but keeping pattern consistent)
-            if len(cls._cache) >= MAX_CACHE_SIZE:
-                cls._cache.pop(next(iter(cls._cache)))
-            instance = object.__new__(cls)
-            cls._cache[key] = instance
-        return cls._cache[key]
 
     def serialize(self) -> str:
         return "p"
@@ -537,11 +510,11 @@ class PrecursorIon(Serializable, CompositionProvider, MassProvider):
         """Parse precursor ion string 'p'"""
         s = s.strip()
         if s != "p":
-            raise ValueError(f"Invalid precursor ion: '{s}'")
+            raise PaftacularError(f"Invalid precursor ion: '{s}'")
         return PrecursorIon()
 
-    def mass(self, monoisotopic: bool = True) -> float:
-        return FRAGMENT_ION_LOOKUP["p"].get_mass(monoisotopic)
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
+        return FRAGMENT_ION_LOOKUP["p"].get_mass(monoisotopic=monoisotopic)
 
     @property
     def formula(self) -> str | None:

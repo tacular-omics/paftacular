@@ -8,11 +8,12 @@ Quickstart
 Install paftacular with ``pip install paftacular`` (see :doc:`installation` for
 extras).
 
-There are three parsing functions:
+There are two parsing functions:
 
-* ``parse``: Parses a single or multiple comma-separated mzPAF annotations. Returns a single ``PafAnnotation`` or a list of them.
-* ``parse_multi``: Parses multiple comma-separated mzPAF annotations. Always returns a list of ``PafAnnotation``.
-* ``parse_single``: Parses a single mzPAF annotation. Returns a single ``PafAnnotation``. Raises ValueError if multiple annotations are provided.
+* ``parse``: Parses exactly one mzPAF annotation and returns a ``PafAnnotation``. Raises ``PafParseError`` for zero or several annotations.
+* ``parse_multi``: Parses comma-separated mzPAF annotations. Always returns a list of ``PafAnnotation``.
+
+Every error caused by bad input is a ``PaftacularError`` (a ``ValueError``).
 
 .. testcode::
 
@@ -31,7 +32,7 @@ There are three parsing functions:
 .. testcode::
 
    # Parse with modifications
-   ann = pft.parse_single("y5-H2O^2/1.2ppm*0.95")
+   ann = pft.parse("y5-H2O^2/1.2ppm*0.95")
    print(ann.charge)
    print(ann.mass_error.value)
    print(ann.confidence)
@@ -42,16 +43,17 @@ There are three parsing functions:
    1.2
    0.95
 
-Compute the mass of an annotated ion:
+Compute the mass of an annotated ion. Without a sequence, ``get_mass()`` is the
+ion offset only, and ``mz()`` needs a sequence (embedded or from ``resolve()``):
 
 .. testcode::
 
    ann = pft.parse("y5")
-   print(ann.mass())
+   print(ann.get_mass())
 
 .. testoutput::
 
-   19.017841466812
+   19.017841466621
 
 Serialize back to mzPAF:
 

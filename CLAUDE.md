@@ -5,12 +5,13 @@
 paftacular parses and serializes HUPO-PSI mzPAF 1.0.1 peak annotations (`y5-H2O^2/1.2ppm*0.95`)
 and calculates ion masses, m/z and elemental compositions. Users are people reading or writing
 fragment annotations from spectral libraries and search-engine output. Python 3.12 or newer.
-Imported as `pft` by convention. Current version: 1.4.0.
+Imported as `pft` by convention. Current release: 1.4.0. `main` carries the unreleased 2.0.0
+breaking major (see `docs/migration.rst`).
 
 Place in the tacular-omics graph (tier 1):
 
-- **Upstream:** `tacular` (required, `>=1.2,<2`) supplies element, amino-acid, modification
-  and fragment-ion lookups. `peptacular` (`>=4.2,<5`, extra `peptacular`) is optional and
+- **Upstream:** `tacular` (required, `>=2.0,<3`) supplies element, amino-acid, modification
+  and fragment-ion lookups. `peptacular` (`>=5.0,<6`, extra `peptacular`) is optional and
   supplies ProForma sequence masses, `resolve()` and `to_mzpaf()`. `pysmiles` (extra `smiles`)
   is optional, for `s{...}` ions. The `mcp` extra adds the official MCP SDK v2 and peptacular.
   `all` installs everything.
@@ -54,14 +55,14 @@ installs with each extra combination at minimum and newer dependency versions.
 src/paftacular/
   __init__.py      public names and __version__ (hatch reads the version from here)
   annotation.py    frozen PafAnnotation: make_* factories, mass/mz/comp/formula, serialize, resolve, to/from_dict
-  parser.py        mzPAFParser, parse/parse_single/parse_multi, iter_parse/parse_batch, ParseResult
+  parser.py        parse/parse_multi, iter_parse, ParseResult, bounded per-substring component caches
   syntax.py        annotation_spans(): delimiter-aware comma splitting, incl. nested ProForma in {...}
-  errors.py        PafParseError(ValueError) with zero-based position and annotation_index
+  errors.py        PaftacularError(ValueError) base, PafParseError (zero-based position), PafUnknownReferenceError
   resolution.py    resolve(): select the fragment sequence from a full ProForma analyte
   serialization.py versioned to_dict/from_dict (schema_version 1), strict field validation
   conversion.py    to_mzpaf(): peptacular Fragment -> PafAnnotation
   constants.py     enums, grammar regexes (_ATOM_TOKEN, FULL_PAF_PATTERN), InternalSeries, INTERNAL_MASS_DIFFS, MAX_CACHE_SIZE
-  util.py          validate_number, format_number, validate_integer, parse_formula
+  util.py          validate_number, format_number, validate_integer, parse_formula, to_enum
   comps/base.py    Serializable (shared __reduce__), MassProvider, CompositionProvider, ScalableComposition
   comps/ions.py    PeptideIon, InternalFragment, ImmoniumIon, ReferenceIon, NamedCompound, ChemicalFormula, SMILESCompound, UnknownIon, PrecursorIon
   comps/modifiers.py MassError, IsotopeSpecification, NeutralLoss, Adduct
@@ -70,7 +71,7 @@ src/paftacular/
 ```
 
 Data flow: text -> `syntax.annotation_spans` finds annotation boundaries -> each span is
-matched whole against `FULL_PAF_PATTERN` -> `mzPAFParser._build_annotation` builds the ion
+matched whole against `FULL_PAF_PATTERN` -> `parser._build_annotation` builds the ion
 component plus modifier tuples -> frozen `PafAnnotation`. Calculation sums the ion component
 (offset only, or sequence residues when an embedded or resolved sequence exists), neutral
 losses, isotopes and adducts, then charge. `serialize()` rebuilds text from the components.
@@ -79,18 +80,17 @@ losses, isotopes and adducts, then charge. `serialize()` rebuilds text from the 
 
 Everything is exported from `paftacular/__init__.py`:
 
-- **Parsing:** `parse(s)` returns one `PafAnnotation` or a list (a list for comma input and
-  for `""`). `parse_single(s)` requires exactly one. `parse_multi(s)` always returns a list.
-  `iter_parse(records)` yields `ParseResult` lazily. `parse_batch(records)` collects them.
-  `mzPAFParser` is the class behind these. `PafParseError`, `ParseResult` (`.ok`, `.index`,
+- **Parsing:** `parse(s)` returns exactly one `PafAnnotation` (raises otherwise).
+  `parse_multi(s)` always returns a list. `iter_parse(records)` yields `ParseResult` lazily.
+  `PaftacularError`, `PafParseError`, `ParseResult` (`.ok`, `.index`,
   `.text`, `.annotations`, `.error`).
 - **Annotation:** `PafAnnotation` (frozen, hashable). Factories `make_peptide`,
   `make_internal`, `make_immonium`, `make_reference`, `make_named_compound`, `make_formula`,
   `make_smiles`, `make_unknown`, `make_precursor`, all taking `CommonAnnotationParams`
   (`neutral_losses`, `isotopes`, `adducts` as strings, `charge`, `mass_error`,
-  `mass_error_unit`, `confidence`, `is_auxiliary`, `analyte_reference`). Methods `mass`, `mz`,
-  `comp`, `dict_composition`, `formula`, `proforma_formula`, `serialize`, `as_dict`,
-  `to_dict`, `from_dict`, `resolve`, `parse`. Properties `sequence`, `peptacular_ion_type`.
+  `mass_error_unit`, `confidence`, `is_auxiliary`, `analyte_reference`). Methods `get_mass`,
+  `mz`, `comp`, `formula`, `proforma_formula`, `serialize`, `to_dict`, `from_dict`,
+  `resolve`, `parse`. Optional arguments are keyword-only everywhere. Properties `sequence`, `peptacular_ion_type`.
 - **Ion components** (`ann.ion_type`): `PeptideIon`, `InternalFragment`, `ImmoniumIon`,
   `ReferenceIon`, `NamedCompound`, `ChemicalFormula`, `SMILESCompound`, `UnknownIon`,
   `PrecursorIon`. `IonType` is their union type alias.
@@ -107,8 +107,8 @@ Everything is exported from `paftacular/__init__.py`:
 - Full type annotations, checked with `ty check src`. Ships `py.typed`. Ruff line length 160,
   rules E W F I B UP (E741 ignored).
 - Components and `PafAnnotation` are frozen dataclasses. Transformations return new objects.
-- Errors: parse failures raise `PafParseError` (a `ValueError`). Semantic failures raise
-  `ValueError`. Unsupported calculations (unknown ions, named compounds) raise
+- Errors: every error from user input is a `PaftacularError` (a `ValueError`). Parse failures
+  raise its subclass `PafParseError`. Wrap errors from tacular and peptacular. Unsupported calculations (unknown ions, named compounds) raise
   `NotImplementedError`. Missing optional dependencies raise `ImportError` naming the extra.
 - No logging in the core. `mcp/handlers.py` logs unexpected failures to stderr only.
 - Tests live in `tests/test_*.py`, flat. Optional-dependency tests use
@@ -120,15 +120,15 @@ Everything is exported from `paftacular/__init__.py`:
 
 Scientific conventions:
 
-- `mass()` returns the charged-species mass. `comp()` counts nuclei. To compare summed element
-  masses with `mass()`, subtract charge times the electron mass. Upstream ion offsets are
+- `get_mass()` returns the charged-species mass. `comp()` counts nuclei. To compare summed element
+  masses with `get_mass()`, subtract charge times the electron mass. Upstream ion offsets are
   rounded, so independent checks need an absolute tolerance near one microdalton, with
   relative tolerance disabled.
 - Without an embedded or resolved sequence, peptide, internal and precursor calculations
   return only the ion offset and modifiers (`y5` gives 19.0178, `b5` gives 1.0073). Preserve
-  this. Use `resolve()` to select the complete fragment sequence from an analyte.
+  this. `mz()` raises for those instead, because an offset has no meaningful m/z. Use `resolve()` to select the complete fragment sequence from an analyte.
 - The `{...}` in `y3{PEP}` is the fragment's own sequence. It is used verbatim. A length
-  that differs from the position (`y3{PEPTIDE}`) makes `mass()`/`comp()` emit a `UserWarning`
+  that differs from the position (`y3{PEPTIDE}`) makes `get_mass()`/`comp()` emit a `UserWarning`
   (mzPAF 4.4.3: MUST NOT be shorter, SHOULD NOT be longer) and still uses all seven residues.
 - Embedded sequences contribute residue mass and composition through peptacular
   `ion_type="n"`, because the default precursor composition would add an extra water on top
@@ -139,9 +139,9 @@ Scientific conventions:
 - A generic `+i` uses the carbon-13 minus carbon-12 shift. Add contributions to counters
   rather than overwriting them when isotope keys coincide. At the annotation level, consume
   ordinary monoisotopic atoms when available and keep genuine deficits when sequence context
-  is absent. `+iA` (average isotopomer) raises `ValueError` on mass and composition.
-- `formula()` raises `ValueError` when the composition mixes signs (for example an unresolved
-  `y5+i` or `y5-[Adenine]`). `dict_composition()` returns the signed counts and
+  is absent. `+iA` (average isotopomer) raises `PaftacularError` on mass and composition.
+- `formula()` raises `PaftacularError` when the composition mixes signs (for example an
+  unresolved `y5+i` or `y5-[Adenine]`). `comp()` returns the signed counts and
   `proforma_formula()` writes negative counts (`C5H11N2O-1`).
 - Counter addition and unary plus discard negative entries. Accumulate with `update()` and
   preserve genuine negative counts from modifications.
@@ -167,22 +167,25 @@ Parser and interchange:
 - Use `format_number()` for grammar-compatible decimal output without truncating float
   precision. Scientific notation is not part of the grammar (`y5/1e-3` is rejected). Mass
   losses print at least five decimals (`y5-17.03` serializes as `y5-17.03000`).
+- Charge is a nonzero integer. Negative charge removes protons and serializes as `^-n`
+  (`serialize(signed_charge=False)` writes `^n`). `mz()` divides by the absolute charge.
 - Component parsers consume the entire input. Zero charge, nonintegral positions and reversed
   ranges must fail. Resolution checks bounds against the analyte.
-- `to_dict()` / `from_dict()` use schema version 1 and reject unknown fields. Keep `as_dict()`
-  compatible as a display format. Resolved context is stored in structured export and is
+- `to_dict()` / `from_dict()` use schema version 1 and reject unknown fields. Resolved context is stored in structured export and is
   deliberately absent from mzPAF text.
 - Optional dependency paths must fail with actionable install instructions. Importing and
   parsing the core must work without any extra.
 
 Caching:
 
-- `ImmoniumIon`, `ReferenceIon`, `NamedCompound`, `UnknownIon`, `PrecursorIon`,
-  `IsotopeSpecification`, `NeutralLoss` and `Adduct` cache constructor instances in a
-  class-level dict bounded by `MAX_CACHE_SIZE` (10 000, FIFO eviction). `PeptideIon`,
-  `InternalFragment` and `PafAnnotation` are not cached. Validate arguments before caching so
-  an invalid call cannot mutate a cached object. `Serializable.__reduce__` rebuilds through the
-  constructor for pickle and copy. Measure with `just benchmark` before expanding caching.
+- Constructors build fresh objects. There is no `__new__` interning. The parser keeps bounded
+  per-substring caches (`parser._ION_CACHE`, `_LOSS_CACHE`, `_ISOTOPE_CACHE`, `_ADDUCT_CACHE`,
+  `_MASS_ERROR_CACHE`, each `MAX_CACHE_SIZE` = 10 000 with FIFO eviction), so repeated text
+  shares one immutable component. `parser._clear_caches()` empties them (tests use it). Never
+  mutate a cached component: `SMILESCompound.composition` is a `cached_property` on a shared
+  object. `conversion.py` caches per-ion-type plans, peptide ions and loss units with
+  `lru_cache`. `Serializable.__reduce__` rebuilds through the constructor for pickle and copy.
+  Measure with `just benchmark` before expanding caching.
 
 MCP (`paftacular[mcp]`, console script `paftacular-mcp`, also `python -m paftacular.mcp`):
 

@@ -1,6 +1,8 @@
-# Table from the specification showing differences from yb
+"""Enums, grammar regexes and the internal-fragment correction table."""
+
 import re
 from enum import StrEnum
+from types import MappingProxyType
 
 
 class InternalSeries(StrEnum):
@@ -17,29 +19,34 @@ class InternalSeries(StrEnum):
     CZ = "cz"
 
 
-INTERNAL_SERIES_TO_DIFF: dict[InternalSeries, str | None] = {
-    InternalSeries.AX: None,
-    InternalSeries.BX: "+CO",
-    InternalSeries.CX: "+CHNO",
-    InternalSeries.AY: "-CO",
-    InternalSeries.BY: None,
-    InternalSeries.CY: "+NH",
-    InternalSeries.AZ: "-CHNO",
-    InternalSeries.BZ: "-NH",
-    InternalSeries.CZ: None,
-}
+# Table from the specification (section 4.4.4) showing differences from by.
+_INTERNAL_SERIES_TO_DIFF: MappingProxyType[InternalSeries, str | None] = MappingProxyType(
+    {
+        InternalSeries.AX: None,
+        InternalSeries.BX: "+CO",
+        InternalSeries.CX: "+CHNO",
+        InternalSeries.AY: "-CO",
+        InternalSeries.BY: None,
+        InternalSeries.CY: "+NH",
+        InternalSeries.AZ: "-CHNO",
+        InternalSeries.BZ: "-NH",
+        InternalSeries.CZ: None,
+    }
+)
 
-INTERNAL_MASS_DIFFS: dict[tuple[str, str], None | str] = {
-    ("a", "x"): None,  #  Default, no difference
-    ("b", "x"): "+CO",
-    ("c", "x"): "+CHNO",
-    ("a", "y"): "-CO",
-    ("b", "y"): None,  # Default, no difference
-    ("c", "y"): "+NH",
-    ("a", "z"): "-CHNO",
-    ("b", "z"): "-NH",
-    ("c", "z"): None,  # No difference
-}
+INTERNAL_MASS_DIFFS: MappingProxyType[tuple[str, str], None | str] = MappingProxyType(
+    {
+        ("a", "x"): None,  #  Default, no difference
+        ("b", "x"): "+CO",
+        ("c", "x"): "+CHNO",
+        ("a", "y"): "-CO",
+        ("b", "y"): None,  # Default, no difference
+        ("c", "y"): "+NH",
+        ("a", "z"): "-CHNO",
+        ("b", "z"): "-NH",
+        ("c", "z"): None,  # No difference
+    }
+)
 
 
 class IonSeries(StrEnum):
@@ -114,7 +121,7 @@ class AminoAcids(StrEnum):
 # The trailing element/count runs are POSSESSIVE (`*+`, py3.11+): [A-Z] overlaps [A-Za-z0-9], so a
 # plain `[A-Za-z0-9]*` under the surrounding `_ATOM_TOKEN+` is a classic `(a+)+`-style catastrophic-
 # backtracking (ReDoS) shape -- an anchored non-match on a long single-letter run (e.g. "y1+HHHH...!"
-# via mzPAFParser.parse) would hang. Nothing that legitimately follows an atom run starts with an
+# via parse) would hang. Nothing that legitimately follows an atom run starts with an
 # alnum char, so refusing to give characters back never rejects a valid annotation.
 _ATOM_TOKEN = r"(?:\[[0-9]+[A-Z][A-Za-z0-9]*+\]|[A-Z][A-Za-z0-9]*+)"
 
@@ -140,6 +147,7 @@ NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[{_REFERENCE_NAME}(
 ADDUCT_REGEX_PATTERN = rf"([+-])(\d*)({_ATOM_TOKEN}+)"
 
 
+# Bound for the parser's component caches (keyed by annotation substring).
 MAX_CACHE_SIZE = 10_000
 
 
@@ -159,7 +167,7 @@ _SMILES = r"(?:s\{(?P<smiles>[^\}]+)\})"
 _UNKNOWN = r"(?:(?P<unannotated>\?)(?P<unannotated_label>\d+)?)"
 
 # Combine all ion types
-_ION_TYPES = f"(?:{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_REFERENCE}|{_FORMULA}|{_NAMED}|{_SMILES}|{_UNKNOWN})"
+_ION_TYPES = f"(?P<ion>{_PEPTIDE_SERIES}|{_INTERNAL}|{_PRECURSOR}|{_IMMONIUM}|{_REFERENCE}|{_FORMULA}|{_NAMED}|{_SMILES}|{_UNKNOWN})"
 
 # Modifiers
 _NEUTRAL_LOSSES = rf"(?P<neutral_losses>(?:{NEUTRAL_LOSS_REGEX_PATTERN})+)?"

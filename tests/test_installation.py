@@ -26,13 +26,13 @@ def test_optional_installation():
         if expected is not None:
             assert available == (extra in selected)
         text = "y2{PE}" if extra == "peptacular" else "s{C}"
-        annotation = p.parse_single(text)
+        annotation = p.parse(text)
         assert annotation.serialize() == text
         if available:
-            assert annotation.mass() > 0
+            assert annotation.get_mass() > 0
         else:
             with pytest.raises(ImportError, match=package):
-                annotation.mass()
+                annotation.get_mass()
 
     if expected is not None:
         assert (importlib.util.find_spec("mcp") is not None) == ("mcp" in selected)
@@ -52,7 +52,7 @@ def test_mcp_import_boundary_and_cli():
 
 
 def test_core_operations_need_no_extras():
-    annotation = p.parse_single("f{C2H4}+i")
+    annotation = p.parse("f{C2H4}+i")
     assert annotation.formula() == "C[13C]H4"
     assert p.PafAnnotation.from_dict(annotation.to_dict()) == annotation
-    assert [result.ok for result in p.parse_batch(["y2", "bad"])] == [True, False]
+    assert [result.ok for result in p.iter_parse(["y2", "bad"])] == [True, False]

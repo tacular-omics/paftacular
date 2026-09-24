@@ -131,7 +131,7 @@ def test_bundled_tool_examples():
 )
 def test_calculation_matches_core(annotation, analyte):
     request = {"annotation": annotation, "properties": ["mass", "mz", "formula", "composition"]}
-    expected = pft.parse_single(annotation)
+    expected = pft.parse(annotation)
     if analyte is not None:
         request["analyte"] = analyte
         expected = expected.resolve(analyte)
@@ -139,10 +139,10 @@ def test_calculation_matches_core(annotation, analyte):
     assert not result.is_error
     data = result.structured_content["data"]
     assert data["status"] == "success"
-    assert data["mass_da"] == expected.mass()
+    assert data["mass_da"] == expected.get_mass()
     assert data["mz_th"] == expected.mz()
     assert data["formula"] == expected.formula()
-    assert data["composition"] == expected.dict_composition()
+    assert data["composition"] == {str(e): n for e, n in expected.comp().items()}
     assert data["mass_basis"] == "charged_species"
 
 
@@ -158,7 +158,7 @@ def test_resolution_interchange_and_references():
     calculated = call("calculate_ion", {"annotation": data["annotation"]})
     assert not calculated.is_error
     assert calculated.structured_content["data"]["context_source"] == "resolved"
-    assert calculated.structured_content["data"]["mz_th"] == pft.parse_single("y3^2").resolve("PEPTIDE").mz()
+    assert calculated.structured_content["data"]["mz_th"] == pft.parse("y3^2").resolve("PEPTIDE").mz()
 
 
 def test_builder():
@@ -167,10 +167,10 @@ def test_builder():
         {"ion": "y3", "charge": 2, "neutral_losses": ["-H2O"], "isotopes": ["+i"], "mass_error": 1.2, "mass_error_unit": "ppm", "confidence": 0.9},
     )
     assert not result.is_error
-    annotation = pft.parse_single(result.structured_content["data"]["canonical"])
+    annotation = pft.parse(result.structured_content["data"]["canonical"])
     assert annotation.charge == 2
     assert annotation.neutral_losses[0] == pft.NeutralLoss.parse("-H2O")
-    assert annotation.mass_error == pft.MassError(1.2, "ppm")
+    assert annotation.mass_error == pft.MassError(1.2, unit="ppm")
     assert annotation.confidence == 0.9
     assert call("build_annotation", {"ion": "y3^2"}).is_error
 
@@ -204,7 +204,7 @@ def test_explicit_offsets():
     result = call("calculate_ion", {"annotation": "y3{IDE}", "mode": "offsets"})
     data = result.structured_content["data"]
     assert not result.is_error
-    assert data["mass_da"] == pft.parse_single("y3").mass()
+    assert data["mass_da"] == pft.parse("y3").get_mass()
     assert data["mass_basis"] == "offsets_and_modifiers"
     assert data["context_source"] == "ignored"
     assert call("calculate_ion", {"annotation": "f{H2}", "mode": "offsets"}).is_error
@@ -250,7 +250,7 @@ def test_generate_fragments():
     assert rows[-1]["result"]["ion"]["canonical"] == "y3^2"
     for row in rows:
         data = row["result"]
-        core = pft.parse_single(data["ion"]["canonical"]).resolve("[Acetyl]-PEPTIDE")
+        core = pft.parse(data["ion"]["canonical"]).resolve("[Acetyl]-PEPTIDE")
         assert data["mz_th"] == core.mz()
     assert call("generate_fragments", {"analyte": "A" * 60}).is_error
     assert call("generate_fragments", {"analyte": "PEPTIDE", "positions": [7]}).is_error
@@ -258,7 +258,7 @@ def test_generate_fragments():
 
 @pytest.mark.parametrize("unit,tolerance", [("ppm", 2.0), ("Th", 0.001)])
 def test_matching(unit, tolerance):
-    theoretical = pft.parse_single("y3^2").resolve("PEPTIDE").mz()
+    theoretical = pft.parse("y3^2").resolve("PEPTIDE").mz()
     result = call(
         "match_mz",
         {
@@ -317,7 +317,11 @@ def test_smiles_isotope_calculation():
 
 
 def test_missing_smiles_dependency(monkeypatch):
+    from paftacular import parser
+
     monkeypatch.setitem(sys.modules, "pysmiles", None)
+    # Parsed ions are shared by the parser cache, so drop any s{C} with a computed composition.
+    parser._clear_caches()
     result = call("calculate_ion", {"annotation": "s{C}"})
     assert result.is_error
     assert result.structured_content["data"]["property_errors"]["mass"]["code"] == "missing_dependency"

@@ -5,17 +5,25 @@ from functools import lru_cache
 
 from tacular import ELEMENT_LOOKUP, REFMOL_LOOKUP, UNIMOD_LOOKUP, ElementInfo, RefMolInfo
 
-from ..errors import PafUnknownReferenceError
+from ..errors import PaftacularError, PafUnknownReferenceError
 from ..util import parse_formula
 
 
-def formula_to_composition(formula: str) -> Counter[ElementInfo]:
-    """Convert chemical formula string to elemental composition"""
+@lru_cache(maxsize=4096)
+def _formula_items(formula: str) -> tuple[tuple[ElementInfo, int], ...]:
     elem_counts: Counter[str] = parse_formula(formula)
-    return Counter({ELEMENT_LOOKUP[elem]: count for elem, count in elem_counts.items()})
+    try:
+        return tuple((ELEMENT_LOOKUP[elem], count) for elem, count in elem_counts.items())
+    except KeyError as error:
+        raise PaftacularError(f"Unknown element or isotope in formula {formula!r}: {error}") from None
 
 
-def composition_to_proforma_formula_string(comp: Counter[ElementInfo], hill_order: bool = True) -> str:
+def formula_to_composition(formula: str) -> Counter[ElementInfo]:
+    """Convert chemical formula string to elemental composition (a new Counter each call)."""
+    return Counter(dict(_formula_items(formula)))
+
+
+def composition_to_proforma_formula_string(comp: Counter[ElementInfo]) -> str:
     """Convert composition to ProForma-style formula string"""
     keys = list(sorted(comp.keys()))
     comps = []
@@ -35,7 +43,7 @@ def composition_to_formula_string(comp: Counter[ElementInfo]) -> str:
     all_positive = all(count >= 0 for count in comp.values())
     all_negative = all(count <= 0 for count in comp.values())
     if not (all_positive or all_negative):
-        raise ValueError("Composition must have all positive or all negative counts to convert to formula string")
+        raise PaftacularError("Composition must have all positive or all negative counts to convert to formula string")
 
     keys = list(sorted(comp.keys()))
     comps = []
@@ -71,8 +79,8 @@ def lookup_reference(name: str) -> RefMolInfo:
         name=name,
         label_type="Unimod",
         molecule_type="modification",
-        chemical_formula=composition_to_formula_string(composition),
-        monoisotopic_mass=sum(element.get_mass(True) * count for element, count in composition.items()),
-        average_mass=sum(element.get_mass(False) * count for element, count in composition.items()),
+        formula=composition_to_formula_string(composition),
+        monoisotopic_mass=sum(element.get_mass(monoisotopic=True) * count for element, count in composition.items()),
+        average_mass=sum(element.get_mass(monoisotopic=False) * count for element, count in composition.items()),
         dict_composition={str(element): count for element, count in composition.items()},
     )

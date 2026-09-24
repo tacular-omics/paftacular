@@ -3,7 +3,8 @@ from __future__ import annotations
 import warnings
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
+from functools import lru_cache
 from typing import TYPE_CHECKING, Literal, TypedDict, Unpack
 
 if TYPE_CHECKING:
@@ -14,6 +15,7 @@ else:
     except ImportError:
         pt = None
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, ElementInfo
+from tacular.constants import ELECTRON_MASS, PROTON_MASS
 
 from .comps import (
     Adduct,
@@ -35,8 +37,9 @@ from .comps import (
     formula_to_composition,
 )
 from .comps.ions import SIDE_CHAIN_SERIES
-from .constants import INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
-from .util import format_number, validate_integer, validate_number
+from .constants import _INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
+from .errors import PaftacularError
+from .util import format_number, to_enum, validate_integer, validate_number
 
 # mzPAF 1.0.1 section 4.4.3 side-chain ions keep the other n-1 residues, the backbone
 # part of residue n and the beta-carbon substituent that is not lost. d keeps C2H3N,
@@ -54,9 +57,29 @@ _BETA_SUBSTITUENT: dict[tuple[str, str], str] = {
 _V_ION_RESIDUES = "ACDEFGHIKLMNOPQRSTUVWY"
 
 
+_HYDROGEN = ELEMENT_LOOKUP["H"]
+
+
 def _require_peptacular() -> None:
     if pt is None:
         raise ImportError("peptacular is required for this feature. Install it with: pip install paftacular[peptacular]")
+
+
+@lru_cache(maxsize=1024)
+def _parse_proforma_cached(sequence: str) -> pt.ProFormaAnnotation:
+    try:
+        return pt.parse(sequence)
+    except ValueError as error:
+        raise PaftacularError(f"Invalid ProForma sequence {sequence!r}: {error}") from error
+
+
+def _parse_proforma(sequence: str) -> pt.ProFormaAnnotation:
+    """Parse a ProForma sequence with peptacular.
+
+    The result is shared through a cache. Copy it before editing it in place.
+    """
+    _require_peptacular()
+    return _parse_proforma_cached(sequence)
 
 
 class CommonAnnotationParams(TypedDict, total=False):
@@ -75,10 +98,15 @@ class CommonAnnotationParams(TypedDict, total=False):
 
 @dataclass(frozen=True, slots=True)
 class PafAnnotation:
-    """Fragment ion annotation following mzPAF specification"""
+    """Fragment ion annotation following mzPAF specification.
+
+    ``charge`` is any nonzero integer. A negative charge means a deprotonated (negative mode)
+    ion: without adducts it removes ``abs(charge)`` protons, and ``mz()`` divides by ``abs(charge)``.
+    """
 
     # Core ion description
     ion_type: IonType
+    _: KW_ONLY
 
     # Optional components
     analyte_reference: int | None = None
@@ -93,22 +121,23 @@ class PafAnnotation:
 
     def __post_init__(self):
         """Validate annotation constraints"""
-        validate_integer(self.charge, "Charge", 1)
+        if type(self.charge) is not int or self.charge == 0:
+            raise PaftacularError(f"Charge must be a nonzero integer, got {self.charge!r}")
         if self.analyte_reference is not None:
             validate_integer(self.analyte_reference, "Analyte reference")
         if self.confidence is not None:
             validate_number(self.confidence)
         if self.resolved_sequence is not None:
             if not isinstance(self.ion_type, PeptideIon | InternalFragment | PrecursorIon):
-                raise ValueError("Resolved sequence requires a peptide, internal, or precursor ion")
+                raise PaftacularError("Resolved sequence requires a peptide, internal, or precursor ion")
             if not isinstance(self.resolved_sequence, str) or not self.resolved_sequence:
-                raise ValueError("Resolved sequence must be a nonempty string")
+                raise PaftacularError("Resolved sequence must be a nonempty string")
             if isinstance(self.ion_type, PeptideIon | InternalFragment):
                 embedded = self.ion_type.sequence
                 if embedded is not None and embedded != self.resolved_sequence:
-                    raise ValueError("Embedded and resolved sequences must agree")
+                    raise PaftacularError("Embedded and resolved sequences must agree")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
-            raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
+            raise PaftacularError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
     @property
     def peptacular_ion_type(self) -> pt.IonType | None:
@@ -148,13 +177,13 @@ class PafAnnotation:
             for iso in isotopes:
                 match iso:
                     case int():
-                        iso_objs.append(IsotopeSpecification(count=iso))
+                        iso_objs.append(IsotopeSpecification(iso))
                     case str():
                         iso_objs.append(IsotopeSpecification.parse(iso))
                     case IsotopeSpecification():
                         iso_objs.append(iso)
                     case _:
-                        raise ValueError(f"Invalid isotope specification: {iso}")
+                        raise PaftacularError(f"Invalid isotope specification: {iso}")
 
         # Convert adducts from strings if necessary
         adduct_objs: list[Adduct] = []
@@ -165,10 +194,10 @@ class PafAnnotation:
         # Create MassError object if necessary
         mass_error_obj: MassError | None = None
         if (mass_error_val := kwargs.get("mass_error")) is not None:
-            mass_error_obj = MassError(value=mass_error_val, unit=kwargs.get("mass_error_unit", "da"))
+            mass_error_obj = MassError(mass_error_val, unit=kwargs.get("mass_error_unit", "da"))
 
         return PafAnnotation(
-            ion_type=ion_type,
+            ion_type,
             analyte_reference=kwargs.get("analyte_reference"),
             is_auxiliary=kwargs.get("is_auxiliary", False),
             neutral_losses=tuple(nl_objs),
@@ -185,26 +214,25 @@ class PafAnnotation:
         return PafAnnotation._create_annotation(PrecursorIon(), **kwargs)
 
     @staticmethod
-    def make_peptide(ion_type: str | IonSeries, position: int, sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
+    def make_peptide(ion_type: str | IonSeries, position: int, *, sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a peptide fragment ion"""
-        ion_series: IonSeries = ion_type if isinstance(ion_type, IonSeries) else IonSeries(ion_type)
-        return PafAnnotation._create_annotation(PeptideIon(series=ion_series, position=position, sequence=sequence), **kwargs)
+        return PafAnnotation._create_annotation(PeptideIon(to_enum(IonSeries, ion_type, "ion series"), position, sequence=sequence), **kwargs)
 
     @staticmethod
     def make_internal(
-        start_position: int, end_position: int, ion_type: str | InternalSeries = "by", sequence: str | None = None, **kwargs: Unpack[CommonAnnotationParams]
+        start_position: int,
+        end_position: int,
+        *,
+        ion_type: str | InternalSeries = "by",
+        sequence: str | None = None,
+        **kwargs: Unpack[CommonAnnotationParams],
     ) -> PafAnnotation:
         """Create a PafAnnotation for an internal fragment"""
-        internal_ion = InternalFragment(
-            start_position=start_position,
-            end_position=end_position,
-            sequence=sequence,
-        )
-
-        ion_type_enum = InternalSeries(ion_type) if isinstance(ion_type, str) else ion_type
+        internal_ion = InternalFragment(start_position, end_position, sequence=sequence)
+        ion_type_enum = to_enum(InternalSeries, ion_type, "internal series")
 
         # Add series-specific neutral loss if applicable
-        if series_loss := INTERNAL_SERIES_TO_DIFF[ion_type_enum]:
+        if series_loss := _INTERNAL_SERIES_TO_DIFF[ion_type_enum]:
             neutral_losses = list(kwargs.get("neutral_losses") or [])
             neutral_losses.append(NeutralLoss.parse(series_loss))
             kwargs["neutral_losses"] = neutral_losses
@@ -212,42 +240,40 @@ class PafAnnotation:
         return PafAnnotation._create_annotation(internal_ion, **kwargs)
 
     @staticmethod
-    def make_immonium(amino_acid: str | AminoAcids, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
+    def make_immonium(amino_acid: str | AminoAcids, *, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for an immonium ion"""
-        aa_enum: AminoAcids = amino_acid if isinstance(amino_acid, AminoAcids) else AminoAcids(amino_acid)
-        return PafAnnotation._create_annotation(ImmoniumIon(amino_acid=aa_enum, modification=modification), **kwargs)
+        return PafAnnotation._create_annotation(ImmoniumIon(to_enum(AminoAcids, amino_acid, "immonium amino acid"), modification=modification), **kwargs)
 
     @staticmethod
     def make_reference(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a reference ion"""
-        return PafAnnotation._create_annotation(ReferenceIon(name=name), **kwargs)
+        return PafAnnotation._create_annotation(ReferenceIon(name), **kwargs)
 
     @staticmethod
     def make_named_compound(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a named compound"""
-        return PafAnnotation._create_annotation(NamedCompound(name=name), **kwargs)
+        return PafAnnotation._create_annotation(NamedCompound(name), **kwargs)
 
     @staticmethod
     def make_formula(formula: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a chemical formula"""
-        return PafAnnotation._create_annotation(ChemicalFormula(formula=formula), **kwargs)
+        return PafAnnotation._create_annotation(ChemicalFormula(formula), **kwargs)
 
     @staticmethod
     def make_smiles(smiles: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for a SMILES compound"""
-        return PafAnnotation._create_annotation(SMILESCompound(smiles=smiles), **kwargs)
+        return PafAnnotation._create_annotation(SMILESCompound(smiles), **kwargs)
 
     @staticmethod
-    def make_unknown(label: int | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
+    def make_unknown(*, label: int | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for an unknown/unannotated ion"""
         return PafAnnotation._create_annotation(UnknownIon(label=label), **kwargs)
 
     def _parse_sequence(self, sequence: str) -> pt.ProFormaAnnotation:
         """Parse the fragment sequence and warn when its length disagrees with the ion position."""
-        _require_peptacular()
-        annot = pt.parse(sequence)
+        annot = _parse_proforma(sequence)
         if annot.has_charge:
-            raise ValueError("Sequence in annotation should not have charge for mass calculation")
+            raise PaftacularError("Sequence in annotation should not have charge for mass calculation")
         ion = self.ion_type
         if isinstance(ion, PeptideIon):
             expected = ion.position
@@ -280,7 +306,7 @@ class PafAnnotation:
         label = f"{series}{ion.position}"
         if series == "v":
             if residue not in _V_ION_RESIDUES:
-                raise ValueError(f"{label} is not defined for residue {residue}")
+                raise PaftacularError(f"{label} is not defined for residue {residue}")
             # The side chain leaves whole, so a modification on it leaves too.
             annot = annot.copy()
             annot.clear_internal_mod_at_index(index)
@@ -289,9 +315,9 @@ class PafAnnotation:
             substituent = _BETA_SUBSTITUENT.get((series, residue))
             if substituent is None:
                 hint = f" Use {series}a or {series}b." if residue in "TI" and len(series) == 1 else ""
-                raise ValueError(f"{label} is not defined for residue {residue}.{hint}")
+                raise PaftacularError(f"{label} is not defined for residue {residue}.{hint}")
             if annot.has_internal_mods_at_index(index):
-                raise ValueError(f"{label} is not defined when residue {residue} carries a modification")
+                raise PaftacularError(f"{label} is not defined when residue {residue} carries a modification")
             kept = formula_to_composition(_SIDE_CHAIN_BACKBONE[series[0]])
             kept.update(formula_to_composition(substituent))
         kept.subtract(AA_LOOKUP[residue].composition)
@@ -306,50 +332,62 @@ class PafAnnotation:
             return self._side_chain_sequence(annot)
         return annot, None
 
-    def mass(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
-        """Calculate the mass of the annotated ion including modifications"""
+    def get_mass(self, *, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
+        """Calculate the charged-species mass of the annotated ion including modifications.
+
+        Without an embedded or resolved sequence, peptide, internal and precursor ions give only
+        the ion offset plus modifiers. Pass ``calculate_sequence=False`` to get that offset even
+        when a sequence is present.
+        """
         annot, ion_comp = self._ion_parts(calculate_sequence)
         if ion_comp is not None:
-            base_mass = sum(element.get_mass(monoisotopic) * count for element, count in ion_comp.items())
+            base_mass = sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in ion_comp.items())
         else:
-            base_mass = self.ion_type.mass(monoisotopic=monoisotopic)
+            base_mass = self.ion_type.get_mass(monoisotopic=monoisotopic)
 
         # Apply neutral losses/gains
         for loss in self.neutral_losses:
-            base_mass += loss.mass(monoisotopic=monoisotopic)
+            base_mass += loss.get_mass(monoisotopic=monoisotopic)
 
         if isinstance(self.ion_type, ChemicalFormula):
             # A ChemicalFormula's atom count already represents the fully charged species
             # (mzPAF section 4.4.9): any adduct only labels which atoms carry the charge and
             # MUST NOT add mass, and the theoretical m/z needs only an electron-mass correction
             # per charge, not a full proton per charge like the other (neutral-basis) ion types.
-            base_mass -= self.charge * 0.000548579909
+            base_mass -= self.charge * ELECTRON_MASS
         else:
             # Apply adducts
             for adduct in self.adducts:
-                base_mass += adduct.mass(monoisotopic=monoisotopic)
+                base_mass += adduct.get_mass(monoisotopic=monoisotopic)
             if self.adducts:
-                base_mass -= self.charge * 0.000548579909
-
-            # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-            if self.charge != 0 and len(self.adducts) == 0:
-                base_mass += self.charge * 1.007276466812
+                base_mass -= self.charge * ELECTRON_MASS
+            else:
+                # Default protonation (positive charge) or deprotonation (negative charge)
+                base_mass += self.charge * PROTON_MASS
 
         # Apply isotopes
         for isotope in self.isotopes:
-            base_mass += isotope.mass(monoisotopic=monoisotopic)
+            base_mass += isotope.get_mass(monoisotopic=monoisotopic)
 
         if annot is not None:
             base_mass += annot.mass(monoisotopic=monoisotopic, ion_type="n")
 
         return base_mass
 
-    def mz(self, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
-        """Calculate the m/z of the annotated ion"""
-        total_mass = self.mass(monoisotopic=monoisotopic, calculate_sequence=calculate_sequence)
-        return total_mass / self.charge
+    def mz(self, *, monoisotopic: bool = True) -> float:
+        """Calculate the m/z of the annotated ion.
 
-    def comp(self, calculate_sequence: bool = True) -> Counter[ElementInfo]:
+        Peptide, internal and precursor ions need a sequence (embedded or from ``resolve()``).
+        Without one only the ion offset is known, so this raises :class:`PaftacularError`.
+        """
+        if self.sequence is None and isinstance(self.ion_type, PeptideIon | InternalFragment | PrecursorIon):
+            raise PaftacularError(
+                f"m/z of {self.serialize()!r} needs a sequence. Embed one ({{PEPTIDE}}) or call resolve() with the analyte. "
+                "get_mass() still returns the ion offset without a sequence."
+            )
+        return self.get_mass(monoisotopic=monoisotopic) / abs(self.charge)
+
+    def comp(self, *, calculate_sequence: bool = True) -> Counter[ElementInfo]:
         """Calculate the elemental composition of the annotated ion including modifications"""
         comp: Counter[ElementInfo] = Counter()
         annot, ion_comp = self._ion_parts(calculate_sequence)
@@ -373,9 +411,8 @@ class PafAnnotation:
                 comp.update(adduct.composition)
 
             # Adjust for charge state (if no adducts specified) default protonation/deprotonation
-            if self.charge != 0 and len(self.adducts) == 0:
-                proton = ELEMENT_LOOKUP["H"]
-                comp[proton] += self.charge
+            if not self.adducts:
+                comp[_HYDROGEN] += self.charge
 
         # Apply isotopes
         for isotope in self.isotopes:
@@ -395,11 +432,6 @@ class PafAnnotation:
                     comp[ordinary] -= available
 
         return comp
-
-    def dict_composition(self, calculate_sequence: bool = True) -> dict[str, int]:
-        """Get the elemental composition as a dictionary of element symbols to counts"""
-        comp_counter = self.comp(calculate_sequence=calculate_sequence)
-        return {str(elem): count for elem, count in comp_counter.items()}
 
     @property
     def sequence(self) -> str | None:
@@ -431,16 +463,21 @@ class PafAnnotation:
 
         return from_dict(data)
 
-    def formula(self, calculate_sequence: bool = True) -> str:
+    def formula(self, *, calculate_sequence: bool = True) -> str:
         """Get the chemical formula string of the annotated ion"""
         return composition_to_formula_string(self.comp(calculate_sequence=calculate_sequence))
 
-    def proforma_formula(self, calculate_sequence: bool = True) -> str:
+    def proforma_formula(self, *, calculate_sequence: bool = True) -> str:
         """Get the ProForma-style chemical formula string of the annotated ion"""
         return composition_to_proforma_formula_string(self.comp(calculate_sequence=calculate_sequence))
 
-    def serialize(self, include_sequence: bool = True) -> str:
-        """Serialize the annotation back to mzPAF string format"""
+    def serialize(self, *, include_sequence: bool = True, signed_charge: bool = True) -> str:
+        """Serialize the annotation back to mzPAF string format.
+
+        A negative charge is written as ``^-n`` by default so the text round trips. mzPAF 1.0.1
+        section 4.8 says the charge MUST NOT include the minus sign (negative mode is a property
+        of the spectrum), so pass ``signed_charge=False`` to write only the magnitude.
+        """
         parts: list[str] = []
 
         # Auxiliary marker
@@ -473,9 +510,10 @@ class PafAnnotation:
             adduct_str = "M" + "".join(str(a) for a in self.adducts)
             parts.append(f"[{adduct_str}]")
 
-        # Charge state (only if > 1)
-        if self.charge > 1:
-            parts.append(f"^{self.charge}")
+        # Charge state (charge 1 is implied)
+        charge = self.charge if signed_charge else abs(self.charge)
+        if charge != 1:
+            parts.append(f"^{charge}")
 
         # Mass error
         if self.mass_error:
@@ -490,26 +528,9 @@ class PafAnnotation:
     @staticmethod
     def parse(annotation_str: str) -> PafAnnotation:
         """Parse a single mzPAF annotation string into a FragmentAnnotation object"""
-        from .parser import MZ_PAF_PARSER
+        from .parser import parse
 
-        return MZ_PAF_PARSER.parse(annotation_str)
-
-    def as_dict(self) -> dict:
-        """Convert the annotation to a dictionary representation"""
-        return {
-            "ion": str(self.ion_type),
-            "analyte_reference": self.analyte_reference,
-            "is_auxiliary": self.is_auxiliary,
-            "neutral_losses": [str(nl) for nl in self.neutral_losses],
-            "isotopes": [str(iso) for iso in self.isotopes],
-            "adducts": [str(ad) for ad in self.adducts],
-            "charge": self.charge,
-            "mass_error": str(self.mass_error) if self.mass_error else None,
-            "confidence": self.confidence,
-        }
+        return parse(annotation_str)
 
     def __str__(self) -> str:
         return self.serialize()
-
-    def __repr__(self) -> str:
-        return f"PafAnnotation({self.as_dict()})"

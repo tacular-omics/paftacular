@@ -21,24 +21,28 @@ class Serializable(ABC):
         """Reconstruct dataclass components through their normal constructors."""
         if not is_dataclass(self):
             raise TypeError("Component reconstruction requires a dataclass")
-        return type(self), tuple(getattr(self, field.name) for field in fields(self))
+        return _rebuild, (type(self), {field.name: getattr(self, field.name) for field in fields(self) if field.init})
+
+
+def _rebuild(cls: type, kwargs: dict[str, object]) -> object:
+    """Pickle helper: call the constructor by keyword so kw-only fields round trip."""
+    return cls(**kwargs)
 
 
 class MassProvider(ABC):
     """Base class for objects that can provide mass"""
 
     @abstractmethod
-    def mass(self, monoisotopic: bool = True) -> float:
-        """Calculate mass"""
-        pass
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
+        """Monoisotopic (default) or average mass in Da."""
 
     @property
     def monoisotopic_mass(self) -> float:
-        return self.mass(monoisotopic=True)
+        return self.get_mass(monoisotopic=True)
 
     @property
     def average_mass(self) -> float:
-        return self.mass(monoisotopic=False)
+        return self.get_mass(monoisotopic=False)
 
 
 class CompositionProvider(ABC):
@@ -48,19 +52,10 @@ class CompositionProvider(ABC):
     @abstractmethod
     def composition(self) -> Counter["ElementInfo"]:
         """Get elemental composition"""
-        pass
 
-    @property
-    def dict_composition(self) -> dict[str, int]:
-        """Get composition as a dictionary with element symbols as keys"""
-        return {str(elem): count for elem, count in self.composition.items()}
-
-    def mass(self, monoisotopic: bool = True) -> float:
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
         """Calculate mass from composition"""
-        m = 0.0
-        for elem, count in self.composition.items():
-            m += elem.get_mass(monoisotopic) * count
-        return m
+        return sum(elem.get_mass(monoisotopic=monoisotopic) * count for elem, count in self.composition.items())
 
 
 class ScalableComposition(CompositionProvider):
@@ -72,7 +67,6 @@ class ScalableComposition(CompositionProvider):
     @abstractmethod
     def _single_composition(self) -> Counter["ElementInfo"]:
         """Get composition for single instance (before scaling)"""
-        pass
 
     @property
     def composition(self) -> Counter["ElementInfo"]:
