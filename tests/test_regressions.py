@@ -170,3 +170,18 @@ def test_ion_composition_is_a_copy(text):
     assert dict(ion.composition) == expected
     assert dict(p.parse_single(text).ion_type.composition) == expected
     assert p.PeptideIon("y", 3).mass() == before
+
+
+@pytest.mark.parametrize("name", ["TMT126-ETD", "TMT131C-ETD", "TMTpro_zero", "sidechain_A"])
+@pytest.mark.parametrize("template", ["a1+[{}]", "p-[{}]", "y2-2[{}]^2", "r[{}]-[{}]"])
+def test_reference_name_loss_with_hyphen_or_underscore(name, template):
+    # mzPAF 1.0.1 section 4.5 allows any reference molecule name as a bracketed loss or gain,
+    # and Appendix B names contain "-" (TMT126-ETD) and "_" (TMTpro_zero, sidechain_A). The
+    # section 6.2 grammar allows both characters; the loss regex used to reject them.
+    text = template.format(name, name)
+    annotation = p.parse_single(text)
+    loss = annotation.neutral_losses[-1]
+    assert name in str(loss)
+    assert annotation.serialize() == text
+    reference = p.NeutralLoss.parse(f"+[{name}]").mass()
+    assert reference == pytest.approx(p.parse_single(f"r[{name}]").mass() - 1.007276466812, rel=0, abs=1e-6)
