@@ -69,11 +69,14 @@ Every rename and removal, with the replacement, is in the
   exact element masses, not tacular's 6-decimal constants. Offset masses move by up to
   ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
 - A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) in an embedded or resolved
-  sequence counts at its listed database mass (Oxidation 15.994915), exactly as peptacular
-  computes it, so paftacular and peptacular agree on every ion mass and m/z to 1e-9 Da.
-  Composition is used only for modifications with no listed mass (formulas, glycans).
+  sequence counts at its listed database mass (Oxidation 15.994915), the same rule as
+  peptacular. Plain fragment and precursor ions agree with peptacular to 1e-9 Da. Ions with
+  neutral losses or isotope peaks will agree once the matching peptacular fix lands.
+  Composition is used only for modifications with no listed mass (formulas, glycans), and
+  under a global isotope label (`<13C>`, `<15N>`) in both packages.
   A Unimod name used as a reference ion or loss (`r[Hex]`, `-[Hex]`) also uses the listed
-  mass. `comp()` and `formula()` are unchanged, so for a named modification the mass summed
+  6-decimal mass. mzPAF reference-list entries (`r[TMT6plex]`, `r[iTRAQ4plex]`) keep their
+  exact formula masses. `comp()` and `formula()` are unchanged, so for a named modification the mass summed
   from `comp()` can differ from `get_mass()` by up to ~1e-6 Da, because the listed mass is
   rounded. A modified sequence mass is about twice as fast after the first call.
 - Monoisotopic charge uses tacular's CODATA `PROTON_MASS` for the default charge and for an
@@ -84,6 +87,9 @@ Every rename and removal, with the replacement, is in the
 
 #### Fixed
 
+- Labile modifications (`{Glycan:Hex}PEPTIDEK`) are lost on fragmentation, as ProForma
+  defines them and peptacular computes them. Fragment ions no longer add their mass
+  (`y7^2` of `{Glycan:Hex}PEPTIDEK` was 81 Da too heavy). Precursor ions keep it.
 - A global isotope label (`<13C>`) in an embedded sequence now replaces its element in the
   ion offset and in formula deltas too, not only in the residues, like peptacular 5.
   `a2{<13C>RY}` has 14 13C, not 15 (1.x labelled the residues and left the offset C

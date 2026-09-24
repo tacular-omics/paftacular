@@ -62,8 +62,9 @@ Renamed and removed names
        substrings through bounded caches.
    * - MCP ``match_mz`` request ``"tolerance_unit": "Th"``
      - ``"tolerance_unit": "da"`` (tacular's ``ToleranceUnit``, ``"da"`` or ``"ppm"``). The
-       value is still an absolute m/z difference. ``"Th"`` is rejected. MCP responses carry
-       ``response_schema_version`` 2.
+       value is still an absolute m/z difference. ``"Th"`` is rejected. The matched
+       candidate field is still ``delta_th`` (observed minus theoretical m/z, in Th). MCP
+       responses carry ``response_schema_version`` 2.
 
 Keyword-only arguments
 ----------------------
@@ -155,11 +156,17 @@ Behaviour changes
   masses move by up to ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
 - **Listed modification masses.** A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO)
   in an embedded or resolved sequence counts at its listed database mass (Oxidation
-  15.994915), the same rule peptacular uses, so the two agree on every ion m/z to 1e-9 Da.
-  Composition is used only when there is no listed mass (formula modifications, glycans).
-  Unimod reference names (``r[Hex]``, ``-[Hex]``) use the listed mass too. ``comp()`` is
+  15.994915), the same rule as peptacular. Plain fragment and precursor ions agree with
+  peptacular to 1e-9 Da. Ions with neutral losses or isotope peaks will agree once the
+  matching peptacular fix lands. Composition is used only when there is no listed mass
+  (formula modifications, glycans), and under a global isotope label (``<13C>``, ``<15N>``)
+  in both packages. Unimod reference names (``r[Hex]``, ``-[Hex]``) use the listed 6-decimal
+  mass too. mzPAF reference-list entries (``r[TMT6plex]``) keep their exact formula masses. ``comp()`` is
   unchanged, so the mass summed from ``comp()`` can differ from ``get_mass()`` by up to
   ~1e-6 Da for a named modification, because the listed mass is rounded.
+- **Labile modifications.** A labile modification (``{Glycan:Hex}PEPTIDEK``) is lost on
+  fragmentation, as ProForma defines it and peptacular computes it. Fragment ions no longer
+  add its mass. Precursor ions keep it.
 - **Charge carrier mass.** Monoisotopic charge is tacular's CODATA ``PROTON_MASS``, for the
   default charge and for an ``H`` carrier alike, so ``y2{DE}[M+H]`` equals ``y2{DE}``.
   An ``H`` carrier of the opposite sign (``[M+H]^-1``) is a hydride, an H atom plus an

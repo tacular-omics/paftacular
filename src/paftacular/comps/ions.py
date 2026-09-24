@@ -24,7 +24,7 @@ from .util import composition_to_formula_string, composition_to_proforma_formula
 
 def immonium_amino_acid(value: object) -> AminoAcid:
     """Convert ``value`` to a standard :class:`tacular.AminoAcid`, as a PaftacularError otherwise."""
-    if value not in IMMONIUM_AMINO_ACIDS:
+    if not isinstance(value, str) or value not in IMMONIUM_AMINO_ACIDS:
         choices = ", ".join(sorted(IMMONIUM_AMINO_ACIDS))
         raise PaftacularError(f"Invalid immonium amino acid {value!r}. Expected one of: {choices}")
     return AminoAcid(value)

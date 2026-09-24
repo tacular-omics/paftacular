@@ -111,15 +111,25 @@ def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
     """The neutral mass of a sequence's residues and modifications, as peptacular computes it.
 
     A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass,
-    so paftacular and peptacular agree on every ion mass. Its composition, and so ``comp()``,
+    the same rule as peptacular. Its composition, and so ``comp()``,
     can differ from that mass by up to about 1e-6 Da because the listed mass is rounded.
     """
     return annot.mass(monoisotopic=monoisotopic, ion_type="n")
 
 
+def _without_labile(annot: pt.ProFormaAnnotation) -> pt.ProFormaAnnotation:
+    """A copy of ``annot`` without its labile modifications, which a fragment ion loses (ProForma)."""
+    if not annot.has_labile_mods:
+        return annot
+    stripped = annot.copy()
+    stripped.set_labile_mods(None, validate=False)
+    return stripped
+
+
 @lru_cache(maxsize=4096)
-def _cached_sequence_mass(sequence: str, monoisotopic: bool) -> float:
-    return _sequence_mass(_parse_proforma(sequence), monoisotopic)
+def _cached_sequence_mass(sequence: str, monoisotopic: bool, keep_labile: bool) -> float:
+    annot = _parse_proforma(sequence)
+    return _sequence_mass(annot if keep_labile else _without_labile(annot), monoisotopic)
 
 
 def _removed_carrier_atoms(charge: int, adducts: tuple[Adduct, ...]) -> Counter[ElementInfo]:
@@ -391,6 +401,9 @@ class PafAnnotation:
         if calculate_sequence is not True or self.sequence is None:
             return None, None
         annot = self._parse_sequence(self.sequence)
+        if not isinstance(self.ion_type, PrecursorIon):
+            # Labile modifications are lost on fragmentation (ProForma), like peptacular.
+            annot = _without_labile(annot)
         if isinstance(self.ion_type, PeptideIon) and self.ion_type.series in SIDE_CHAIN_SERIES:
             return self._side_chain_sequence(annot)
         return annot, None
@@ -469,7 +482,7 @@ class PafAnnotation:
 
         if annot is not None:
             if ion_comp is None and self.sequence is not None:
-                base_mass += _cached_sequence_mass(self.sequence, monoisotopic)
+                base_mass += _cached_sequence_mass(self.sequence, monoisotopic, isinstance(self.ion_type, PrecursorIon))
             else:
                 base_mass += _sequence_mass(annot, monoisotopic)
 

@@ -280,6 +280,9 @@ def test_matching_rejects_th_unit():
     # 2.0 uses tacular's ToleranceUnit ("da" or "ppm"). "Th" was the 1.x spelling of "da".
     result = call("match_mz", {"observed_mz": 100.0, "tolerance": 0.01, "tolerance_unit": "Th", "candidates": [{"annotation": "y3^2", "analyte": "PEPTIDE"}]})
     assert result.is_error
+    message = result.content[0].text
+    assert "tolerance_unit" in message
+    assert "'da'" in message and "'ppm'" in message
 
 
 def test_response_schema_version_is_2():

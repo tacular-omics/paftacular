@@ -3,6 +3,7 @@
 CONVENTIONS = [
     "Complete peptide, internal, and precursor calculations require sequence context. Offsets must be requested explicitly.",
     "mass_da is the charged species mass in Da. mz_th is mass divided by positive charge, in Th.",
+    "match_mz tolerance_unit is 'da' (an absolute m/z difference) or 'ppm'. delta_th is the observed minus theoretical m/z, in Th.",
     "All MCP calculations are monoisotopic. Average isotopomers are unsupported.",
     "Composition counts nuclei. Explicit adduct mass includes electron correction. Formula ions already contain the charged species atoms.",
     "Resolved context survives dictionary interchange but is absent from mzPAF text.",

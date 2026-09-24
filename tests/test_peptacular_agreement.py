@@ -1,7 +1,12 @@
-"""paftacular and peptacular agree on every ion m/z for sequences with named modifications.
+"""paftacular and peptacular agree on ion m/z for sequences with named modifications.
 
 Both add a named modification by its listed database mass (Unimod or PSI-MOD, 6 decimals),
-not by its composition, so the two packages match to 1e-9 Da.
+not by its composition, so plain fragment and precursor ions match to 1e-9 Da. Labile
+modifications count for the precursor only: fragments lose them, in both packages.
+
+Ions with neutral losses or isotope peaks are xfail: peptacular's ``frag()`` switches to
+composition masses for named modifications when ``deltas=`` or ``isotopes=`` is set. Remove
+the xfail marks once peptacular keeps the listed masses there.
 """
 
 import pytest
@@ -18,6 +23,8 @@ PEPTIDES = [
     "M[MOD:00719]AGIC[UNIMOD:4]PEPTIDER",
     "N[Deamidated]Q[Gln->pyro-Glu]TY[Nitro]K[GG]R",
     "<[Carbamidomethyl]@C>PEC[Oxidation]TIM[Dioxidation]DER",
+    "{Glycan:Hex}PEPTIDEK",
+    "{Glycan:Hex}PEM[Oxidation]TIDEK",
 ]
 
 # mzPAF z is the z-dot radical, which peptacular calls "z.".
@@ -54,3 +61,37 @@ def test_average_mass_matches_peptacular(peptide):
     expected = pt.parse(peptide).frag(ion_type="y", charge=2, position=4, monoisotopic=False)
     resolved = pft.parse("y4^2").resolve(peptide)
     assert resolved.get_mass(monoisotopic=False) == pytest.approx(expected.mass, rel=0, abs=1e-9)
+
+
+_PEPTACULAR_DELTA_XFAIL = pytest.mark.xfail(
+    strict=True,
+    reason="peptacular frag() uses composition for named mods with deltas/isotopes; fixed in peptacular listed-mass-losses branch",
+)
+
+# (peptide, mzPAF annotation, the same ion without the delta, peptacular frag() arguments)
+DELTA_CASES = [
+    ("PEM[Oxidation]TIDEK", "y6-H2O", "y6", {"ion_type": "y", "position": 6, "charge": 1, "deltas": {"H2O": 1}}),
+    ("PEM[Oxidation]TIDEK", "b3-NH3^2", "b3^2", {"ion_type": "b", "position": 3, "charge": 2, "deltas": {"NH3": 1}}),
+    ("PEPS[Phospho]TIDEK", "y6-H3PO4", "y6", {"ion_type": "y", "position": 6, "charge": 1, "deltas": {"H3PO4": 1}}),
+    ("PEM[Oxidation]TIDEK", "y6+i", "y6", {"ion_type": "y", "position": 6, "charge": 1, "isotopes": 1}),
+    ("PEPS[Phospho]TIDEK", "b4+2i^2", "b4^2", {"ion_type": "b", "position": 4, "charge": 2, "isotopes": 2}),
+    ("PEM[Oxidation]TIDEK", "p-H2O^2", "p^2", {"ion_type": "p", "charge": 2, "deltas": {"H2O": 1}}),
+]
+
+
+@_PEPTACULAR_DELTA_XFAIL
+@pytest.mark.parametrize(("peptide", "annotation", "plain", "kwargs"), DELTA_CASES)
+def test_delta_and_isotope_mz_matches_peptacular(peptide, annotation, plain, kwargs):
+    expected = pt.parse(peptide).frag(**kwargs)
+    assert pft.parse(annotation).resolve(peptide).mz() == pytest.approx(expected.mz, rel=0, abs=1e-9)
+
+
+@pytest.mark.parametrize(("peptide", "annotation", "plain", "kwargs"), DELTA_CASES)
+def test_delta_and_isotope_ion_is_plain_ion_plus_delta(peptide, annotation, plain, kwargs):
+    # paftacular is self-consistent: the delta ion is the plain ion (which matches peptacular)
+    # plus the exact delta, so the xfail above is peptacular's to fix.
+    plain_kwargs = {key: value for key, value in kwargs.items() if key not in ("deltas", "isotopes")}
+    plain_ion = pft.parse(plain).resolve(peptide)
+    assert plain_ion.get_mass() == pytest.approx(pt.parse(peptide).frag(**plain_kwargs).mass, rel=0, abs=1e-9)
+    delta = pft.parse(annotation).get_mass(calculate_sequence=False) - pft.parse(plain).get_mass(calculate_sequence=False)
+    assert pft.parse(annotation).resolve(peptide).get_mass() == pytest.approx(plain_ion.get_mass() + delta, rel=0, abs=1e-9)

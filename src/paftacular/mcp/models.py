@@ -99,6 +99,7 @@ class MatchRequest(Model):
     observed_mz: Annotated[float, Field(gt=0)]
     candidates: Annotated[list[ContextRequest], Field(min_length=1, max_length=MAX_RECORDS)]
     tolerance: Annotated[float, Field(ge=0)] = 10.0
+    # "da" applies the tolerance to the absolute m/z difference; "ppm" is relative.
     tolerance_unit: ToleranceUnit = "ppm"
 
 
@@ -163,6 +164,7 @@ class Candidate(Model):
     index: int
     result: Calculation | None = None
     error: Error | None = None
+    # Observed minus theoretical m/z, in Th (whatever the tolerance unit).
     delta_th: float | None = None
     delta_ppm: float | None = None
     matched: bool = False

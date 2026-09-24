@@ -31,6 +31,8 @@ PROTON = 1.007276466812
         lambda: pft.PeptideIon("y", 0),
         lambda: pft.InternalFragment(4, 2),
         lambda: pft.ImmoniumIon("Z"),
+        lambda: pft.ImmoniumIon(["M"]),  # type: ignore[arg-type]
+        lambda: pft.ImmoniumIon({"a": 1}),  # type: ignore[arg-type]
         lambda: pft.NeutralLoss(0, base_formula="H2O"),
         lambda: pft.NeutralLoss(-1),
         lambda: pft.IsotopeSpecification(1, element="C"),
