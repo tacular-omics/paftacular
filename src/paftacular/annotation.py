@@ -118,7 +118,7 @@ def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
     if annot.has_mods():
         try:
             return annot.mass(monoisotopic=monoisotopic, ion_type="n", calculate_with_composition=True)
-        except ValueError:
+        except pt.CompositionError:
             pass
     return annot.mass(monoisotopic=monoisotopic, ion_type="n")
 
@@ -126,6 +126,24 @@ def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
 @lru_cache(maxsize=4096)
 def _cached_sequence_mass(sequence: str, monoisotopic: bool) -> float:
     return _sequence_mass(_parse_proforma(sequence), monoisotopic)
+
+
+def _removed_carrier_atoms(charge: int, adducts: tuple[Adduct, ...]) -> Counter[ElementInfo]:
+    """The atoms charge carriers remove from a neutral ion, as negative counts.
+
+    That is one H per charge for a default negative charge, and the atoms of each negative
+    adduct (``[M-H]``). A global isotope label covers these atoms, so ``<2H>`` at ``^-1``
+    loses a deuteron.
+    """
+    removed: Counter[ElementInfo] = Counter()
+    if not adducts:
+        if charge < 0:
+            removed[_HYDROGEN] += charge
+        return removed
+    for adduct in adducts:
+        if adduct.count < 0:
+            removed.update(adduct.composition)
+    return removed
 
 
 class CommonAnnotationParams(TypedDict, total=False):
@@ -395,6 +413,12 @@ class PafAnnotation:
                 comp.update(loss.composition)
         return comp
 
+    def _removed_carrier_comp(self) -> Counter[ElementInfo]:
+        """The atoms the charge carriers remove from the neutral ion. A formula ion has none."""
+        if isinstance(self.ion_type, ChemicalFormula):
+            return Counter()
+        return _removed_carrier_atoms(self.charge, self.adducts)
+
     @reraise_as_paftacular
     def get_mass(self, *, monoisotopic: bool = True, calculate_sequence: bool = True) -> float:
         """Calculate the charged-species mass of the annotated ion including modifications.
@@ -414,9 +438,12 @@ class PafAnnotation:
             base_mass += loss.get_mass(monoisotopic=monoisotopic)
 
         # A global isotope label (<13C>) replaces its element everywhere in the neutral ion,
-        # the ion offset and formula deltas included, like peptacular.
+        # the ion offset and formula deltas included, like peptacular. Atoms a charge carrier
+        # removes come out of the labelled ion, so <2H> at ^-1 loses a deuteron.
         if labels := _isotope_label_map(annot):
-            for element, count in self._offset_and_delta_comp(ion_comp).items():
+            labelled = self._offset_and_delta_comp(ion_comp)
+            labelled.update(self._removed_carrier_comp())
+            for element, count in labelled.items():
                 if (isotope := labels.get(element)) is not None:
                     base_mass += (isotope.get_mass(monoisotopic=monoisotopic) - element.get_mass(monoisotopic=monoisotopic)) * count
 
@@ -428,10 +455,12 @@ class PafAnnotation:
             # per charge, not a full proton per charge like the other (neutral-basis) ion types.
             base_mass -= self.charge * ELECTRON_MASS
         elif self.adducts:
-            # An H carrier is a proton, so [M+H] gives exactly the mass of the default charge.
+            # An H carrier with the sign of the charge is a proton (or a removed proton), so
+            # [M+H] and [M-H]^-1 give exactly the mass of the default charge. [M+H]^-1 adds a
+            # hydrogen atom and an electron.
             protons = 0
             for adduct in self.adducts:
-                if adduct.base_formula == "H":
+                if adduct.base_formula == "H" and (adduct.count > 0) == (self.charge > 0):
                     protons += adduct.count
                 else:
                     base_mass += adduct.get_mass(monoisotopic=monoisotopic)
@@ -489,11 +518,16 @@ class PafAnnotation:
         else:
             # Apply adducts
             for adduct in self.adducts:
-                comp.update(adduct.composition)
+                if labels and adduct.count < 0:
+                    # A removed carrier atom comes out of the labelled ion.
+                    for element, count in adduct.composition.items():
+                        comp[labels.get(element, element)] += count
+                else:
+                    comp.update(adduct.composition)
 
             # Adjust for charge state (if no adducts specified) default protonation/deprotonation
             if not self.adducts:
-                comp[_HYDROGEN] += self.charge
+                comp[labels.get(_HYDROGEN, _HYDROGEN) if self.charge < 0 else _HYDROGEN] += self.charge
 
         # Apply isotopes
         for isotope in self.isotopes:

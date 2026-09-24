@@ -16,10 +16,10 @@ else:
     except ImportError:
         pt = None
 
-from tacular import FRAGMENT_ION_LOOKUP, NEUTRAL_DELTA_LOOKUP, FragmentIonInfo
+from tacular import FRAGMENT_ION_LOOKUP, NEUTRAL_DELTA_LOOKUP, ElementInfo, FragmentIonInfo
 from tacular import IonType as TacularIonType
 
-from .annotation import PafAnnotation
+from .annotation import PafAnnotation, _removed_carrier_atoms
 from .comps import (
     Adduct,
     ImmoniumIon,
@@ -202,7 +202,7 @@ def _adducts(frag: pt.Fragment) -> tuple[Adduct, ...]:
     return tuple(adducts)
 
 
-def _immonium(frag: pt.Fragment, deltas: Sequence[NeutralLoss]) -> tuple[ImmoniumIon, tuple[IsotopeSpecification, ...]]:
+def _immonium(frag: pt.Fragment, deltas: Sequence[NeutralLoss], removed: Counter[ElementInfo]) -> tuple[ImmoniumIon, tuple[IsotopeSpecification, ...]]:
     """The immonium ion of a one-residue fragment and the isotope shifts of its global labels."""
     sequence = frag.sequence if frag.parent_sequence is not None else None
     if sequence is None:
@@ -230,15 +230,18 @@ def _immonium(frag: pt.Fragment, deltas: Sequence[NeutralLoss]) -> tuple[Immoniu
         raise PaftacularError(f"mzPAF allows one modification on an immonium ion, got {', '.join(tags)}")
     modification = tags[0] if tags else None
     ion = ImmoniumIon(to_enum(AminoAcids, annot.sequence, "immonium amino acid"), modification=modification)
-    return ion, _immonium_label_isotopes(annot, deltas)
+    return ion, _immonium_label_isotopes(annot, deltas, removed)
 
 
-def _immonium_label_isotopes(annot: pt.ProFormaAnnotation, deltas: Sequence[NeutralLoss] = ()) -> tuple[IsotopeSpecification, ...]:
+def _immonium_label_isotopes(
+    annot: pt.ProFormaAnnotation, deltas: Sequence[NeutralLoss] = (), removed: Counter[ElementInfo] | None = None
+) -> tuple[IsotopeSpecification, ...]:
     """A global isotope label (<13C>) as isotope shifts, one per labelled atom (<13C>P is +4i13C).
 
-    The label replaces every atom of its element in the final neutral immonium ion: residue,
-    modification and formula deltas, not the charging proton. A delta that removes an atom
-    of the labelled element removes a labelled atom, so <15N>K with -NH3 is IK-NH3+i15N.
+    Labels are counted on the final ion composition, after formula deltas and the atoms that
+    charge carriers remove (``removed``, negative counts), like peptacular 5. Mass-only
+    deltas, isotope shifts and added carriers are not labelled. So <15N>K with -NH3 is
+    IK-NH3+i15N, and <2H>P at ^-1 is IP+6i2H^-1 (the removed proton is a deuteron).
     """
     if not annot.has_isotope_mods:
         return ()
@@ -253,6 +256,8 @@ def _immonium_label_isotopes(annot: pt.ProFormaAnnotation, deltas: Sequence[Neut
     for loss in deltas:
         if loss.loss_type != "mass":
             comp.update(loss.composition)
+    if removed:
+        comp.update(removed)
     isotopes: list[IsotopeSpecification] = []
     for template, replaced in annot._map_isotopes().items():
         if count := comp[template]:
@@ -281,7 +286,11 @@ def to_mzpaf(
     sequence: str | None = None
     label_isotopes: tuple[IsotopeSpecification, ...] = ()
     ion: IonType
+    charge = frag.charge_state
+    if charge == 0:
+        raise PaftacularError("Cannot write an uncharged fragment in mzPAF")
     deltas = _losses(frag)
+    adducts = _adducts(frag)
     ion_type = frag.ion_type
     if ion_type is None:
         ion = UnknownIon()
@@ -296,7 +305,7 @@ def to_mzpaf(
             assert series is not None
             ion = _peptide_ion(series, position if isinstance(position, int) else -1, sequence)
         elif kind == _IMMONIUM:
-            ion, label_isotopes = _immonium(frag, deltas)
+            ion, label_isotopes = _immonium(frag, deltas, _removed_carrier_atoms(charge, adducts))
         elif kind == _INTERNAL:
             start, end = frag.position if isinstance(frag.position, tuple) and len(frag.position) == 2 else (-1, -1)
             if include_sequence:
@@ -307,9 +316,6 @@ def to_mzpaf(
             if include_sequence:
                 sequence = _fragment_sequence(FRAGMENT_ION_LOOKUP[ion_type], frag)
 
-    charge = frag.charge_state
-    if charge == 0:
-        raise PaftacularError("Cannot write an uncharged fragment in mzPAF")
     if kind == _INTERNAL:
         losses = (*deltas, *fixed_losses)
     elif fixed_losses:
@@ -321,7 +327,7 @@ def to_mzpaf(
         ion,
         neutral_losses=losses,
         isotopes=(*label_isotopes, *_isotopes(frag)) if label_isotopes else _isotopes(frag),
-        adducts=_adducts(frag),
+        adducts=adducts,
         charge=charge,
         mass_error=None if mass_error is None else MassError(mass_error, unit=mass_error_unit),
         confidence=confidence,

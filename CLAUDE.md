@@ -136,11 +136,13 @@ Scientific conventions:
   of paftacular's own ion offset.
 - Formula ions already specify every atom in the charged species. Their adducts label charge
   carriers and add no atoms. Other ion types add adduct atoms and subtract electron mass.
-  Implicit protonation and explicit `[M+H]` must agree exactly: an `H` carrier is charged as
-  `PROTON_MASS` (monoisotopic) or natural-abundance H less an electron (average).
+  Implicit protonation and explicit `[M+H]` must agree exactly: an `H` carrier whose sign
+  matches the charge is charged as `PROTON_MASS` (monoisotopic) or natural-abundance H less
+  an electron (average). `[M+H]^-1` is a hydride, an H atom plus an electron.
 - A global isotope label in the embedded sequence relabels the ion offset and formula deltas
-  too (peptacular 5 does the same). Mass-only deltas, isotope shifts, adducts and the charge
-  stay unlabelled. Global fixed modifications on v/w/d follow the explicit-mod rule.
+  too (peptacular 5 does the same), and so do atoms removed by carriers: the H of a default
+  negative charge and negative adducts (`[M-H]`). Mass-only deltas, isotope shifts, added
+  adducts and the positive charge proton stay unlabelled. Global fixed modifications on v/w/d follow the explicit-mod rule.
 - A generic `+i` uses the carbon-13 minus carbon-12 shift. Add contributions to counters
   rather than overwriting them when isotope keys coincide. At the annotation level, consume
   ordinary monoisotopic atoms when available and keep genuine deficits when sequence context

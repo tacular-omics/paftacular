@@ -291,3 +291,20 @@ def test_non_element_formulas_fail_at_parse_time(text):
 def test_non_ascii_digits_are_rejected(text):
     with pytest.raises(PafParseError):
         pft.parse(text)
+
+
+def test_removed_deuteron_is_labelled():
+    # A negative charge removes a hydrogen atom. Under <2H> that atom is a deuteron.
+    removed = pft.parse("b2{<2H>PE}^-1")
+    assert removed.formula() == "C10[2H13]N2O4"
+    assert pft.parse("b2{<2H>PE}[M-H]^-1").get_mass() == pytest.approx(removed.get_mass(), rel=0, abs=1e-12)
+    assert pft.parse("b2{<2H>PE}[M-H]^-1").formula() == removed.formula()
+
+
+def test_h_adduct_of_the_opposite_sign_is_a_hydride():
+    from tacular import ELEMENT_LOOKUP
+    from tacular.constants import ELECTRON_MASS, PROTON_MASS
+
+    # [M+H]^-1 adds an H atom and an electron. The default +1 charge adds a proton.
+    shift = pft.parse("y2{DE}[M+H]^-1").get_mass() - pft.parse("y2{DE}").get_mass()
+    assert shift == pytest.approx(ELEMENT_LOOKUP["H"].get_mass() + ELECTRON_MASS - PROTON_MASS, rel=0, abs=1e-12)

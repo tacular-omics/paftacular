@@ -68,8 +68,9 @@ Every rename and removal, with the replacement, is in the
   modification (`K[+42.010565]`) keeps the tabulated masses.
 - Monoisotopic charge uses tacular's CODATA `PROTON_MASS` for the default charge and for an
   `H` carrier, so `y2{DE}[M+H]` equals `y2{DE}` exactly (1.x charged `[M+H]` as H less an
-  electron, 1.4e-8 Da lighter). The average charge is natural-abundance H less an electron.
-  1.x added the monoisotopic proton, 1.16e-4 Da per charge too light.
+  electron, 1.4e-8 Da lighter). An `H` carrier of the opposite sign (`[M+H]^-1`) is a hydride:
+  an H atom plus an electron. The average charge is natural-abundance H less an electron.
+  For average mass 1.x added the monoisotopic proton, 1.16e-4 Da per charge too light.
 
 #### Fixed
 
@@ -77,13 +78,18 @@ Every rename and removal, with the replacement, is in the
   ion offset and in formula deltas too, not only in the residues, like peptacular 5.
   `a2{<13C>RY}` has 14 13C, not 15 (1.x labelled the residues and left the offset C
   light, off by one label shift per offset atom for a, c, x, z, v, w, d, internal and
-  precursor ions). Mass-only deltas, isotope shifts, adducts and the charge stay unlabelled.
+  precursor ions). Mass-only deltas, isotope shifts, added adducts and the positive charge
+  proton stay unlabelled.
 - A global fixed modification on the residue whose side chain a side-chain ion loses is
   handled like an explicit one. A v ion loses it with the side chain
   (`v3{<[Carbamidomethyl]@C>CFQ}` is 349.151, 1.x gave 406.172), and w and d ions raise
   `PaftacularError`.
-- `to_mzpaf` counts an immonium ion's global isotope label after its formula deltas.
-  `<15N>K` with `-NH3` gives `IK-NH3+i15N` (one 15N left), not `+2i15N`.
+- `to_mzpaf` counts an immonium ion's global isotope label on the final ion, after formula
+  deltas and removed carrier atoms. `<15N>K` with `-NH3` gives `IK-NH3+i15N` (one 15N left),
+  not `+2i15N`, and `<2H>P` at `^-1` gives `IP+6i2H^-1`.
+- A negative charge on a labelled ion removes a labelled atom. Under `<2H>` the default
+  negative charge and a `[M-H]` carrier remove a deuteron, so `b2{<2H>PE}^-1` is
+  `C10[2H13]N2O4` with no negative H, as in peptacular 5.
 - Requires `tacular>=2.0,<3`. The `peptacular`, `mcp` and `all` extras require
   `peptacular>=5.0,<6`.
 

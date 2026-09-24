@@ -314,7 +314,8 @@ print(round(pft.parse("s{CN=C=O}").get_mass(), 6))  # 58.02874
 ```
 
 **Modifiers and charge carriers.** Adducts replace the default protons. An `H` carrier is a
-proton, so `y2{DE}[M+H]` equals `y2{DE}`. Monoisotopic charge uses CODATA `PROTON_MASS`, and
+proton when its sign matches the charge, so `y2{DE}[M+H]` equals `y2{DE}`. `[M+H]^-1` is a
+hydride, an H atom plus an electron. Monoisotopic charge uses CODATA `PROTON_MASS`, and
 average charge natural-abundance H less an electron. Formula ions (`f{...}`) already list
 every atom of the charged species, so their adducts add no atoms.
 
@@ -433,7 +434,8 @@ complete. Negative charges are kept (`^-1`). Neutral deltas use canonical names 
 mass deltas. Terminal and global fixed modifications on an immonium ion move into its
 modification (`IP[Acetyl]`, `IP[Oxidation]`), and a global isotope label becomes isotope shifts
 (`<13C>` gives `IP+4i13C`), so the mass is kept. The label is counted on the final ion, after
-formula deltas (`<15N>K` with `-NH3` gives `IK-NH3+i15N`). peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
+formula deltas and removed carrier atoms (`<15N>K` with `-NH3` gives `IK-NH3+i15N`, `<2H>P`
+at charge -1 gives `IP+6i2H^-1`). peptacular's own `Fragment.to_mzpaf()` returns the mzPAF string.
 
 ```python
 import peptacular as pt

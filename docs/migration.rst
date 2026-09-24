@@ -152,12 +152,15 @@ Behaviour changes
   modification keeps the tabulated masses.
 - **Charge carrier mass.** Monoisotopic charge is tacular's CODATA ``PROTON_MASS``, for the
   default charge and for an ``H`` carrier alike, so ``y2{DE}[M+H]`` equals ``y2{DE}``.
-  Average charge is natural-abundance H less an electron, 1.16e-4 Da per charge heavier than
-  1.x.
+  An ``H`` carrier of the opposite sign (``[M+H]^-1``) is a hydride, an H atom plus an
+  electron. Average charge is natural-abundance H less an electron, 1.16e-4 Da per charge
+  heavier than 1.x.
 - **Global isotope labels** (``<13C>``) in an embedded sequence replace their element in
   the ion offset and formula deltas too, like peptacular 5. ``a2{<13C>RY}`` has 14 13C,
-  where 1.x counted 15. Mass-only deltas, isotope shifts, adducts and the charge stay
-  unlabelled. ``to_mzpaf`` counts an immonium label after its deltas (``IK-NH3+i15N``).
+  where 1.x counted 15. Atoms removed by a negative charge are labelled too: under ``<2H>``
+  a ``^-1`` charge or ``[M-H]`` removes a deuteron. Mass-only deltas, isotope shifts, added
+  adducts and the positive charge proton stay unlabelled. ``to_mzpaf`` counts an immonium
+  label on the final ion (``IK-NH3+i15N``, ``IP+6i2H^-1``).
 - **Global fixed modifications on side-chain ions.** A v ion loses one on its side-chain
   residue (``v3{<[Carbamidomethyl]@C>CFQ}`` is 349.151, not 406.172), and w and d ions
   raise ``PaftacularError``, as for explicit modifications.

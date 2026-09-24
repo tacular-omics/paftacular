@@ -299,3 +299,40 @@ def test_immonium_label_counts_atoms_after_deltas():
     annotation = paf.to_mzpaf(fragment)
     assert annotation.serialize() == "IK-NH3+i15N"
     assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-7)
+
+
+@pytest.mark.parametrize(
+    ("charge", "deltas", "expected"),
+    [
+        (-1, None, "IP+6i2H^-1"),
+        (-2, None, "IP+5i2H^-2"),
+        (1, None, "IP+7i2H"),
+    ],
+)
+def test_immonium_label_counts_the_deuteron_removed_by_a_negative_charge(charge, deltas, expected):
+    fragment = pt.parse("<2H>P").frag(ion_type="i", position=1, charge=charge, deltas=deltas)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == expected
+    assert annotation.serialize() == fragment.to_mzpaf()
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+def test_immonium_label_counts_a_formula_gain():
+    fragment = pt.parse("<15N>K").frag(ion_type="i", position=1, charge=1, deltas={"N-1H-3": -1})
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == "IK+NH3+3i15N"
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+@pytest.mark.parametrize(("ion_type", "position"), [("b", 2), ("y", 2), ("p", None)])
+@pytest.mark.parametrize("charge", [-1, -2])
+def test_deuterium_label_at_negative_charge_matches_peptacular(ion_type, position, charge):
+    fragment = pt.parse("<2H>PEK").frag(ion_type=ion_type, position=position, charge=charge)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+def test_uncharged_fragment_is_refused():
+    fragment = pt.parse("PEK").frag(ion_type="b", position=2, charge=0)
+    with pytest.raises(ValueError, match="charge"):
+        paf.to_mzpaf(fragment)
