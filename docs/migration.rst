@@ -70,6 +70,8 @@ Renamed and removed names
        rejected. ``mz_th`` is mass / \|charge\|.
    * - MCP unknown top-level tool arguments silently ignored
      - rejected with an error, as unknown fields inside ``request`` already were.
+   * - MCP ``get_capabilities`` field ``ion_series``
+     - ``ion_type`` (the library and peptacular MCP name). Same values. No alias.
 
 Keyword-only arguments
 ----------------------

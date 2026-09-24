@@ -184,6 +184,10 @@ observed minus theoretical, with theoretical m/z as the ppm denominator.
 Matching is inclusive at the tolerance boundary. It does not identify a
 peptide, search a database, or assign a confidence probability.
 
+``get_capabilities`` lists the supported mzPAF ion series codes under ``ion_type``
+(the library and peptacular name, ``ion_series`` before 2.0) and the series
+that complete calculations can resolve under ``resolvable_series``.
+
 Resources and prompts
 ----------------------
 

@@ -104,7 +104,7 @@ def capabilities() -> Capabilities:
     return Capabilities(
         dependencies=dependencies,
         integrations={name: find_spec(name) is not None for name in ("peptacular", "pysmiles")},
-        ion_series=[series.value for series in IonSeries],
+        ion_type=[series.value for series in IonSeries],
         resolvable_series=["a", "b", "c", "x", "y", "z", "internal", "precursor"],
         limits={
             "records": MAX_RECORDS,

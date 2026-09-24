@@ -18,7 +18,7 @@ from paftacular.mcp.server import create_server
 # Old or non-shared spellings that must not reappear in any input or output schema.
 BANNED = re.compile(
     r"^(unit|tolerance_type|.*_tolerance_type|retention_time.*|inverse_reduced.*|ion_mobility_.*|target_mz|"
-    r"scan_start_time|ce|tic|TIC|time|one_over_k0.*|mz_begin|mz_end|window_group|monoisotopic_mz)$"
+    r"scan_start_time|ce|tic|TIC|time|one_over_k0.*|mz_begin|mz_end|window_group|monoisotopic_mz|ion_series)$"
 )
 
 # Property names ending in "unit" that are not a Da/ppm tolerance switch.
