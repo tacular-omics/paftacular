@@ -113,6 +113,13 @@ def create_server() -> MCPServer:
         """Compare observed m/z with explicit candidates in ppm or Da. Return signed errors and ranked matches. Matching does not prove identity."""
         return respond(handlers.match_mz, request)
 
+    # The SDK's argument models ignore unknown top-level arguments, so a misspelled or
+    # renamed argument would silently do nothing. Forbid them (same patch as peptacular).
+    for tool in server._tool_manager.list_tools():
+        tool.fn_metadata.arg_model.model_config["extra"] = "forbid"
+        tool.fn_metadata.arg_model.model_rebuild(force=True)
+        tool.parameters = tool.fn_metadata.arg_model.model_json_schema()
+
     def add_reference(uri: str, content: str) -> None:
         @server.resource(uri, name=uri.rsplit("/", 1)[-1], mime_type="text/plain")
         async def reference() -> str:

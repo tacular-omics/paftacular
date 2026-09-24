@@ -2,7 +2,7 @@
 
 CONVENTIONS = [
     "Complete peptide, internal, and precursor calculations require sequence context. Offsets must be requested explicitly.",
-    "mass_da is the charged species mass in Da. mz_th is mass divided by positive charge, in Th.",
+    "mass_da is the charged species mass in Da. mz_th is mass divided by |charge|, in Th, so it is positive in negative mode too.",
     "match_mz tolerance_unit is 'da' (an absolute m/z difference) or 'ppm'. delta_th is the observed minus theoretical m/z, in Th.",
     "All MCP calculations are monoisotopic. Average isotopomers are unsupported.",
     "Composition counts nuclei. Explicit adduct mass includes electron correction. Formula ions already contain the charged species atoms.",
@@ -29,7 +29,8 @@ Calculation and matching requests also accept a complete annotation dictionary
 returned by another tool. This preserves resolved context across tool calls.
 
 Use build_annotation to attach typed charge, losses, isotopes, adducts, mass error,
-and confidence to a bare ion. Use serialize_annotation with a complete dictionary
+and confidence to a bare ion. Charges are nonzero integers, negative for negative mode (-1 writes ^-1).
+Use serialize_annotation with a complete dictionary
 returned by another tool. Its schema_version is distinct from the MCP response version.
 
 Use generate_fragments to enumerate a/b/c/x/y/z fragments for a ProForma analyte.

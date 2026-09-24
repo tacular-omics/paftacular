@@ -215,6 +215,10 @@ MCP (`paftacular[mcp]`, console script `paftacular-mcp`, also `python -m paftacu
   racing the component caches. Request/response contracts are versioned separately from core
   interchange. Limits: 100 records, 16 KiB per text, 256 KiB input, 512 KiB output, 1000
   parsed annotations per call. `docs/mcp.rst` is the contract. `MCP_PLAN.md` is historical.
+- Unknown arguments are rejected at the top level (`create_server()` sets `extra="forbid"` on
+  the SDK argument models) and inside `request` (`Model` config). `charge`/`charges` take any
+  nonzero integer, like the library. `tests/test_mcp_vocabulary.py` guards names, the Da/ppm
+  switch, signed charges and record keys against drift.
 
 ## Releasing
 

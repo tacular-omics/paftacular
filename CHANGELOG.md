@@ -30,6 +30,13 @@ Every rename and removal, with the replacement, is in the
 - MCP `match_mz`: `tolerance_unit` is tacular's `ToleranceUnit`, `"da"` or `"ppm"`
   (default `"ppm"`). `"Th"` is now `"da"` (an absolute m/z difference) and is rejected.
   The MCP `response_schema_version` is 2.
+- MCP `build_annotation` `charge` and `generate_fragments` `charges` accept any nonzero
+  integer (negative for negative mode), like the library. They were positive only. Zero
+  is rejected with a clear error. `mz_th` stays mass / |charge|.
+- MCP tools reject unknown arguments at the top level (they were silently ignored), as
+  they already did inside `request`. The input schemas now say `additionalProperties: false`.
+- MCP `get_capabilities`: `ion_series` is renamed `ion_types` and `resolvable_series` is
+  renamed `resolvable_ion_types` (plural lists, as in peptacular's MCP). Same values. No alias.
 - `parse(s)` returns exactly one `PafAnnotation` and raises `PafParseError` for comma input
   or empty text. `parse_multi(s)` always returns a list.
 - `get_mass(*, monoisotopic=True)` replaces `mass()`, matching tacular 2.0. Optional

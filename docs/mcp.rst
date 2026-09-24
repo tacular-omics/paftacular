@@ -135,7 +135,8 @@ Scientific outputs
 ------------------
 
 Results label monoisotopic charged-species mass as ``mass_da`` and m/z as
-``mz_th``. Charge and context source are explicit. ``mass_basis`` distinguishes
+``mz_th``. ``mz_th`` is ``mass_da`` divided by \|charge\|, so it is positive in
+negative mode too. Charge and context source are explicit. ``mass_basis`` distinguishes
 a complete charged species from offsets and modifiers. Average-mass
 calculations are not exposed in this MCP version.
 
@@ -162,6 +163,10 @@ cleavage corrections follow the conventions explained in :doc:`usage`.
 Generation and matching
 -----------------------
 
+``build_annotation`` ``charge`` and ``generate_fragments`` ``charges`` accept any
+nonzero integer, negative for negative mode (``-1`` writes ``^-1``), like the
+library. Zero is rejected with a clear error.
+
 ``generate_fragments`` defaults to b/y series with charge 1 and all positions
 from 1 through analyte length minus 1. It excludes the full-length peptide.
 Select ``series``, ``charges``, and ``positions`` to reduce the results.
@@ -178,6 +183,10 @@ errors, plus matching indices sorted by absolute ppm error. Signed errors are
 observed minus theoretical, with theoretical m/z as the ppm denominator.
 Matching is inclusive at the tolerance boundary. It does not identify a
 peptide, search a database, or assign a confidence probability.
+
+``get_capabilities`` lists the supported mzPAF ion series codes under ``ion_types``
+and the ion types that complete calculations can resolve under
+``resolvable_ion_types`` (``ion_series`` and ``resolvable_series`` before 2.0).
 
 Resources and prompts
 ----------------------
@@ -196,7 +205,9 @@ Errors and limits
 
 Domain failures return an MCP error result with a structured error code and
 message. Parse errors include zero-based character and annotation positions.
-Malformed tool argument schemas are rejected by the SDK. Batches retain
+Malformed tool argument schemas are rejected by the SDK, and so are unknown
+arguments, at the top level and inside ``request``: a misspelled or renamed
+argument is an error, never silently ignored. Batches retain
 per-record failures without failing the whole call. Partial single-ion
 results remain successful MCP responses with explicit property errors.
 
