@@ -22,6 +22,7 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
+from .comps.ions import immonium_amino_acid
 from .comps.util import _formula_items
 from .constants import (
     ADDUCT_REGEX_PATTERN,
@@ -30,7 +31,6 @@ from .constants import (
     MAX_CACHE_SIZE,
     NEUTRAL_LOSS_REGEX_PATTERN,
     PARTIAL_PAF_PATTERN,
-    AminoAcids,
     IonSeries,
 )
 from .errors import PafParseError, PaftacularError
@@ -93,7 +93,7 @@ def _build_ion(groups: dict[str, str | None]) -> IonType:
     if groups["precursor"]:
         return PrecursorIon()
     if amino_acid := groups["immonium"]:
-        return ImmoniumIon(to_enum(AminoAcids, amino_acid, "immonium amino acid"), modification=groups["immonium_modification"])
+        return ImmoniumIon(immonium_amino_acid(amino_acid), modification=groups["immonium_modification"])
     if name := groups["reference_label"]:
         return ReferenceIon(name)
     if formula := groups["formula"]:

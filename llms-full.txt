@@ -170,7 +170,7 @@ for r in pft.iter_parse(["y2", "zz"]):
 |---|---|---|
 | `PeptideIon` | `series: IonSeries`, `position: int`, `sequence: str or None` | `y3{PEP}` |
 | `InternalFragment` | `start_position`, `end_position`, `sequence`, `nterm_ion_type`, `cterm_ion_type` | `m2:5` |
-| `ImmoniumIon` | `amino_acid: AminoAcids`, `modification: str or None` | `IM[Oxidation]` |
+| `ImmoniumIon` | `amino_acid: tacular.AminoAcid`, `modification: str or None` | `IM[Oxidation]` |
 | `PrecursorIon` | none | `p` |
 | `ReferenceIon` | `name` | `r[TMT126]` |
 | `ChemicalFormula` | `formula` | `f{C13H9}` |
@@ -231,7 +231,7 @@ Mass losses print at least five decimals. Scientific notation is not part of the
 ```text
 PafAnnotation.make_peptide(ion_type: str | IonSeries, position: int, *, sequence: str | None = None, **kw)
 PafAnnotation.make_internal(start_position: int, end_position: int, *, ion_type: str | InternalSeries = "by", sequence: str | None = None, **kw)
-PafAnnotation.make_immonium(amino_acid: str | AminoAcids, *, modification: str | None = None, **kw)
+PafAnnotation.make_immonium(amino_acid: str | AminoAcid, *, modification: str | None = None, **kw)
 PafAnnotation.make_precursor(**kw)
 PafAnnotation.make_reference(name: str, **kw)
 PafAnnotation.make_formula(formula: str, **kw)
@@ -350,7 +350,14 @@ except pft.PaftacularError as e:
 
 A generic `+i` adds the 13C minus 12C mass difference. To check `get_mass()` against summed element
 masses from `comp()`, subtract `charge` times the electron mass, and use an absolute tolerance
-of about 1e-6 Da because the upstream ion offsets are rounded.
+of about 1e-6 Da because the upstream ion offsets are rounded. A named modification (Unimod,
+PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass, the same rule as peptacular, and
+`comp()` can differ from `get_mass()` by up to ~1e-6 Da for it. Plain fragment and precursor ions
+agree with peptacular to 1e-9 Da. Ions with neutral losses or isotope peaks will agree once the
+matching peptacular fix lands. A global isotope label (`<13C>`, `<15N>`) uses composition in both
+packages. Unimod reference names (`r[Hex]`) use the listed 6-decimal mass; mzPAF reference-list
+entries (`r[TMT6plex]`) keep exact formula masses. Labile modifications (`{Glycan:Hex}`) count
+only for precursor ions: fragments lose them.
 
 ## Resolving against the full analyte
 
@@ -474,7 +481,7 @@ reinterpreted. Supply both cleavage fields together, one from a/b/c and one from
 
 - `IonSeries`: `a b c d v w x y z da db wa wb` (StrEnum).
 - `BackboneCleavageType`: `a b c x y z`.
-- `AminoAcids`: the 20 standard one-letter codes.
+- Immonium amino acids are `tacular.AminoAcid` members, limited to the 20 standard codes.
 - `AnnotationName`: `precursor immonium reference named_compound formula smiles unannotated series internal`.
 - `paftacular.constants.InternalSeries` (not exported): `ax bx cx ay by cy az bz cz`.
 - `PaftacularError`, `PafParseError`, `PafUnknownReferenceError`: the error classes.
@@ -502,7 +509,7 @@ Tools (all read-only, each except `get_capabilities` takes one `request` object)
 | `calculate_ion` | mass (`mass_da`), m/z (`mz_th`), formula, composition for one annotation |
 | `calculate_ions` | the same for a list, with per-item outcomes |
 | `generate_fragments` | a/b/c/x/y/z terminal fragments (default b/y, charge 1) |
-| `match_mz` | compare candidates to an observed m/z (default 10 ppm, or Th) |
+| `match_mz` | compare candidates to an observed m/z (`tolerance_unit` "ppm", the default at 10, or "da") |
 
 Example `calculate_ion` arguments:
 

@@ -15,7 +15,7 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
-from .constants import AminoAcids, AnnotationName, BackboneCleavageType, IonSeries
+from .constants import AnnotationName, BackboneCleavageType, IonSeries
 from .conversion import to_mzpaf
 from .errors import PafParseError, PaftacularError, PafUnknownReferenceError, PafUnsupportedCalculationError
 from .parser import ParseResult, iter_parse, parse, parse_multi
@@ -40,7 +40,6 @@ __all__ = [
     "IonSeries",
     "BackboneCleavageType",
     "AnnotationName",
-    "AminoAcids",
     "parse",
     "parse_multi",
     "to_mzpaf",

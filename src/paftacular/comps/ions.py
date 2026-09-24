@@ -13,13 +13,21 @@ else:
         import peptacular as pt
     except ImportError:
         pt = None
-from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, ElementInfo, RefMolInfo
+from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, AminoAcid, ElementInfo, RefMolInfo
 
-from ..constants import _ADDUCT_BODY, AminoAcids, IonSeries
+from ..constants import _ADDUCT_BODY, IMMONIUM_AMINO_ACIDS, IonSeries
 from ..errors import PaftacularError, PafUnsupportedCalculationError, reraise_as_paftacular
 from ..util import to_enum, validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
 from .util import composition_to_formula_string, composition_to_proforma_formula_string, formula_to_composition, lookup_reference
+
+
+def immonium_amino_acid(value: object) -> AminoAcid:
+    """Convert ``value`` to a standard :class:`tacular.AminoAcid`, as a PaftacularError otherwise."""
+    if not isinstance(value, str) or value not in IMMONIUM_AMINO_ACIDS:
+        choices = ", ".join(sorted(IMMONIUM_AMINO_ACIDS))
+        raise PaftacularError(f"Invalid immonium amino acid {value!r}. Expected one of: {choices}")
+    return AminoAcid(value)
 
 
 def _require_peptacular() -> None:
@@ -226,13 +234,13 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
 class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     """Represents an immonium ion"""
 
-    amino_acid: AminoAcids
+    amino_acid: AminoAcid
     _: KW_ONLY
     modification: str | None = None
 
     def __post_init__(self):
-        if type(self.amino_acid) is not AminoAcids:
-            object.__setattr__(self, "amino_acid", to_enum(AminoAcids, self.amino_acid, "immonium amino acid"))
+        if type(self.amino_acid) is not AminoAcid or self.amino_acid not in IMMONIUM_AMINO_ACIDS:
+            object.__setattr__(self, "amino_acid", immonium_amino_acid(self.amino_acid))
         if self.modification is not None and (not isinstance(self.modification, str) or not self.modification):
             raise PaftacularError("Modification must be a nonempty string")
         if self.modification is not None and re.fullmatch(_ADDUCT_BODY, self.modification):
@@ -253,7 +261,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
             raise PaftacularError(f"Invalid immonium ion: '{s}'")
 
         aa_str, modification = match.groups()
-        return ImmoniumIon(to_enum(AminoAcids, aa_str, "immonium amino acid"), modification=modification)
+        return ImmoniumIon(immonium_amino_acid(aa_str), modification=modification)
 
     @reraise_as_paftacular
     def get_mass(self, *, monoisotopic: bool = True) -> float:

@@ -32,7 +32,8 @@ from .comps import (
     PrecursorIon,
     UnknownIon,
 )
-from .constants import _INTERNAL_MASS_DIFFS, AminoAcids, IonSeries
+from .comps.ions import immonium_amino_acid
+from .constants import _INTERNAL_MASS_DIFFS, IonSeries
 from .errors import PaftacularError
 from .util import parse_formula, to_enum
 
@@ -229,7 +230,7 @@ def _immonium(frag: pt.Fragment, deltas: Sequence[NeutralLoss], removed: Counter
     if len(tags) > 1:
         raise PaftacularError(f"mzPAF allows one modification on an immonium ion, got {', '.join(tags)}")
     modification = tags[0] if tags else None
-    ion = ImmoniumIon(to_enum(AminoAcids, annot.sequence, "immonium amino acid"), modification=modification)
+    ion = ImmoniumIon(immonium_amino_acid(annot.sequence), modification=modification)
     return ion, _immonium_label_isotopes(annot, deltas, removed)
 
 

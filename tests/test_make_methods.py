@@ -1,6 +1,9 @@
 """Tests for PafAnnotation static make_* factory methods"""
 
-from paftacular import PafAnnotation
+import pytest
+from tacular import AminoAcid
+
+from paftacular import PafAnnotation, PaftacularError, parse
 from paftacular.comps import (
     Adduct,
     ChemicalFormula,
@@ -15,7 +18,7 @@ from paftacular.comps import (
     SMILESCompound,
     UnknownIon,
 )
-from paftacular.constants import AminoAcids, IonSeries
+from paftacular.constants import IonSeries
 
 
 class TestMakePrecursor:
@@ -155,15 +158,28 @@ class TestMakeImmonium:
         """Test creating a basic immonium ion"""
         annot = PafAnnotation.make_immonium("K")
         assert isinstance(annot.ion_type, ImmoniumIon)
-        assert annot.ion_type.amino_acid == AminoAcids.K
+        assert annot.ion_type.amino_acid == AminoAcid.K
         assert annot.serialize() == "IK"
 
     def test_immonium_with_amino_acid_enum(self):
-        """Test using AminoAcids enum directly"""
-        annot = PafAnnotation.make_immonium(AminoAcids.W)
+        """Test using AminoAcid enum directly"""
+        annot = PafAnnotation.make_immonium(AminoAcid.W)
         assert isinstance(annot.ion_type, ImmoniumIon)
-        assert annot.ion_type.amino_acid == AminoAcids.W
+        assert annot.ion_type.amino_acid == AminoAcid.W
         assert annot.serialize() == "IW"
+
+    def test_immonium_amino_acid_is_tacular_enum(self):
+        """The amino acid is tacular's AminoAcid, not a paftacular copy"""
+        assert type(PafAnnotation.make_immonium("K").ion_type.amino_acid) is AminoAcid
+        assert type(ImmoniumIon.parse("IK").amino_acid) is AminoAcid
+
+    @pytest.mark.parametrize("code", ["B", "J", "O", "U", "X", "Z"])
+    def test_immonium_rejects_nonstandard_codes(self, code):
+        """Only the 20 standard amino acids make immonium ions, as before tacular's enum was used"""
+        with pytest.raises(PaftacularError, match="Invalid immonium amino acid"):
+            PafAnnotation.make_immonium(code)
+        with pytest.raises(PaftacularError):
+            parse(f"I{code}")
 
     def test_immonium_with_modification(self):
         """Test immonium ion with modification"""
@@ -377,7 +393,7 @@ class TestMakeMethodsRoundTrip:
         serialized = annot.serialize()
         parsed = PafAnnotation.parse(serialized)
         assert isinstance(parsed.ion_type, ImmoniumIon)
-        assert parsed.ion_type.amino_acid == AminoAcids.K
+        assert parsed.ion_type.amino_acid == AminoAcid.K
         assert parsed.ion_type.modification == "Acetyl"
 
     def test_formula_roundtrip(self):

@@ -17,6 +17,9 @@ Renamed and removed names
    * - ``parse(s)`` returning one annotation or a list
      - ``parse(s)`` always returns exactly one ``PafAnnotation`` and raises ``PafParseError``
        otherwise. Use ``parse_multi(s)`` for comma-separated text and for ``""``.
+   * - ``paftacular.AminoAcids``, ``paftacular.constants.AminoAcids``
+     - ``tacular.AminoAcid``. ``ImmoniumIon.amino_acid`` is a ``tacular.AminoAcid``. Immonium
+       ions still accept only the 20 standard codes (not B, J, O, U, X or Z).
    * - ``parse_single(s)``
      - ``parse(s)``
    * - ``parse_batch(records)``
@@ -57,6 +60,11 @@ Renamed and removed names
        interning in ``__new__``
      - removed. Constructors build fresh objects. The parser shares components for repeated
        substrings through bounded caches.
+   * - MCP ``match_mz`` request ``"tolerance_unit": "Th"``
+     - ``"tolerance_unit": "da"`` (tacular's ``ToleranceUnit``, ``"da"`` or ``"ppm"``). The
+       value is still an absolute m/z difference. ``"Th"`` is rejected. The matched
+       candidate field is still ``delta_th`` (observed minus theoretical m/z, in Th). MCP
+       responses carry ``response_schema_version`` 2.
 
 Keyword-only arguments
 ----------------------
@@ -146,10 +154,19 @@ Behaviour changes
 - **Exact offsets.** Every ion-type offset (all peptide series, immonium, internal,
   precursor) is summed from exact element masses, not tacular's 6-decimal constants. Offset
   masses move by up to ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
-- **Exact modification masses.** A named modification in an embedded sequence counts at the
-  exact mass of its composition, not its 6-decimal Unimod mass. A sequence with several
-  modifications moves by up to ~1.5e-6 Da. A sequence that also has a mass-only
-  modification keeps the tabulated masses.
+- **Listed modification masses.** A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO)
+  in an embedded or resolved sequence counts at its listed database mass (Oxidation
+  15.994915), the same rule as peptacular. Plain fragment and precursor ions agree with
+  peptacular to 1e-9 Da. Ions with neutral losses or isotope peaks will agree once the
+  matching peptacular fix lands. Composition is used only when there is no listed mass
+  (formula modifications, glycans), and under a global isotope label (``<13C>``, ``<15N>``)
+  in both packages. Unimod reference names (``r[Hex]``, ``-[Hex]``) use the listed 6-decimal
+  mass too. mzPAF reference-list entries (``r[TMT6plex]``) keep their exact formula masses. ``comp()`` is
+  unchanged, so the mass summed from ``comp()`` can differ from ``get_mass()`` by up to
+  ~1e-6 Da for a named modification, because the listed mass is rounded.
+- **Labile modifications.** A labile modification (``{Glycan:Hex}PEPTIDEK``) is lost on
+  fragmentation, as ProForma defines it and peptacular computes it. Fragment ions no longer
+  add its mass. Precursor ions keep it.
 - **Charge carrier mass.** Monoisotopic charge is tacular's CODATA ``PROTON_MASS``, for the
   default charge and for an ``H`` carrier alike, so ``y2{DE}[M+H]`` equals ``y2{DE}``.
   An ``H`` carrier of the opposite sign (``[M+H]^-1``) is a hydride, an H atom plus an

@@ -92,7 +92,7 @@ closed-world behavior. Every tool except ``get_capabilities`` takes one
    * - ``generate_fragments``
      - Generate proper a/b/c/x/y/z terminal fragments for selected positions and charges.
    * - ``match_mz``
-     - Compare supplied candidates with an observed m/z using ppm or Th tolerance.
+     - Compare supplied candidates with an observed m/z using a ppm or Da tolerance.
 
 Calculate a fragment
 --------------------
@@ -147,7 +147,7 @@ while retaining the valid calculated values. Inspect these fields before
 presenting an answer.
 
 The response includes the core annotation dictionary. Its ``schema_version``
-is independent from the outer ``response_schema_version``. Resolved sequence
+is independent from the outer ``response_schema_version`` (2 in paftacular 2.0). Resolved sequence
 context is preserved in that dictionary but omitted from canonical mzPAF
 text. Calculation, resolution, and matching requests accept either mzPAF text
 or a complete dictionary in ``annotation``. Pass the returned dictionary to
@@ -171,7 +171,8 @@ resolution as individual calculations. Internal fragments and custom losses
 can be supplied through ``calculate_ions``.
 
 ``match_mz`` takes ``observed_mz``, a list of candidate annotation/context
-objects, ``tolerance``, and ``tolerance_unit`` (``ppm`` or ``Th``). The default
+objects, ``tolerance``, and ``tolerance_unit`` (``ppm`` or ``da``, tacular's ``ToleranceUnit``). A ``da``
+tolerance is an absolute m/z difference. The default
 tolerance is 10 ppm. It returns every candidate in input order, including
 errors, plus matching indices sorted by absolute ppm error. Signed errors are
 observed minus theoretical, with theoretical m/z as the ppm denominator.

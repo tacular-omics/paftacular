@@ -14,7 +14,7 @@ else:
         import peptacular as pt
     except ImportError:
         pt = None
-from tacular import AA_LOOKUP, ELEMENT_LOOKUP, ElementInfo
+from tacular import AA_LOOKUP, ELEMENT_LOOKUP, AminoAcid, ElementInfo
 from tacular.constants import ELECTRON_MASS, PROTON_MASS
 
 from .comps import (
@@ -36,8 +36,8 @@ from .comps import (
     composition_to_proforma_formula_string,
     formula_to_composition,
 )
-from .comps.ions import SIDE_CHAIN_SERIES
-from .constants import _INTERNAL_SERIES_TO_DIFF, AminoAcids, InternalSeries, IonSeries
+from .comps.ions import SIDE_CHAIN_SERIES, immonium_amino_acid
+from .constants import _INTERNAL_SERIES_TO_DIFF, InternalSeries, IonSeries
 from .errors import PaftacularError, reraise_as_paftacular
 from .util import format_number, to_enum, validate_integer, validate_number
 
@@ -108,24 +108,28 @@ def _isotope_label_map(annot: pt.ProFormaAnnotation | None) -> dict[ElementInfo,
 
 
 def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
-    """The neutral mass of a sequence's residues and modifications, at full precision.
+    """The neutral mass of a sequence's residues and modifications, as peptacular computes it.
 
-    peptacular's fast mass path adds a Unimod modification by its tabulated mass, rounded to
-    6 decimals (Oxidation 15.994915, not 15.99491462). Summing the composition instead gives
-    the exact mass. A mass-only modification ([+42.010565]) has no composition, so it keeps the
-    fast path.
+    A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass,
+    the same rule as peptacular. Its composition, and so ``comp()``,
+    can differ from that mass by up to about 1e-6 Da because the listed mass is rounded.
     """
-    if annot.has_mods():
-        try:
-            return annot.mass(monoisotopic=monoisotopic, ion_type="n", calculate_with_composition=True)
-        except pt.CompositionError:
-            pass
     return annot.mass(monoisotopic=monoisotopic, ion_type="n")
 
 
+def _without_labile(annot: pt.ProFormaAnnotation) -> pt.ProFormaAnnotation:
+    """A copy of ``annot`` without its labile modifications, which a fragment ion loses (ProForma)."""
+    if not annot.has_labile_mods:
+        return annot
+    stripped = annot.copy()
+    stripped.set_labile_mods(None, validate=False)
+    return stripped
+
+
 @lru_cache(maxsize=4096)
-def _cached_sequence_mass(sequence: str, monoisotopic: bool) -> float:
-    return _sequence_mass(_parse_proforma(sequence), monoisotopic)
+def _cached_sequence_mass(sequence: str, monoisotopic: bool, keep_labile: bool) -> float:
+    annot = _parse_proforma(sequence)
+    return _sequence_mass(annot if keep_labile else _without_labile(annot), monoisotopic)
 
 
 def _removed_carrier_atoms(charge: int, adducts: tuple[Adduct, ...]) -> Counter[ElementInfo]:
@@ -304,9 +308,9 @@ class PafAnnotation:
         return PafAnnotation._create_annotation(internal_ion, **kwargs)
 
     @staticmethod
-    def make_immonium(amino_acid: str | AminoAcids, *, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
+    def make_immonium(amino_acid: str | AminoAcid, *, modification: str | None = None, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
         """Create a PafAnnotation for an immonium ion"""
-        return PafAnnotation._create_annotation(ImmoniumIon(to_enum(AminoAcids, amino_acid, "immonium amino acid"), modification=modification), **kwargs)
+        return PafAnnotation._create_annotation(ImmoniumIon(immonium_amino_acid(amino_acid), modification=modification), **kwargs)
 
     @staticmethod
     def make_reference(name: str, **kwargs: Unpack[CommonAnnotationParams]) -> PafAnnotation:
@@ -397,6 +401,9 @@ class PafAnnotation:
         if calculate_sequence is not True or self.sequence is None:
             return None, None
         annot = self._parse_sequence(self.sequence)
+        if not isinstance(self.ion_type, PrecursorIon):
+            # Labile modifications are lost on fragmentation (ProForma), like peptacular.
+            annot = _without_labile(annot)
         if isinstance(self.ion_type, PeptideIon) and self.ion_type.series in SIDE_CHAIN_SERIES:
             return self._side_chain_sequence(annot)
         return annot, None
@@ -475,7 +482,7 @@ class PafAnnotation:
 
         if annot is not None:
             if ion_comp is None and self.sequence is not None:
-                base_mass += _cached_sequence_mass(self.sequence, monoisotopic)
+                base_mass += _cached_sequence_mass(self.sequence, monoisotopic, isinstance(self.ion_type, PrecursorIon))
             else:
                 base_mass += _sequence_mass(annot, monoisotopic)
 

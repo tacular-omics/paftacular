@@ -3,6 +3,7 @@
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from tacular.types import ToleranceUnit
 
 from paftacular import __version__
 
@@ -98,7 +99,8 @@ class MatchRequest(Model):
     observed_mz: Annotated[float, Field(gt=0)]
     candidates: Annotated[list[ContextRequest], Field(min_length=1, max_length=MAX_RECORDS)]
     tolerance: Annotated[float, Field(ge=0)] = 10.0
-    tolerance_unit: Literal["ppm", "Th"] = "ppm"
+    # "da" applies the tolerance to the absolute m/z difference; "ppm" is relative.
+    tolerance_unit: ToleranceUnit = "ppm"
 
 
 class Error(Model):
@@ -109,7 +111,7 @@ class Error(Model):
 
 
 class Envelope[T](Model):
-    response_schema_version: Literal[1] = 1
+    response_schema_version: Literal[2] = 2
     package_version: str = __version__
     data: T | None = None
     error: Error | None = None
@@ -162,6 +164,7 @@ class Candidate(Model):
     index: int
     result: Calculation | None = None
     error: Error | None = None
+    # Observed minus theoretical m/z, in Th (whatever the tolerance unit).
     delta_th: float | None = None
     delta_ppm: float | None = None
     matched: bool = False
@@ -170,7 +173,7 @@ class Candidate(Model):
 class Matches(Model):
     observed_mz: float
     tolerance: float
-    tolerance_unit: Literal["ppm", "Th"]
+    tolerance_unit: ToleranceUnit
     candidates: list[Candidate]
     matching_indices: list[int]
     interpretation: str = "Mass agreement is a candidate filter, not proof of fragment identity. Deltas are observed minus theoretical."

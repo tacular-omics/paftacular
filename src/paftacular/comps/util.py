@@ -55,12 +55,20 @@ def composition_to_formula_string(comp: Counter[ElementInfo]) -> str:
     return "".join(comps)
 
 
+def _listed_or_summed(listed: float | None, composition: Counter[ElementInfo], *, monoisotopic: bool) -> float:
+    """The listed database mass, or the composition's mass when the entry lists none."""
+    if listed is not None:
+        return listed
+    return sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in composition.items())
+
+
 @lru_cache(maxsize=1024)
 def lookup_reference(name: str) -> RefMolInfo:
     """Find a reference molecule by name.
 
     mzPAF 1.0.1 sections 4.4.7 and 4.5: the mzPAF reference molecule list takes priority,
-    then a Unimod entry name (for example ``Hex`` or ``HexNAc(2)``).
+    then a Unimod entry name (for example ``Hex`` or ``HexNAc(2)``). A Unimod entry keeps its
+    listed masses, like peptacular, and its composition only supplies the formula.
     """
     try:
         return REFMOL_LOOKUP[name]
@@ -71,7 +79,7 @@ def lookup_reference(name: str) -> RefMolInfo:
     except KeyError:
         unimod = None
     composition = Counter(unimod.composition) if unimod is not None and unimod.name == name and unimod.composition else None
-    if not composition:
+    if unimod is None or not composition:
         raise PafUnknownReferenceError(name)
     if any(count < 0 for count in composition.values()):
         raise PafUnknownReferenceError(name, f"Unimod entry '{name}' is a composition change, not a molecule, so it cannot be a reference")
@@ -80,7 +88,7 @@ def lookup_reference(name: str) -> RefMolInfo:
         label_type="Unimod",
         molecule_type="modification",
         formula=composition_to_formula_string(composition),
-        monoisotopic_mass=sum(element.get_mass(monoisotopic=True) * count for element, count in composition.items()),
-        average_mass=sum(element.get_mass(monoisotopic=False) * count for element, count in composition.items()),
+        monoisotopic_mass=_listed_or_summed(unimod.monoisotopic_mass, composition, monoisotopic=True),
+        average_mass=_listed_or_summed(unimod.average_mass, composition, monoisotopic=False),
         dict_composition={str(element): count for element, count in composition.items()},
     )

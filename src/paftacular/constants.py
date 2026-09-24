@@ -4,6 +4,8 @@ import re
 from enum import StrEnum
 from types import MappingProxyType
 
+from tacular import AminoAcid
+
 
 class InternalSeries(StrEnum):
     """Enumeration of internal ion series types"""
@@ -90,29 +92,9 @@ class AnnotationName(StrEnum):
     INTERNAL = "internal"
 
 
-class AminoAcids(StrEnum):
-    """Standard amino acids"""
-
-    A = "A"
-    C = "C"
-    D = "D"
-    E = "E"
-    F = "F"
-    G = "G"
-    H = "H"
-    I = "I"
-    K = "K"
-    L = "L"
-    M = "M"
-    N = "N"
-    P = "P"
-    Q = "Q"
-    R = "R"
-    S = "S"
-    T = "T"
-    V = "V"
-    W = "W"
-    Y = "Y"
+# mzPAF immonium ions use the 20 standard amino acids. tacular.AminoAcid also lists
+# ambiguous (B, J, X, Z) and rare (O, U) codes, which paftacular does not accept here.
+IMMONIUM_AMINO_ACIDS: frozenset[AminoAcid] = frozenset(AminoAcid(code) for code in "ACDEFGHIKLMNPQRSTVWY")
 
 
 # A single chemical-formula "atom" token: either a plain element+count (e.g. "H2") or an

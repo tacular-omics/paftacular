@@ -31,6 +31,8 @@ PROTON = 1.007276466812
         lambda: pft.PeptideIon("y", 0),
         lambda: pft.InternalFragment(4, 2),
         lambda: pft.ImmoniumIon("Z"),
+        lambda: pft.ImmoniumIon(["M"]),  # type: ignore[arg-type]
+        lambda: pft.ImmoniumIon({"a": 1}),  # type: ignore[arg-type]
         lambda: pft.NeutralLoss(0, base_formula="H2O"),
         lambda: pft.NeutralLoss(-1),
         lambda: pft.IsotopeSpecification(1, element="C"),
@@ -275,10 +277,21 @@ def test_average_charge_is_natural_hydrogen_less_an_electron():
     assert carrier == pytest.approx(ELEMENT_LOOKUP["H"].get_mass(monoisotopic=False) - ELECTRON_MASS, rel=0, abs=1e-12)
 
 
-def test_modification_masses_are_full_precision():
-    # Unimod tabulates Oxidation as 15.994915. The exact mass of O is 15.99491461957.
+def test_named_modification_uses_listed_mass():
+    # Unimod lists Oxidation as 15.994915. The composition (one O) gives 15.99491461957.
     delta = pft.parse("y2{M[Oxidation]K}").get_mass() - pft.parse("y2{MK}").get_mass()
+    assert delta == pytest.approx(15.994915, rel=0, abs=1e-10)
+
+
+def test_formula_modification_uses_composition():
+    delta = pft.parse("y2{M[Formula:O]K}").get_mass() - pft.parse("y2{MK}").get_mass()
     assert delta == pytest.approx(15.99491461957, rel=0, abs=1e-10)
+
+
+def test_unimod_reference_uses_listed_mass():
+    from tacular import UNIMOD_LOOKUP
+
+    assert pft.parse("y2{DE}-[Hex]").get_mass() - pft.parse("y2{DE}").get_mass() == pytest.approx(-UNIMOD_LOOKUP["Hex"].monoisotopic_mass, rel=0, abs=1e-10)
 
 
 @pytest.mark.parametrize("text", ["IK[M+Methyl]", "y2{DE}[M+Methyl]", "y2{DE}-Methyl", "y2{DE}[M+Xx]"])
