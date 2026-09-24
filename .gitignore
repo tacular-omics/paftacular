@@ -126,7 +126,9 @@ ipython_config.py
 
 # pyenv
 .python-version
-paper/
+paper/paper.pdf
+paper/jats/
+paper/*.crossref
 tmp.py
 
 # pipenv
