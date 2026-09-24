@@ -19,6 +19,9 @@
 - Tests: every worked example in the mzPAF 1.0.1 specification is parsed and round-tripped,
   and 532 m/z values are checked against a frozen reference built with pyteomics
   (`tests/reference/`).
+- Tests: Hypothesis property tests (`tests/test_properties.py`) for the serialise and parse
+  round trip, mass and m/z across charge states, adducts and isotopes, and clean errors on
+  invalid strings. `HYPOTHESIS_PROFILE=thorough` runs 5000 examples per property.
 
 ## [1.3.2] (2026-09-23)
 
