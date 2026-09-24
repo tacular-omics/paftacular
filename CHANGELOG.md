@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] (2026-09-23)
+
 ### Added
 
 - `PafUnknownReferenceError`, raised when calculating an `r[...]` ion or a `-[...]` loss whose
@@ -9,6 +11,9 @@
   `KeyError` and carries the name in `name`.
 
 ### Changed
+
+- Requires `tacular>=1.2,<2`, and the `peptacular`, `mcp` and `all` extras require
+  `peptacular>=4.2,<5` (were `tacular>=1.1.0`, `peptacular>=3.1.2`).
 
 Behaviour changes since 1.3.2 that callers can notice:
 
