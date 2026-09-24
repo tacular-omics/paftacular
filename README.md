@@ -56,7 +56,7 @@ import paftacular as pft
 # Parse a peptide fragment-ion annotation
 ann = pft.parse("y5")
 print(ann.ion_type.series, ann.ion_type.position)  # y 5
-print(ann.mass())                                  # 19.017841466812 (offset only; no sequence context)
+print(ann.mass())  # 19.017841466812 (offset only; no sequence context)
 
 # Parse several comma-separated annotations at once
 anns = pft.parse("y5-H2O^2/1.2ppm*0.95,b3^2")

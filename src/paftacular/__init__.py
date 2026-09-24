@@ -17,7 +17,7 @@ from .comps import (
 )
 from .constants import INTERNAL_MASS_DIFFS, AminoAcids, AnnotationName, BackboneCleavageType, IonSeries
 from .conversion import to_mzpaf
-from .errors import PafParseError
+from .errors import PafParseError, PafUnknownReferenceError
 from .parser import ParseResult, iter_parse, mzPAFParser, parse, parse_batch, parse_multi, parse_single
 from .resolution import resolve
 
@@ -48,6 +48,7 @@ __all__ = [
     "mzPAFParser",
     "to_mzpaf",
     "PafParseError",
+    "PafUnknownReferenceError",
     "ParseResult",
     "parse_batch",
     "iter_parse",

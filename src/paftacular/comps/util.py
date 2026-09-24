@@ -5,6 +5,7 @@ from functools import lru_cache
 
 from tacular import ELEMENT_LOOKUP, REFMOL_LOOKUP, UNIMOD_LOOKUP, ElementInfo, RefMolInfo
 
+from ..errors import PafUnknownReferenceError
 from ..util import parse_formula
 
 
@@ -63,9 +64,9 @@ def lookup_reference(name: str) -> RefMolInfo:
         unimod = None
     composition = Counter(unimod.composition) if unimod is not None and unimod.name == name and unimod.composition else None
     if not composition:
-        raise ValueError(f"Unknown reference molecule '{name}': not in the mzPAF reference list or Unimod")
+        raise PafUnknownReferenceError(name)
     if any(count < 0 for count in composition.values()):
-        raise ValueError(f"Unimod entry '{name}' is a composition change, not a molecule, so it cannot be a reference")
+        raise PafUnknownReferenceError(name, f"Unimod entry '{name}' is a composition change, not a molecule, so it cannot be a reference")
     return RefMolInfo(
         name=name,
         label_type="Unimod",

@@ -596,6 +596,11 @@ Structured Errors and Batch Parsing
 at zero. Syntax errors point to unexpected content or the end of incomplete
 input. Semantic errors identify the start of the affected annotation.
 
+Parsing does not look up reference molecule names. Calculating an ``r[...]``
+ion or a ``-[...]`` loss whose name is in neither the mzPAF reference list nor
+Unimod raises ``PafUnknownReferenceError``, with the name in ``name``. It is a
+``ValueError`` and also a ``KeyError``, which 1.3.2 raised for ``r[...]``.
+
 ``iter_parse()`` processes an iterable lazily. ``parse_batch()`` collects its
 results into a list. Each result preserves the original record text and index.
 If any annotation in a record is malformed, that record has an error and no
