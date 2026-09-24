@@ -17,6 +17,11 @@ just install
 just pre-release
 ```
 
+Install the commit hooks once per clone with `uvx pre-commit install`. On every
+commit they run `ruff check`, `ruff format --check` and a few file checks
+(`uvx pre-commit run --all-files` runs them on everything). Type checks and
+tests are not in the hooks; run `just check` for those.
+
 Changes should include tests for new behavior and user-facing documentation when applicable. Keep pull requests focused, explain the motivation, and describe how the change was validated.
 
 By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
