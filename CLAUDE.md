@@ -5,12 +5,12 @@
 paftacular parses and serializes HUPO-PSI mzPAF 1.0.1 peak annotations (`y5-H2O^2/1.2ppm*0.95`)
 and calculates ion masses, m/z and elemental compositions. Users are people reading or writing
 fragment annotations from spectral libraries and search-engine output. Python 3.12 or newer.
-Imported as `pft` by convention. Current version: 1.3.1.
+Imported as `pft` by convention. Current version: 1.4.0.
 
 Place in the tacular-omics graph (tier 1):
 
-- **Upstream:** `tacular` (required, `>=1.1.0,<2`) supplies element, amino-acid, modification
-  and fragment-ion lookups. `peptacular` (`>=3.1.2,<5`, extra `peptacular`) is optional and
+- **Upstream:** `tacular` (required, `>=1.2,<2`) supplies element, amino-acid, modification
+  and fragment-ion lookups. `peptacular` (`>=4.2,<5`, extra `peptacular`) is optional and
   supplies ProForma sequence masses, `resolve()` and `to_mzpaf()`. `pysmiles` (extra `smiles`)
   is optional, for `s{...}` ions. The `mcp` extra adds the official MCP SDK v2 and peptacular.
   `all` installs everything.
