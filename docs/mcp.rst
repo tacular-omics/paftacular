@@ -51,7 +51,7 @@ version range so an update does not change the server under you:
      "mcpServers": {
        "paftacular": {
          "command": "uvx",
-         "args": ["--from", "paftacular[mcp]>=1.3,<2", "paftacular-mcp"]
+         "args": ["--from", "paftacular[mcp]>=2.0,<3", "paftacular-mcp"]
        }
      }
    }

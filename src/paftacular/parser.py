@@ -1,7 +1,9 @@
+"""mzPAF text parsing: parse, parse_multi and iter_parse."""
+
 import re
-from collections.abc import Iterable, Iterator
+import threading
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
-from typing import ClassVar
 
 from .annotation import PafAnnotation
 from .comps import (
@@ -20,284 +22,237 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
+from .comps.util import _formula_items
 from .constants import (
     ADDUCT_REGEX_PATTERN,
     FULL_PAF_PATTERN,
     ISOTOPE_REGEX_PATTERN,
+    MAX_CACHE_SIZE,
     NEUTRAL_LOSS_REGEX_PATTERN,
     PARTIAL_PAF_PATTERN,
     AminoAcids,
     IonSeries,
 )
-from .errors import PafParseError
+from .errors import PafParseError, PaftacularError
 from .syntax import annotation_spans
+from .util import to_enum
+
+_ISOTOPE_TOKEN = re.compile(ISOTOPE_REGEX_PATTERN)
+_NEUTRAL_LOSS_TOKEN = re.compile(NEUTRAL_LOSS_REGEX_PATTERN)
+_ADDUCT_TOKEN = re.compile(ADDUCT_REGEX_PATTERN)
 
 
-class mzPAFParser:
-    _instance: ClassVar["mzPAFParser | None"] = None
+# Guards eviction and insertion only. Lookups stay lock-free: a hit reads one dict entry.
+_CACHE_LOCK = threading.Lock()
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = object.__new__(cls)
-        return cls._instance
 
-    def parse(self, annotation_str: str) -> PafAnnotation:
-        """Parse a single annotation string"""
-        return parse_single(annotation_str)
+def _store[V](data: dict[str, V], key: str, value: V) -> None:
+    """Insert into a bounded cache, dropping the oldest entry when full. Safe under threads."""
+    with _CACHE_LOCK:
+        if key not in data and len(data) >= MAX_CACHE_SIZE:
+            del data[next(iter(data))]
+        data[key] = value
 
-    def _build_annotation(self, match: re.Match[str]) -> PafAnnotation:
-        """Build a PafAnnotation from a match against FULL_PAF_PATTERN/PARTIAL_PAF_PATTERN"""
-        groups = match.groupdict()
 
-        return PafAnnotation(
-            ion_type=self._parse_ion_type(groups),
-            analyte_reference=self._parse_int(groups, "analyte_reference"),
-            is_auxiliary=bool(groups.get("is_auxiliary")),
-            neutral_losses=self._parse_neutral_losses(groups.get("neutral_losses")),
-            isotopes=self._parse_isotopes(groups.get("isotope")),
-            adducts=self._parse_adducts(groups.get("adducts")),
-            charge=1 if groups.get("charge") is None else self._require_int(groups, "charge"),
-            mass_error=self._parse_mass_error(groups),
-            confidence=self._parse_float(groups, "confidence"),
-        )
+class _BoundedCache[V]:
+    """Substring -> component cache. Components are immutable, so equal text shares one object.
 
-    def _parse_ion_type(self, groups: dict[str, str | None]) -> IonType:
-        """Parse the ion type from regex groups using dispatch pattern"""
+    Only successful builds are stored, so an invalid substring fails every time it is parsed.
+    The oldest entry is dropped once the cache holds ``MAX_CACHE_SIZE`` entries.
+    """
 
-        # Peptide ion series
-        if groups.get("series"):
-            series_str = self._require(groups, "series")
-            ion_series = IonSeries(series_str)
-            return PeptideIon(
-                series=ion_series,
-                position=self._require_int(groups, "ordinal"),
-                sequence=groups.get("sequence_ordinal"),
-            )
+    __slots__ = ("_build", "_data")
 
-        # Internal fragment
-        if groups.get("internal_start"):
-            return InternalFragment(
-                start_position=self._require_int(groups, "internal_start"),
-                end_position=self._require_int(groups, "internal_end"),
-                sequence=groups.get("sequence_internal"),
-            )
+    def __init__(self, build: Callable[[str], V]):
+        self._data: dict[str, V] = {}
+        self._build = build
 
-        # Precursor ion
-        if groups.get("precursor"):
-            return PrecursorIon()
-
-        # Immonium ion
-        if groups.get("immonium"):
-            aa_str = self._require(groups, "immonium")
-            amino_acid = AminoAcids(aa_str)
-            return ImmoniumIon(
-                amino_acid=amino_acid,
-                modification=groups.get("immonium_modification"),
-            )
-
-        # Reference ion
-        if groups.get("reference_label"):
-            return ReferenceIon(name=self._require(groups, "reference_label"))
-
-        # Chemical formula
-        if groups.get("formula"):
-            return ChemicalFormula(formula=self._require(groups, "formula"))
-
-        # Named compound
-        if groups.get("named_compound"):
-            return NamedCompound(name=self._require(groups, "named_compound"))
-
-        # SMILES compound
-        if groups.get("smiles"):
-            return SMILESCompound(smiles=self._require(groups, "smiles"))
-
-        # Unknown/unannotated ion
-        if groups.get("unannotated"):
-            return UnknownIon(label=self._parse_int(groups, "unannotated_label"))
-
-        # Should never reach here due to regex, but provide helpful error
-        non_null = {k: v for k, v in groups.items() if v is not None}
-        raise ValueError(f"Unable to parse ion type. Available groups: {non_null}")
-
-    def _parse_isotopes(self, isotope_str: str | None) -> tuple[IsotopeSpecification, ...]:
-        """Parse isotope notation into tuple of specifications
-
-        Examples:
-            "+i" -> (IsotopeSpecification(count=1),)
-            "-2i13C" -> (IsotopeSpecification(count=-2, element="13C"),)
-            "+i-2i13C+iA" -> (IsotopeSpecification(count=1), IsotopeSpecification(count=-2, element="13C"), IsotopeSpecification(count=1, is_average=True))
-        """
-        if not isotope_str:
-            return ()
-
-        # Extract individual isotope strings like "+i", "-2i13C", "+iA"
-        isotope_matches = re.findall(ISOTOPE_REGEX_PATTERN, isotope_str)
-        if not isotope_matches:
-            return ()
-
-        # Parse each isotope component
-        isotopes: list[IsotopeSpecification] = []
-        for match_groups in isotope_matches:
-            # The outer annotation pattern has already validated these tokens.
-            sign_str, count_str, element_or_avg = match_groups
-
-            count = int(count_str) if count_str else 1
-            isotopes.append(
-                IsotopeSpecification(
-                    count=-count if sign_str == "-" else count,
-                    element=None if element_or_avg == "A" else element_or_avg or None,
-                    is_average=element_or_avg == "A",
-                )
-            )
-
-        return tuple(isotopes)
-
-    def _parse_neutral_losses(self, losses_str: str | None) -> tuple[NeutralLoss, ...]:
-        """Parse neutral losses/gains into tuple of NeutralLoss objects"""
-        if not losses_str:
-            return ()
-
-        # Pattern matches: [+-] followed by number, formula, or named group
-
-        loss_strings = re.findall(NEUTRAL_LOSS_REGEX_PATTERN, losses_str)
-
-        losses: list[NeutralLoss] = []
-        for loss_str in loss_strings:
-            losses.append(NeutralLoss.parse(loss_str))
-        return tuple(losses)
-
-    def _parse_adducts(self, adduct_str: str | None) -> tuple[Adduct, ...]:
-        """Parse adduct notation into tuple of Adduct objects
-
-        Examples:
-            "M+H" -> (Adduct(count=1, base_formula="H"),)
-            "M+2H+Na" -> (Adduct(count=2, base_formula="H"), Adduct(count=1, base_formula="Na"))
-            "M+NH4" -> (Adduct(count=1, base_formula="NH4"),)
-            "M-H+2Na" -> (Adduct(count=-1, base_formula="H"), Adduct(count=2, base_formula="Na"))
-        """
-        if not adduct_str:
-            return ()
-
-        # Verify M prefix
-        if not adduct_str.startswith("M"):
-            raise ValueError(f"Adduct string must start with 'M': '{adduct_str}'")
-
-        content = adduct_str[1:]  # Remove 'M'
-        if not content:
-            raise ValueError(f"Adduct string must have components after 'M': '{adduct_str}'")
-
-        # Extract individual adduct strings like "+H", "+2Na", "-NH4"
-        adduct_strings = re.findall(ADDUCT_REGEX_PATTERN, content)
-        if not adduct_strings:
-            raise ValueError(f"No adduct components found in '{adduct_str}'")
-
-        # Parse each adduct component
-        adducts: list[Adduct] = []
-        for match_groups in adduct_strings:
-            # Construct directly from the validated token groups.
-            sign_str, count_str, formula = match_groups
-            count = int(count_str) if count_str else 1
-            adducts.append(Adduct(count=-count if sign_str == "-" else count, base_formula=formula))
-
-        return tuple(adducts)
-
-    def _parse_mass_error(self, groups: dict[str, str | None]) -> MassError | None:
-        """Parse mass error value and unit"""
-        if not groups.get("mass_error"):
-            return None
-
-        mass_error_str = groups.get("mass_error")
-        if mass_error_str is None:
-            raise ValueError("Mass error value is missing")
-        value = float(mass_error_str)
-        unit = groups.get("mass_error_unit")
-
-        if unit == "ppm":
-            return MassError(value, "ppm")
-        elif unit is None:
-            return MassError(value, "da")
-        else:
-            raise ValueError(f"Unknown mass error unit: '{unit}'")
-
-    # Helper methods for common parsing patterns
-    def _require(self, groups: dict[str, str | None], key: str) -> str:
-        """Get required string value from groups, raise if missing"""
-        value = groups.get(key)
-        if value is None or not isinstance(value, str):
-            raise ValueError(f"Required field '{key}' is missing or invalid")
+    def get(self, key: str) -> V:
+        try:
+            return self._data[key]
+        except KeyError:
+            pass
+        value = self._build(key)
+        _store(self._data, key, value)
         return value
 
-    def _require_int(self, groups: dict[str, str | None], key: str) -> int:
-        """Get required integer value from groups, raise if missing"""
-        value = groups.get(key)
-        if value is None:
-            raise ValueError(f"Required field '{key}' is missing")
-        try:
-            return int(value)
-        except ValueError as e:
-            raise ValueError(f"Field '{key}' must be an integer, got '{value}'") from e
+    def clear(self) -> None:
+        with _CACHE_LOCK:
+            self._data.clear()
 
-    def _parse_int(self, groups: dict[str, str | None], key: str) -> int | None:
-        """Parse optional integer from groups"""
-        value = groups.get(key)
-        if value is None:
-            return None
-        try:
-            return int(value)
-        except ValueError as e:
-            raise ValueError(f"Field '{key}' must be an integer, got '{value}'") from e
-
-    def _parse_float(self, groups: dict[str, str | None], key: str) -> float | None:
-        """Parse optional float from groups"""
-        value = groups.get(key)
-        if value is None:
-            return None
-        try:
-            return float(value)
-        except ValueError as e:
-            raise ValueError(f"Field '{key}' must be a number, got '{value}'") from e
-
-    def parse_multi(self, annotation_str: str) -> list[PafAnnotation]:
-        """Parse annotations separated by commas outside labels and sequences."""
-        annotations: list[PafAnnotation] = []
-        for index, (start, end) in enumerate(annotation_spans(annotation_str)):
-            segment = annotation_str[start:end]
-            offset = start + len(segment) - len(segment.lstrip())
-            segment = segment.strip()
-            match = FULL_PAF_PATTERN.fullmatch(segment)
-            if match is None:
-                partial = PARTIAL_PAF_PATTERN.match(segment)
-                position = offset + (partial.end() if partial else 0)
-                raise PafParseError(annotation_str, position, index, "Unexpected or missing annotation content")
-            try:
-                annotations.append(self._build_annotation(match))
-            except ValueError as error:
-                raise PafParseError(annotation_str, offset, index, str(error)) from error
-        return annotations
+    def __len__(self) -> int:
+        return len(self._data)
 
 
-MZ_PAF_PARSER = mzPAFParser()
+def _build_ion(groups: dict[str, str | None]) -> IonType:
+    """Build the ion component from the regex groups of one annotation."""
+    if series := groups["series"]:
+        return PeptideIon(to_enum(IonSeries, series, "ion series"), int(groups["ordinal"] or ""), sequence=groups["sequence_ordinal"])
+    if start := groups["internal_start"]:
+        return InternalFragment(int(start), int(groups["internal_end"] or ""), sequence=groups["sequence_internal"])
+    if groups["precursor"]:
+        return PrecursorIon()
+    if amino_acid := groups["immonium"]:
+        return ImmoniumIon(to_enum(AminoAcids, amino_acid, "immonium amino acid"), modification=groups["immonium_modification"])
+    if name := groups["reference_label"]:
+        return ReferenceIon(name)
+    if formula := groups["formula"]:
+        return ChemicalFormula(formula)
+    if name := groups["named_compound"]:
+        return NamedCompound(name)
+    if smiles := groups["smiles"]:
+        return SMILESCompound(smiles)
+    if groups["unannotated"]:
+        label = groups["unannotated_label"]
+        return UnknownIon(label=None if label is None else int(label))
+    # The annotation regex guarantees one of the branches above.
+    raise PaftacularError("Unable to parse ion type")
+
+
+def _neutral_losses(text: str) -> tuple[NeutralLoss, ...]:
+    losses = tuple(NeutralLoss.parse(token.group()) for token in _NEUTRAL_LOSS_TOKEN.finditer(text))
+    for loss in losses:
+        if loss.base_formula is not None:
+            _check_formula(loss.base_formula, "neutral loss")
+    return losses
+
+
+def _check_formula(formula: str, what: str) -> None:
+    """Reject a formula with a token that is not an element (M+Methyl) when it is parsed, not when it is used."""
+    try:
+        _formula_items(formula)
+    except PaftacularError as error:
+        raise PaftacularError(f"Invalid {what} formula {formula!r}: {error}") from error
+
+
+def _isotopes(text: str) -> tuple[IsotopeSpecification, ...]:
+    isotopes: list[IsotopeSpecification] = []
+    for sign, count_text, element in _ISOTOPE_TOKEN.findall(text):
+        count = int(count_text) if count_text else 1
+        if sign == "-":
+            count = -count
+        if element == "A":
+            isotopes.append(IsotopeSpecification(count, is_average=True))
+        else:
+            isotopes.append(IsotopeSpecification(count, element=element or None))
+    return tuple(isotopes)
+
+
+def _adducts(text: str) -> tuple[Adduct, ...]:
+    # The annotation regex guarantees the leading "M" and at least one token.
+    adducts: list[Adduct] = []
+    for sign, count_text, formula in _ADDUCT_TOKEN.findall(text[1:]):
+        count = int(count_text) if count_text else 1
+        _check_formula(formula, "adduct")
+        adducts.append(Adduct(-count if sign == "-" else count, formula))
+    return tuple(adducts)
+
+
+def _mass_error(text: str) -> MassError:
+    if text.endswith("ppm"):
+        return MassError(float(text[:-3]), unit="ppm")
+    return MassError(float(text))
+
+
+# The ion component is built from the match groups, so it is cached inline by its text.
+_ION_CACHE: dict[str, IonType] = {}
+_LOSS_CACHE: _BoundedCache[tuple[NeutralLoss, ...]] = _BoundedCache(_neutral_losses)
+_ISOTOPE_CACHE: _BoundedCache[tuple[IsotopeSpecification, ...]] = _BoundedCache(_isotopes)
+_ADDUCT_CACHE: _BoundedCache[tuple[Adduct, ...]] = _BoundedCache(_adducts)
+_MASS_ERROR_CACHE: _BoundedCache[MassError] = _BoundedCache(_mass_error)
+
+
+def _clear_caches() -> None:
+    """Empty every parser cache (for tests and memory measurements)."""
+    with _CACHE_LOCK:
+        _ION_CACHE.clear()
+    for cache in (_LOSS_CACHE, _ISOTOPE_CACHE, _ADDUCT_CACHE, _MASS_ERROR_CACHE):
+        cache.clear()
+
+
+def _build_annotation(match: re.Match[str]) -> PafAnnotation:
+    """Build a PafAnnotation from a match against FULL_PAF_PATTERN."""
+    groups = match.groupdict()
+    ion = groups["ion"] or ""
+    ion_type = _ION_CACHE.get(ion)
+    if ion_type is None:
+        ion_type = _build_ion(groups)
+        _store(_ION_CACHE, ion, ion_type)
+
+    losses = groups["neutral_losses"]
+    isotopes = groups["isotope"]
+    adducts = groups["adducts"]
+    charge = groups["charge"]
+    analyte_reference = groups["analyte_reference"]
+    mass_error = groups["mass_error"]
+    confidence = groups["confidence"]
+    if mass_error is not None and groups["mass_error_unit"]:
+        mass_error += "ppm"
+    return PafAnnotation(
+        ion_type,
+        analyte_reference=None if analyte_reference is None else int(analyte_reference),
+        is_auxiliary=groups["is_auxiliary"] is not None,
+        neutral_losses=_LOSS_CACHE.get(losses) if losses else (),
+        isotopes=_ISOTOPE_CACHE.get(isotopes) if isotopes else (),
+        adducts=_ADDUCT_CACHE.get(adducts) if adducts else (),
+        charge=1 if charge is None else int(charge),
+        mass_error=_MASS_ERROR_CACHE.get(mass_error) if mass_error else None,
+        confidence=None if confidence is None else _float(confidence),
+    )
+
+
+def _float(text: str) -> float:
+    try:
+        return float(text)
+    except ValueError:
+        raise PaftacularError(f"Expected a number, got {text!r}") from None
+
+
+def _spans(text: str) -> Iterable[tuple[int, int]]:
+    # Fast path: without a comma the whole text is one annotation. Delimiter errors are
+    # reported by annotation_spans() when the regex match fails.
+    if "," not in text:
+        return ((0, len(text)),) if text.strip() else ()
+    return annotation_spans(text)
 
 
 def parse_multi(annotation_str: str) -> list[PafAnnotation]:
-    """parse mzPAF annotation string into list of PafAnnotation"""
-    return MZ_PAF_PARSER.parse_multi(annotation_str)
+    """Parse annotations separated by commas outside labels and sequences.
+
+    Returns an empty list for empty or blank input. Raises :class:`PafParseError`.
+    """
+    if not isinstance(annotation_str, str):
+        raise TypeError(f"Expected an mzPAF string, got {type(annotation_str).__name__}")
+    annotations: list[PafAnnotation] = []
+    for index, (start, end) in enumerate(_spans(annotation_str)):
+        segment = annotation_str[start:end]
+        stripped = segment.strip()
+        offset = start + len(segment) - len(segment.lstrip())
+        match = FULL_PAF_PATTERN.fullmatch(stripped)
+        if match is None:
+            # Let the delimiter scan report unclosed brackets or braces first.
+            for _ in annotation_spans(annotation_str):
+                pass
+            partial = PARTIAL_PAF_PATTERN.match(stripped)
+            position = offset + (partial.end() if partial else 0)
+            raise PafParseError(annotation_str, position, index, "Unexpected or missing annotation content")
+        try:
+            annotations.append(_build_annotation(match))
+        except PaftacularError as error:
+            raise PafParseError(annotation_str, offset, index, str(error)) from error
+    return annotations
 
 
-def parse(annotation_str: str) -> PafAnnotation | list[PafAnnotation]:
-    """parse single mzPAF annotation string into PafAnnotation"""
-    annots = parse_multi(annotation_str)
-    if len(annots) == 1:
-        return annots[0]
-    return annots
+def parse(annotation_str: str) -> PafAnnotation:
+    """Parse exactly one mzPAF annotation.
 
-
-def parse_single(annotation_str: str) -> PafAnnotation:
-    """Parse exactly one annotation."""
-    annots = parse_multi(annotation_str)
-    if len(annots) != 1:
-        raise PafParseError(annotation_str, 0, 0, f"Expected single annotation, got {len(annots)}")
-    return annots[0]
+    Raises :class:`PafParseError` when the text holds zero or several annotations. Use
+    :func:`parse_multi` for comma-separated input.
+    """
+    annotations = parse_multi(annotation_str)
+    if len(annotations) != 1:
+        raise PafParseError(annotation_str, 0, 0, f"Expected one annotation, got {len(annotations)}. Use parse_multi() for comma-separated annotations.")
+    return annotations[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -325,8 +280,3 @@ def iter_parse(records: Iterable[str]) -> Iterator[ParseResult]:
             yield ParseResult(index, text, error=error)
         else:
             yield ParseResult(index, text, annotations)
-
-
-def parse_batch(records: Iterable[str]) -> list[ParseResult]:
-    """Collect batch results without discarding malformed input records."""
-    return list(iter_parse(records))

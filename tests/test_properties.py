@@ -154,7 +154,7 @@ def _quiet(function, *args):
 @given(annotations())
 def test_parse_serialize_round_trip(annotation):
     text = annotation.serialize()
-    parsed = pft.parse_single(text)
+    parsed = pft.parse(text)
     assert parsed == annotation
     assert parsed.serialize() == text
 
@@ -165,10 +165,9 @@ def test_multi_annotation_round_trip(items):
     assert pft.parse_multi(text) == items
 
 
-@pytest.mark.xfail(strict=True, reason="spec ambiguity: [M+H] after an unmodified immonium ion parses as its modification")
 def test_unmodified_immonium_with_adduct_round_trip():
     annotation = PafAnnotation(ion_type=ImmoniumIon("A"), adducts=(Adduct(count=1, base_formula="H"),))
-    assert pft.parse_single(annotation.serialize()) == annotation
+    assert pft.parse(annotation.serialize()) == annotation
 
 
 @given(annotations())
@@ -190,7 +189,7 @@ formula_losses = st.builds(lambda count, formula: NeutralLoss(count=count, base_
 
 def _mass_or_skip(annotation):
     try:
-        return _quiet(annotation.mass)
+        return _quiet(annotation.get_mass)
     except ValueError:
         # Side-chain ions on residues that have none, for example d on G. Covered by explicit tests.
         assume(False)
@@ -201,7 +200,7 @@ def test_charge_adds_one_proton_per_charge(ion, losses, charge):
     single = PafAnnotation(ion_type=ion, neutral_losses=tuple(losses))
     charged = dataclasses.replace(single, charge=charge)
     base = _mass_or_skip(single)
-    mass = _quiet(charged.mass)
+    mass = _quiet(charged.get_mass)
     step = -ELECTRON if isinstance(ion, ChemicalFormula) else PROTON
     assert mass - base == pytest.approx((charge - 1) * step, rel=0, abs=1e-9)
     assert _quiet(charged.mz) * charge == pytest.approx(mass, rel=1e-12, abs=1e-9)
@@ -213,7 +212,7 @@ def test_adduct_mass_independent_of_charge_except_electrons(ion, ion_adducts, ch
     single = PafAnnotation(ion_type=ion, adducts=tuple(ion_adducts))
     charged = dataclasses.replace(single, charge=charge)
     base = _mass_or_skip(single)
-    assert _quiet(charged.mass) - base == pytest.approx(-(charge - 1) * ELECTRON, rel=0, abs=1e-9)
+    assert _quiet(charged.get_mass) - base == pytest.approx(-(charge - 1) * ELECTRON, rel=0, abs=1e-9)
 
 
 @given(computable_ions, st.integers(-3, 3).filter(bool), st.integers(1, 4))
@@ -231,7 +230,7 @@ def test_mass_matches_composition(ion, charge):
     annotation = PafAnnotation(ion_type=ion, charge=charge)
     mass = _mass_or_skip(annotation)
     composition = _quiet(annotation.comp)
-    composition_mass = sum(element.get_mass(True) * count for element, count in composition.items())
+    composition_mass = sum(element.get_mass(monoisotopic=True) * count for element, count in composition.items())
     # Reference masses and Unimod masses are stored to 6 or more decimals. Each named modification adds up to 5e-7.
     tolerance = 1e-6 + 5e-7 * sequence.count("[")
     assert mass == pytest.approx(composition_mass - charge * ELECTRON, rel=0, abs=tolerance)
@@ -287,5 +286,5 @@ def test_mutated_annotation_parses_or_raises_parse_error(annotation, data):
 def test_mass_raises_only_documented_errors(annotation):
     try:
         _quiet(annotation.mz)
-    except (ValueError, NotImplementedError, ImportError):
+    except (ValueError, ImportError):
         pass

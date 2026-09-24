@@ -125,8 +125,8 @@ class TestReferenceIonParsing:
         # Test mass calculations - Adenine (C5H5N5)
         assert ref_ion.monoisotopic_mass == pytest.approx(135.054495, rel=1e-5)
         assert ref_ion.average_mass == pytest.approx(135.127, rel=1e-3)
-        assert ref_ion.mass(monoisotopic=True) == ref_ion.monoisotopic_mass
-        assert ref_ion.mass(monoisotopic=False) == ref_ion.average_mass
+        assert ref_ion.get_mass(monoisotopic=True) == ref_ion.monoisotopic_mass
+        assert ref_ion.get_mass(monoisotopic=False) == ref_ion.average_mass
 
         # Test formula
         assert ref_ion.formula == "C5H5N5"
@@ -220,8 +220,8 @@ class TestSMILESCompoundParsing:
         # CN=C=O is methyl isocyanate: C2H3NO
         assert smiles.monoisotopic_mass == pytest.approx(57.021464, rel=1e-5)
         assert smiles.average_mass == pytest.approx(57.05, rel=1e-2)
-        assert smiles.mass(monoisotopic=True) == smiles.monoisotopic_mass
-        assert smiles.mass(monoisotopic=False) == smiles.average_mass
+        assert smiles.get_mass(monoisotopic=True) == smiles.monoisotopic_mass
+        assert smiles.get_mass(monoisotopic=False) == smiles.average_mass
 
     def test_smiles_compound_formula_properties(self):
         """Test formula and proforma_formula properties"""
@@ -289,7 +289,7 @@ class TestNeutralLossParsing:
         assert comp[ELEMENT_LOOKUP["O"]] == -1
 
         # Mass
-        assert loss.mass() == pytest.approx(-18.010565, rel=1e-6)
+        assert loss.get_mass() == pytest.approx(-18.010565, rel=1e-6)
         assert loss.monoisotopic_mass == pytest.approx(-18.010565, rel=1e-6)
 
         # Serialization
@@ -319,7 +319,7 @@ class TestNeutralLossParsing:
         assert loss.count == 1
         assert loss.formula == "+H2"
         # H2 mass: 2 * 1.007825 = 2.01565 Da
-        assert loss.mass() == pytest.approx(2.01565, rel=1e-5)
+        assert loss.get_mass() == pytest.approx(2.01565, rel=1e-5)
 
     def test_neutral_loss_reference_gain(self):
         ann = parse_one("y5+[Adenine]")
@@ -341,7 +341,7 @@ class TestNeutralLossParsing:
         assert comp[ELEMENT_LOOKUP["N"]] == 5
 
         # Mass
-        assert loss.mass() == pytest.approx(135.0544951833, rel=1e-6)
+        assert loss.get_mass() == pytest.approx(135.0544951833, rel=1e-6)
         assert loss.monoisotopic_mass == pytest.approx(135.0544951833, rel=1e-6)
 
         # Serialization
@@ -371,7 +371,7 @@ def test_neutral_loss_multiple_reference():
     assert comp[ELEMENT_LOOKUP["N"]] == -10
 
     # Mass (2x loss)
-    assert loss.mass() == pytest.approx(-270.10899, rel=1e-6)
+    assert loss.get_mass() == pytest.approx(-270.10899, rel=1e-6)
 
     # Serialization
     assert loss.serialize() == "-2[ADenine]"
@@ -444,7 +444,7 @@ def test_isotope_specification_mass():
     iso = ann.isotopes[0]
 
     # Mass shift for 13C - 12C should be approximately 1.003 Da
-    mass = iso.mass()
+    mass = iso.get_mass()
     # The mass difference between 13C and 12C
     c13_mass = ELEMENT_LOOKUP["13C"].mass
     c12_mass = ELEMENT_LOOKUP["12C"].mass
@@ -459,7 +459,7 @@ def test_isotope_specification_multiple_mass():
     iso = ann.isotopes[0]
 
     # Mass shift for 2x (13C - 12C)
-    mass = iso.mass()
+    mass = iso.get_mass()
     c13_mass = ELEMENT_LOOKUP["13C"].mass
     c12_mass = ELEMENT_LOOKUP["12C"].mass
     expected_shift = 2 * (c13_mass - c12_mass)
@@ -475,7 +475,7 @@ def test_isotope_specification_errors():
     with pytest.raises(ValueError, match="average isotopomer"):
         _ = iso.composition
     with pytest.raises(ValueError, match="average isotopomer"):
-        _ = iso.mass()
+        _ = iso.get_mass()
 
     # Generic isotope (no element) resolves to a 13C substitution per mzPAF section 4.6:
     # composition gains one 13C and loses one 12C, consistent with its mass shift.
@@ -540,7 +540,7 @@ def test_adduct_mass_calculation():
     assert ann.adducts and len(ann.adducts) == 1
     adduct = ann.adducts[0]
     # Hydrogen mass
-    assert adduct.mass() == pytest.approx(1.007825, rel=1e-5)
+    assert adduct.get_mass() == pytest.approx(1.007825, rel=1e-5)
     assert adduct.monoisotopic_mass == pytest.approx(1.007825, rel=1e-5)
 
 
@@ -777,7 +777,7 @@ def test_neutral_loss_mass():
     assert loss.loss_type == "mass"
     assert loss.base_mass == pytest.approx(17.03, rel=1e-5)
     assert loss.count == -1
-    assert loss.mass() == pytest.approx(-17.03, rel=1e-5)
+    assert loss.get_mass() == pytest.approx(-17.03, rel=1e-5)
 
     # Should fail to get composition for mass-based loss
     with pytest.raises(ValueError, match="Cannot calculate composition for mass-based loss"):
@@ -1021,27 +1021,27 @@ class TestMzPafSpecComplianceRegressions:
         12C) rather than raising -- otherwise mass() returns a number while comp() throws.
         """
         ann = parse_one(s)
-        comp = ann.dict_composition()  # must not raise for generic or element-specified isotopes
+        comp = {str(e): n for e, n in ann.comp().items()}  # must not raise for generic or element-specified isotopes
         mass_from_comp = sum(ELEMENT_LOOKUP[sym].get_mass(monoisotopic=True) * n for sym, n in comp.items())
         # comp is neutral-basis (a full H proton per charge); mass() reports the charged species,
         # i.e. one electron mass lighter per charge. This electron delta is the only allowed gap.
         electron_mass = 0.000548579909
-        assert ann.mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
+        assert ann.get_mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
 
     def test_annotation_generic_isotope_matches_explicit_13c(self):
         """`+i` (generic) and `+i13C` (explicit) must produce identical mass and composition."""
         generic, explicit = parse_one("y5+i"), parse_one("y5+i13C")
-        assert generic.mass() == pytest.approx(explicit.mass())
-        assert generic.dict_composition() == explicit.dict_composition()
+        assert generic.get_mass() == pytest.approx(explicit.get_mass())
+        assert {str(e): n for e, n in generic.comp().items()} == {str(e): n for e, n in explicit.comp().items()}
 
     def test_annotation_average_isotope_fails_consistently(self):
         """An average isotope (`+iA`) has no defined monoisotopic mass or composition, so both
         mass() and comp() must raise -- consistently, never one succeeding while the other throws."""
         ann = parse_one("y5+iA")
         with pytest.raises(ValueError):
-            ann.mass()
+            ann.get_mass()
         with pytest.raises(ValueError):
-            ann.dict_composition()
+            {str(e): n for e, n in ann.comp().items()}
 
     def test_immonium_atom_removing_modification_keeps_negative_comp(self):
         """Regression: ImmoniumIon.composition normalized with unary `+`, which drops any element
@@ -1049,11 +1049,11 @@ class TestMzPafSpecComplianceRegressions:
         supplies made composition/formula silently disagree with mass(). Net-negative totals must be
         kept (only exact zeros stripped) so comp() stays consistent with mass()."""
         ann = parse_one("IK[Dehydrated]")  # dehydration removes an O the K immonium doesn't have
-        comp = ann.dict_composition()
+        comp = {str(e): n for e, n in ann.comp().items()}
         assert comp["O"] == -1  # kept, not clamped to 0
         electron_mass = 0.000548579909
         mass_from_comp = sum(ELEMENT_LOOKUP[sym].get_mass(monoisotopic=True) * n for sym, n in comp.items())
-        assert ann.mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
+        assert ann.get_mass() == pytest.approx(mass_from_comp - ann.charge * electron_mass, abs=1e-6)
         # A mixed-sign composition can't be written as a plain formula, but ProForma allows negatives.
         assert ann.proforma_formula() == "C5H11N2O-1"
 
@@ -1061,10 +1061,8 @@ class TestMzPafSpecComplianceRegressions:
     def test_parser_no_catastrophic_backtracking_on_long_atom_run(self):
         """Regression (ReDoS): `_ATOM_TOKEN+` over the overlapping `[A-Z]`/`[A-Za-z0-9]` classes was
         a `(a+)+`-style catastrophic-backtracking shape -- an anchored non-match on a long single-
-        letter run hung mzPAFParser.parse. The possessive `*+` quantifier must keep it linear."""
+        letter run hung the parser. The possessive `*+` quantifier must keep it linear."""
         import signal
-
-        from paftacular.parser import mzPAFParser
 
         def _timeout(signum, frame):
             raise TimeoutError("parse did not return quickly -- catastrophic backtracking regressed")
@@ -1074,7 +1072,7 @@ class TestMzPafSpecComplianceRegressions:
         signal.setitimer(signal.ITIMER_REAL, 2.0)
         try:
             with pytest.raises(ValueError):
-                mzPAFParser().parse(pathological)
+                parse(pathological)
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, old_handler)

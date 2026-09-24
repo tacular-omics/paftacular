@@ -149,7 +149,7 @@ def test_reference_mz(case):
     if case["analyte"]:
         annotation = annotation.resolve(case["analyte"])
     assert annotation.mz() == pytest.approx(case["mz"], rel=0, abs=case["tolerance"])
-    assert annotation.mass() == pytest.approx(case["mz"] * case["charge"], rel=0, abs=case["tolerance"] * case["charge"])
+    assert annotation.get_mass() == pytest.approx(case["mz"] * case["charge"], rel=0, abs=case["tolerance"] * case["charge"])
 
 
 def test_reference_fixture_covers_every_family():
@@ -185,8 +185,8 @@ def test_spec_stated_generic_isotope_shift():
 def test_spec_neutral_loss_table(formula, printed):
     # The sulfur rows of the section 4.5 table are printed about 1e-5 Da off their formulas
     # and are covered by the reference fixture instead.
-    base = PafAnnotation.parse("y1{K}").mass()
-    assert base - PafAnnotation.parse(f"y1{{K}}-{formula}").mass() == pytest.approx(printed, abs=1e-6)
+    base = PafAnnotation.parse("y1{K}").get_mass()
+    assert base - PafAnnotation.parse(f"y1{{K}}-{formula}").get_mass() == pytest.approx(printed, abs=1e-6)
 
 
 def test_formula_ion_rule_c13h9():
@@ -212,24 +212,24 @@ def test_spec_electron_adducts(text):
 )
 def test_unknown_reference_raises_value_error(text):
     with pytest.raises(ValueError, match="NotAMolecule"):
-        PafAnnotation.parse(text).mass()
+        PafAnnotation.parse(text).get_mass()
 
 
 @pytest.mark.parametrize("text", ["d1{G}", "d2{PA}", "w1{P}", "d3{PET}", "w3{IEK}", "da3{PEL}", "wb3{LEK}", "d3{PEK[Acetyl]}"])
 def test_side_chain_ion_undefined_residue_raises(text):
     with pytest.raises(ValueError):
-        PafAnnotation.parse(text).mass()
+        PafAnnotation.parse(text).get_mass()
 
 
 def test_side_chain_v_ion_drops_side_chain_modification():
-    plain = PafAnnotation.parse("v3{SEK}").mass()
-    assert PafAnnotation.parse("v3{S[Phospho]EK}").mass() == pytest.approx(plain, abs=1e-9)
+    plain = PafAnnotation.parse("v3{SEK}").get_mass()
+    assert PafAnnotation.parse("v3{S[Phospho]EK}").get_mass() == pytest.approx(plain, abs=1e-9)
 
 
 @pytest.mark.parametrize("text", ["da3", "db3", "wa3", "wb3"])
 def test_residue_specific_side_chain_ion_needs_sequence(text):
     with pytest.raises(ValueError, match="needs a sequence"):
-        PafAnnotation.parse(text).mass()
+        PafAnnotation.parse(text).get_mass()
 
 
 @pytest.mark.parametrize(("text", "formula"), [("d3", "C2H4N"), ("v3", "C2H3NO2"), ("w3", "C3H4O2"), ("z3", "N-1O")])
@@ -240,7 +240,7 @@ def test_offset_only_ion_formula(text, formula):
 @pytest.mark.parametrize("text", ["r[Deamidated]", "p-[Deamidated]"])
 def test_unimod_composition_change_is_not_a_reference(text):
     with pytest.raises(ValueError, match="not a molecule"):
-        PafAnnotation.parse(text).mass()
+        PafAnnotation.parse(text).get_mass()
 
 
 def test_unimod_reference_formula_and_loss():

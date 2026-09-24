@@ -58,13 +58,6 @@ Constants
    :undoc-members:
    :show-inheritance:
 
-.. py:data:: paftacular.INTERNAL_MASS_DIFFS
-   :type: dict[tuple[str, str], str | None]
-
-   Formula offset of an internal fragment for each pair of N-terminal and
-   C-terminal cleavage types, for example ``("b", "y")``. ``None`` means no
-   offset. Defined in ``paftacular.constants``.
-
 Peptacular Conversion
 ---------------------
 

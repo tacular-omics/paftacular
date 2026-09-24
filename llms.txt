@@ -5,16 +5,18 @@
 > round-trip serialization, plus ion mass, m/z and elemental composition.
 
 Install with `pip install paftacular` (Python >= 3.12). Import as `pft`. Parse with
-`pft.parse_single()` (exactly one annotation) or `pft.parse_multi()` (comma-separated list).
-`pft.iter_parse()` and `pft.parse_batch()` keep a structured `PafParseError` per bad record.
-Build annotations with the `PafAnnotation.make_*` factories. `mass()` is the charged-species
-mass in Da and `mz()` is m/z.
+`pft.parse()` (exactly one annotation) or `pft.parse_multi()` (comma-separated list).
+`pft.iter_parse()` keeps a structured `PafParseError` per bad record. Every error from bad
+input is a `pft.PaftacularError` (a `ValueError`).
+Build annotations with the `PafAnnotation.make_*` factories. `get_mass()` is the charged-species
+mass in Da and `mz()` is m/z. paftacular 2.0 renamed and removed several 1.x names, see the
+[migration guide](https://paftacular.readthedocs.io/en/latest/migration.html).
 
 Without sequence context, peptide, internal and precursor ions give only the ion offset and
-modifiers (`y5` alone is 19.018 Da). Embed the fragment sequence (`y2{DE}`) or call
+modifiers (`y5` alone is 19.018 Da), and `mz()` raises until a sequence is known. Embed the fragment sequence (`y2{DE}`) or call
 `ann.resolve("PEPTIDE")` with the full ProForma analyte for complete masses. That needs the
 `peptacular` extra. `to_dict()` / `PafAnnotation.from_dict()` is versioned, lossless
-interchange. `as_dict()` is a display format only.
+interchange.
 
 Extras: `peptacular` (sequence masses, `resolve()`, `to_mzpaf()` from peptacular fragments),
 `smiles` (`s{...}` ions via pysmiles), `mcp` (local MCP server `paftacular-mcp` with nine

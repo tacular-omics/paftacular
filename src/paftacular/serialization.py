@@ -1,4 +1,4 @@
-"""Version 1 interchange data, independent of the legacy as_dict() display."""
+"""Version 1 interchange data: to_dict() and from_dict()."""
 
 from collections.abc import Mapping
 from dataclasses import asdict, fields
@@ -22,6 +22,7 @@ from .comps import (
     SMILESCompound,
     UnknownIon,
 )
+from .errors import PaftacularError
 
 _IONS = {
     cls.__name__: cls
@@ -46,35 +47,38 @@ def _coerce(value: object, hint: Any) -> Any:
                 return _coerce(value, member)
             except ValueError:
                 pass
-        raise ValueError("Value does not match an allowed type")
+        raise PaftacularError("Value does not match an allowed type")
     if get_origin(hint) is Literal:
         if any(type(value) is type(choice) and value == choice for choice in get_args(hint)):
             return value
     elif isinstance(hint, type) and issubclass(hint, Enum):
         if isinstance(value, str):
-            return hint(value)
+            try:
+                return hint(value)
+            except ValueError:
+                raise PaftacularError(f"Invalid {hint.__name__} value {value!r}") from None
     elif hint is float:
         if type(value) in (float, int):
             return value
     elif type(value) is hint:
         return value
-    raise ValueError(f"Unexpected value type for {hint}")
+    raise PaftacularError(f"Unexpected value type for {hint}")
 
 
 def _load(cls: Any, data: object) -> Any:
     if not isinstance(data, Mapping):
-        raise ValueError(f"{cls.__name__} must be an object")
+        raise PaftacularError(f"{cls.__name__} must be an object")
     data = cast(Mapping[str, object], data)
     expected = {field.name for field in fields(cls)}
     if set(data) != expected:
-        raise ValueError(f"{cls.__name__} requires exactly these fields: {sorted(expected)}")
+        raise PaftacularError(f"{cls.__name__} requires exactly these fields: {sorted(expected)}")
     hints = get_type_hints(cls)
     values = {}
     for name in expected:
         try:
             values[name] = _coerce(data[name], hints[name])
         except ValueError as error:
-            raise ValueError(f"Invalid {cls.__name__}.{name}: {error}") from error
+            raise PaftacularError(f"Invalid {cls.__name__}.{name}: {error}") from error
     return cls(**values)
 
 
@@ -91,21 +95,21 @@ def from_dict(data: Mapping[str, object]) -> PafAnnotation:
     expected = {field.name for field in fields(PafAnnotation)} - {"ion_type"}
     expected.update(("schema_version", "ion"))
     if not isinstance(data, Mapping) or set(data) != expected:
-        raise ValueError(f"Annotation requires exactly these fields: {sorted(expected)}")
+        raise PaftacularError(f"Annotation requires exactly these fields: {sorted(expected)}")
     if type(data["schema_version"]) is not int or data["schema_version"] != 1:
-        raise ValueError("Unsupported annotation schema_version")
+        raise PaftacularError("Unsupported annotation schema_version")
     raw_ion = data["ion"]
     if not isinstance(raw_ion, Mapping):
-        raise ValueError("Ion must be an object")
+        raise PaftacularError("Ion must be an object")
     ion = cast(Mapping[str, object], raw_ion)
     kind = ion.get("type")
     if not isinstance(kind, str) or kind not in _IONS:
-        raise ValueError("Unknown or missing ion type")
+        raise PaftacularError("Unknown or missing ion type")
     values: dict[str, Any] = {"ion_type": _load(_IONS[kind], {key: value for key, value in ion.items() if key != "type"})}
     for name, cls in (("neutral_losses", NeutralLoss), ("isotopes", IsotopeSpecification), ("adducts", Adduct)):
         components = data[name]
         if not isinstance(components, list | tuple):
-            raise ValueError(f"{name} must be an array")
+            raise PaftacularError(f"{name} must be an array")
         values[name] = tuple(_load(cls, item) for item in components)
     values["mass_error"] = None if data["mass_error"] is None else _load(MassError, data["mass_error"])
     hints = get_type_hints(PafAnnotation)

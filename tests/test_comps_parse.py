@@ -387,7 +387,7 @@ class TestParseRoundtrip:
 
     def test_mass_error_roundtrip(self):
         """Test MassError parse/serialize roundtrip"""
-        original = MassError(0.55, "ppm")
+        original = MassError(0.55, unit="ppm")
         parsed = MassError.parse(original.serialize())
         assert parsed.value == original.value
         assert parsed.unit == original.unit

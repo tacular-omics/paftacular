@@ -15,7 +15,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.PeptideIon)
         assert "b7{PEPTIDE}^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_b_pos(self):
         """Test converting a peptacular Fragment to mzPAF format string"""
@@ -24,7 +24,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.PeptideIon)
         assert "b3{PEP}^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_y(self):
         """Test converting a peptacular Fragment to mzPAF format string"""
@@ -33,7 +33,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.PeptideIon)
         assert "y3{IDE}^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_i(self):
         """Test converting a peptacular Fragment to mzPAF format string"""
@@ -42,7 +42,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.ImmoniumIon)
         assert "IP^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_i_mod(self):
         """Test converting a peptacular Fragment to mzPAF format string"""
@@ -51,7 +51,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.ImmoniumIon)
         assert "IP[+10]^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_i_modx2(self):
         annot = pt.parse("PEP[+10][Oxidation]TIDE/2")
@@ -67,7 +67,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.InternalFragment)
         assert "m3:5{PTI}^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     def test_conversion_internal_ay(self):
         """Test converting a peptacular Fragment to mzPAF format string"""
@@ -76,7 +76,7 @@ class TestConversion:
         paf_annot: paf.PafAnnotation = paf.to_mzpaf(frag)
         assert isinstance(paf_annot.ion_type, paf.InternalFragment)
         assert "m3:5{PTI}-CO^2" == str(paf_annot)
-        assert paf_annot.mass() == pytest.approx(frag.mass, rel=1e-6)
+        assert paf_annot.get_mass() == pytest.approx(frag.mass, rel=1e-6)
 
     @pytest.mark.parametrize(
         "options",
@@ -92,17 +92,17 @@ class TestConversion:
     def test_conversion_preserves_modifiers(self, options):
         fragment = pt.parse("PEPTIDE").frag(ion_type="y", position=3, **options)
         annotation = paf.to_mzpaf(fragment, confidence=0.123456789, mass_error=1e-7)
-        assert annotation.mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
-        assert paf.parse_single(annotation.serialize()) == annotation
+        assert annotation.get_mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
+        assert paf.parse(annotation.serialize()) == annotation
 
     def test_precursor_conversion_retains_context(self):
         fragment = pt.parse("PEPTIDE").frag(ion_type="p", charge=2)
         annotation = paf.to_mzpaf(fragment)
         assert annotation.serialize() == "p^2"
         assert annotation.sequence == "PEPTIDE"
-        assert annotation.mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
+        assert annotation.get_mass() == pytest.approx(fragment.mass, rel=0, abs=1e-6)
         assert paf.PafAnnotation.from_dict(annotation.to_dict()) == annotation
-        assert paf.to_mzpaf(fragment, include_annotation=False).sequence is None
+        assert paf.to_mzpaf(fragment, include_sequence=False).sequence is None
 
 
 if __name__ == "__main__":
@@ -125,7 +125,7 @@ def test_conversion_z_and_c_variants(ion_type, expected):
     frag = pt.parse("PEPTIDE/2").frag(ion_type=ion_type, charge=2, position=3)
     annotation = paf.to_mzpaf(frag)
     assert str(annotation) == expected
-    assert annotation.mass() == pytest.approx(frag.mass, rel=0, abs=1e-6)
+    assert annotation.get_mass() == pytest.approx(frag.mass, rel=0, abs=1e-6)
 
 
 PROTON = 1.007276466812
@@ -173,13 +173,166 @@ def test_conversion_side_chain_ions(ion_type, position, expected, mz, charge):
     assert str(annotation) == (expected if charge == 1 else f"{expected}^{charge}")
     expected_mz = (mz + (charge - 1) * PROTON) / charge
     assert annotation.mz() == pytest.approx(expected_mz, rel=0, abs=1e-5)
-    parsed = paf.parse_single(annotation.serialize())
+    parsed = paf.parse(annotation.serialize())
     assert parsed == annotation
     assert parsed.mz() == pytest.approx(expected_mz, rel=0, abs=1e-5)
 
 
 @pytest.mark.parametrize(("ion_type", "position"), [("d", 5), ("v", 2), ("da-threonine", 3), ("wb-isoleucine", 8)])
 def test_conversion_side_chain_ions_negative_charge(ion_type, position):
-    # mzPAF 1.0.1 charges are positive integers, as for every other series.
-    with pytest.raises(ValueError, match="Charge"):
-        paf.to_mzpaf(_side_chain_fragment(ion_type, position, -1))
+    # Negative charge is kept and written as ^-1, so the round trip is lossless.
+    fragment = _side_chain_fragment(ion_type, position, -1)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.charge == -1
+    assert annotation.serialize().endswith("^-1")
+    assert paf.parse(annotation.serialize()) == annotation
+    positive = paf.to_mzpaf(_side_chain_fragment(ion_type, position, 1))
+    assert positive.get_mass() - annotation.get_mass() == pytest.approx(2 * PROTON, rel=0, abs=1e-6)
+
+
+_PARITY_CASES = [
+    (
+        "[Acetyl]-PEM[Oxidation]TIDEK/2",
+        {
+            "ion_types": ("b", "y", "a", "c", "x", "z", "z+H", "c-H", "p", "i", "by", "ax", "cz"),
+            "charges": [1, 2],
+            "neutral_deltas": ("H2O", "NH3", "HCOOH", "HCONH2"),
+            "max_ndeltas": 2,
+        },
+    ),
+    ("PEPTIDEK", {"ion_types": ("b", "y"), "charges": [1], "isotopes": (0, 1, {"13C": 2}), "deltas": (None, 15.9949, "H2O", {"Na": 1})}),
+    ("PEPTIDEK", {"ion_types": ("b", "y", "d", "w", "v", "p"), "charges": [-1, -2, 3]}),
+    ("PEPTIDEK/[Na:z+1,H:z+1]", {"ion_types": ("b", "y", "p")}),
+]
+
+
+@pytest.mark.parametrize(("sequence", "options"), _PARITY_CASES)
+def test_to_mzpaf_parity_with_peptacular(sequence, options):
+    """to_mzpaf(f) serializes to text that parses back to the same annotation and m/z as f."""
+    for fragment in pt.fragment(sequence, **options):
+        annotation = paf.to_mzpaf(fragment)
+        text = annotation.serialize()
+        parsed = paf.parse(text)
+        if isinstance(annotation.ion_type, paf.PrecursorIon):
+            # p carries its sequence as resolved context, not in mzPAF text.
+            assert parsed.serialize() == text
+            assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-5), text
+            continue
+        assert parsed == annotation, text
+        assert parsed.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-5), text
+        if fragment.charge_state > 0 and not isinstance(annotation.ion_type, paf.ImmoniumIon):
+            # peptacular's own label names the same ion. Its immonium labels drop terminal
+            # modifications (IP for [Acetyl]-P), so those are checked against fragment.mz only.
+            assert paf.parse(fragment.to_mzpaf()).mz() == pytest.approx(parsed.mz(), rel=0, abs=1e-5), text
+
+
+def test_terminal_modified_immonium_keeps_its_mass():
+    fragment = pt.fragment("[Acetyl]-PEK", ion_types=("i",), charges=[1])[0]
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == "IP[Acetyl]"
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-5)
+
+
+@pytest.mark.parametrize(
+    ("sequence", "expected"),
+    [
+        ("<[Oxidation]@P>PEK", "IP[Oxidation]"),
+        ("<13C>PEK", "IP+4i13C"),
+        ("<13C><15N>PEK", "IP+4i13C+i15N"),
+        ("<13C>P[Acetyl]EK", "IP[Acetyl]+6i13C"),
+        ("<[Oxidation]@P><13C>PEK", "IP[Oxidation]+4i13C"),
+    ],
+)
+def test_immonium_keeps_global_mods_and_labels(sequence, expected):
+    fragment = pt.fragment(sequence, ion_types=("i",), charges=[1])[0]
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == expected
+    assert annotation.serialize() == fragment.to_mzpaf()
+    assert paf.parse(expected).mz() == pytest.approx(fragment.mz, rel=0, abs=1e-6)
+
+
+def test_immonium_mass_uses_exact_constants():
+    fragment = pt.fragment("PEK", ion_types=("i",), charges=[1])[0]
+    # Only the proton may differ: peptacular before 5.0 charged with H minus an electron.
+    assert paf.parse("IP").mz() == pytest.approx(fragment.mz, rel=0, abs=5e-8)
+
+
+@pytest.mark.parametrize(
+    ("ion_type", "loss"),
+    [("cy", "+NH3"), ("bz", "-NH3"), ("az", "-HCONH2"), ("ax", "-H2"), ("bx", "+CO-H2"), ("cx", "+CHNO"), ("ay", "-CO")],
+)
+def test_internal_offsets_use_canonical_names(ion_type, loss):
+    fragment = pt.fragment("PEPTIDEK", ion_types=(ion_type,), charges=[1])[0]
+    text = paf.to_mzpaf(fragment).serialize()
+    assert text == fragment.to_mzpaf()
+    assert text.endswith(loss)
+
+
+@pytest.mark.parametrize(
+    ("sequence", "ion_type", "position", "deltas"),
+    [
+        ("<13C>RYK", "a", 2, None),
+        ("<13C>QDK", "x", 2, None),
+        ("<15N>PLK", "c", 2, None),
+        ("<15N>KSL", "z", 2, None),
+        ("<13C>KMIH", "v", 3, None),
+        ("<13C>PEPTIDE", "az", (2, 4), None),
+        ("<13C>PEPTIDE", "p", None, None),
+        ("<15N>KEK", "b", 2, "N-1H-3"),
+        ("<13C>PEK", "b", 2, "C-1O-2"),
+        ("<15N>KEK", "b", 2, {-17.026549: 1}),
+    ],
+)
+def test_global_label_covers_offset_and_formula_deltas(sequence, ion_type, position, deltas):
+    # The label replaces its element in the final ion: residues, ion offset and formula
+    # deltas. Mass-only deltas and the charge carrier stay unlabelled.
+    fragment = pt.parse(sequence).frag(ion_type=ion_type, position=position, charge=1, deltas=deltas)
+    annotation = paf.to_mzpaf(fragment)
+    if ion_type != "p":  # a precursor keeps its sequence outside the text
+        assert paf.parse(annotation.serialize()).get_mass() == pytest.approx(annotation.get_mass(), rel=0, abs=1e-9)
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-7)
+
+
+def test_immonium_label_counts_atoms_after_deltas():
+    # <15N>K immonium has two N. Losing NH3 removes one of them, so one 15N label remains.
+    fragment = pt.parse("<15N>K").frag(ion_type="i", position=1, charge=1, deltas="N-1H-3")
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == "IK-NH3+i15N"
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-7)
+
+
+@pytest.mark.parametrize(
+    ("charge", "deltas", "expected"),
+    [
+        (-1, None, "IP+6i2H^-1"),
+        (-2, None, "IP+5i2H^-2"),
+        (1, None, "IP+7i2H"),
+    ],
+)
+def test_immonium_label_counts_the_deuteron_removed_by_a_negative_charge(charge, deltas, expected):
+    fragment = pt.parse("<2H>P").frag(ion_type="i", position=1, charge=charge, deltas=deltas)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == expected
+    assert annotation.serialize() == fragment.to_mzpaf()
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+def test_immonium_label_counts_a_formula_gain():
+    fragment = pt.parse("<15N>K").frag(ion_type="i", position=1, charge=1, deltas={"N-1H-3": -1})
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == "IK+NH3+3i15N"
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+@pytest.mark.parametrize(("ion_type", "position"), [("b", 2), ("y", 2), ("p", None)])
+@pytest.mark.parametrize("charge", [-1, -2])
+def test_deuterium_label_at_negative_charge_matches_peptacular(ion_type, position, charge):
+    fragment = pt.parse("<2H>PEK").frag(ion_type=ion_type, position=position, charge=charge)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-9)
+
+
+def test_uncharged_fragment_is_refused():
+    fragment = pt.parse("PEK").frag(ion_type="b", position=2, charge=0)
+    with pytest.raises(ValueError, match="charge"):
+        paf.to_mzpaf(fragment)

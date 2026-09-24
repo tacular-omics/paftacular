@@ -58,12 +58,12 @@ Quick Example
 
    ann = pft.parse("y5")
    print(ann.ion_type.series)
-   print(ann.mass())
+   print(ann.get_mass())
 
 .. testoutput::
 
    y
-   19.017841466812
+   19.017841150651
 
 New to paftacular? Start with :doc:`installation` and :doc:`quickstart`.
 See :doc:`usage` for the full guide, including creating annotations programmatically,
@@ -76,6 +76,7 @@ computing masses/compositions, and round-tripping to mzPAF strings.
    installation
    quickstart
    usage
+   migration
    mcp
    api
    changelog
