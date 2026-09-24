@@ -123,6 +123,9 @@ print([a.serialize() for a in anns])  # ['_{A, B}', 'y2{PE[Phospho]P}']
 `position` is a zero-based character offset into `text` and `annotation_index` is the
 zero-based annotation within the record. Syntax errors point at the unexpected content.
 Semantic errors (zero charge, reversed ranges) point at the start of the annotation.
+`PafUnknownReferenceError(name)` is raised by `mass()`, `comp()` and `formula()` (not by parsing)
+for an `r[...]` ion or `-[...]` loss whose name is in neither the mzPAF reference list nor Unimod.
+It subclasses both `ValueError` and `KeyError`.
 
 ```python
 import paftacular as pft

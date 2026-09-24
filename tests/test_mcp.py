@@ -377,3 +377,9 @@ def test_stdio_connection(launch, mode, tmp_path):
                 assert len((await client.list_prompts()).prompts) == 2
 
     asyncio.run(run())
+
+
+def test_unknown_reference_error_info():
+    error = handlers.error_info(pft.PafUnknownReferenceError("NotAMolecule"))
+    assert error.code == "unknown_reference"
+    assert error.message == "Unknown reference molecule 'NotAMolecule': not in the mzPAF reference list or Unimod"

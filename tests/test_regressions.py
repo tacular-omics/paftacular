@@ -185,3 +185,54 @@ def test_reference_name_loss_with_hyphen_or_underscore(name, template):
     assert annotation.serialize() == text
     reference = p.NeutralLoss.parse(f"+[{name}]").mass()
     assert reference == pytest.approx(p.parse_single(f"r[{name}]").mass() - 1.007276466812, rel=0, abs=1e-6)
+
+
+@pytest.mark.parametrize("name", ["HexNAc(2)", "Hex(1)HexNAc(2)", "dHex(1)Hex(1)"])
+@pytest.mark.parametrize("template", ["y2-[{}]", "p+[{}]", "y2-2[{}]^2", "r[{}]-[{}]", "y2-H2O-[{}]+i"])
+def test_reference_name_loss_with_parentheses(name, template):
+    # mzPAF 1.0.1 section 4.4.7 names Unimod entries such as HexNAc(2), and the section 6.2
+    # grammar allows "(" and ")" in bracketed content. The loss regex used to reject them.
+    text = template.format(name, name)
+    annotation = p.parse_single(text)
+    assert annotation.neutral_losses[-1].base_reference == name
+    assert annotation.serialize() == text
+    assert p.parse_single(annotation.serialize()) == annotation
+    reference = p.NeutralLoss.parse(f"+[{name}]").mass()
+    assert reference == pytest.approx(p.parse_single(f"r[{name}]").mass() - 1.007276466812, rel=0, abs=1e-6)
+
+
+@pytest.mark.parametrize("text", ["y2-[HexNAc(2]", "y2-[HexNAc2)]", "y2-[HexNAc)(2]", "y2-[Hex((2))]"])
+def test_reference_name_loss_rejects_unbalanced_parentheses(text):
+    with pytest.raises(p.PafParseError):
+        p.parse_single(text)
+
+
+@pytest.mark.parametrize(
+    ("text", "formula", "count"),
+    [("y2-H2O", "H2O", -1), ("y2-2H2O", "H2O", -2), ("y2+H2[18O1]", "H2[18O1]", 1), ("y2-NH3-H2O", "H2O", -1)],
+)
+def test_formula_losses_unchanged_by_reference_name_grammar(text, formula, count):
+    loss = p.parse_single(text).neutral_losses[-1]
+    assert (loss.base_formula, loss.count) == (formula, count)
+
+
+@pytest.mark.parametrize("text", ["r[NotAMolecule]", "p-[NotAMolecule]", "y5-[NotAMolecule]", "y2-[Hex(9)NotAMolecule(1)]"])
+def test_unknown_reference_error_is_also_key_error(text):
+    # 1.3.2 raised KeyError for an unknown r[...] name. The error is now a ValueError, and it
+    # subclasses KeyError too so existing "except KeyError" handlers keep working.
+    annotation = p.parse_single(text)
+    with pytest.raises(p.PafUnknownReferenceError, match="NotAMolecule") as info:
+        annotation.mass()
+    assert isinstance(info.value, KeyError)
+    assert isinstance(info.value, ValueError)
+    assert str(info.value).startswith("Unknown reference molecule '")
+    assert "NotAMolecule" in info.value.name
+    with pytest.raises(KeyError):
+        _ = p.ReferenceIon("NotAMolecule").composition
+
+
+def test_unknown_reference_error_pickles():
+    error = p.PafUnknownReferenceError("NotAMolecule")
+    restored = pickle.loads(pickle.dumps(error))
+    assert type(restored) is p.PafUnknownReferenceError
+    assert (restored.name, str(restored)) == (error.name, str(error))

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- `PafUnknownReferenceError`, raised when calculating an `r[...]` ion or a `-[...]` loss whose
+  name is in neither the mzPAF reference list nor Unimod. It subclasses both `ValueError` and
+  `KeyError` and carries the name in `name`.
+
 ### Changed
 
 Behaviour changes since 1.3.2 that callers can notice:
@@ -14,11 +20,18 @@ Behaviour changes since 1.3.2 that callers can notice:
 - `PeptideIon("da"|"db"|"wa"|"wb", n)` without a sequence still raises `ValueError` from
   `mass()`, `composition` and `formula`, now with "needs a sequence" in the message. With a
   sequence they return the residue-specific value.
-- Unknown reference names in `r[...]`, `ReferenceIon` and `-[...]` losses raise `ValueError`
-  from `mass()`, `composition` and `formula` (`r[...]` and `ReferenceIon` raised `KeyError`).
+- Unknown reference names in `r[...]`, `ReferenceIon` and `-[...]` losses raise
+  `PafUnknownReferenceError` from `mass()`, `composition` and `formula`. It is a `ValueError`
+  and still a `KeyError`, so `except KeyError` code written for 1.3.2 keeps working. The MCP
+  server reports these as `unknown_reference` with the plain message.
   Unimod names that used to raise, such as `r[Hex]`, now resolve.
 - `d` and `w` ions on a residue where the series is undefined (G, A, P; plain `d`/`w` on
   T or I; a modified residue n) raise `ValueError` when a sequence is given.
+- The source distribution ships only `src/`, `tests/`, `docs/usage.rst` (the tests run its
+  examples), `README.md`, `LICENSE`, `CHANGELOG.md`, `CITATION.cff` and `pyproject.toml`
+  (about 95 KB, was about 800 KB). The specification PDF, logo, other docs, `uv.lock` and
+  agent notes are no longer included. The unused `MANIFEST.in` is removed.
+- `scripts/release_version.py sync --set X.Y.Z` also sets `date-released` in `CITATION.cff`.
 
 ### Fixed
 
@@ -27,6 +40,10 @@ Behaviour changes since 1.3.2 that callers can notice:
   Appendix B names). They raised `PafParseError`. mzPAF 1.0.1 section 4.5 allows any reference
   molecule name as a loss and the section 6.2 grammar allows both characters; the section 6.1
   regex omits them. `r[...]` reference ions already accepted these names.
+- Bracketed neutral losses and gains accept names with balanced parentheses, such as
+  `y2-[HexNAc(2)]` and `p+[Hex(1)HexNAc(2)]`. They raised `PafParseError`. mzPAF 1.0.1
+  section 4.4.7 uses `HexNAc(2)` and the section 6.2 grammar allows `(` and `)`. Formula and
+  mass losses parse as before.
 - `to_mzpaf` converts peptacular `d`, `v`, `da`, `db`, `wa` and `wb` fragments, including the
   residue-specific `d-valine`, `w-valine`, `da-threonine` and similar types. It raised
   "Cannot convert fragment" because peptacular also sets `AA_SPECIFIC_FWD`/`AA_SPECIFIC_BWD`
@@ -45,7 +62,7 @@ Behaviour changes since 1.3.2 that callers can notice:
   residue n with its side chain. Analyte resolution now supports these series.
 - Reference names in `r[...]` and `-[...]` fall back to Unimod entry names (`r[Hex]`,
   `r[HexNAc(2)]`, `p-[Hex]`) as sections 4.4.7 and 4.5 allow. Unknown names raise
-  `ValueError` instead of `KeyError`.
+  `PafUnknownReferenceError`, a `ValueError` that is also a `KeyError`.
 - Tests: every worked example in the mzPAF 1.0.1 specification is parsed and round-tripped,
   and 532 m/z values are checked against a frozen reference built with pyteomics
   (`tests/reference/`).

@@ -59,6 +59,8 @@ def error_info(error: Exception) -> Error:
         return Error(code="missing_dependency", message=f"{error}. For MCP with SMILES, install 'paftacular[mcp,smiles]'.")
     if isinstance(error, NotImplementedError):
         return Error(code="unsupported_calculation", message=str(error) or "This calculation is not supported")
+    if isinstance(error, pft.PafUnknownReferenceError):
+        return Error(code="unknown_reference", message=str(error))
     if isinstance(error, KeyError):
         return Error(code="unknown_reference", message=f"Unknown chemistry reference: {error}")
     if isinstance(error, ValueError | OverflowError):

@@ -52,6 +52,20 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/paftacular"]
 
+# The sdist carries the source, tests (plus docs/usage.rst, which they execute) and release
+# metadata only. The spec PDF, logo, other docs, lockfile and agent notes stay in the repository.
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src/paftacular",
+    "tests",
+    "docs/usage.rst",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CITATION.cff",
+    "pyproject.toml",
+]
+
 [dependency-groups]
 dev = [
     "mcp>=2.1.1,<3",

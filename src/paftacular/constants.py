@@ -131,8 +131,12 @@ ISOTOPE_REGEX_PATTERN = rf"([+-]?)(\d*)i({_ISOTOPE_ELEMENT})?"
 # isotope component instead of being split into a bare-mass loss of "+2" plus a dangling "i13C".
 # Bracketed names also allow "_" and "-": section 4.5 permits any reference molecule name there
 # (Appendix B has TMTpro_zero, sidechain_A, TMT126-ETD) and the section 6.2 grammar allows both,
-# although the section 6.1 regex omits them.
-NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[(?:[A-Za-z0-9:\._\-]+)(?:\[[A-Za-z0-9\.:\-]+\])?\]|\d+(?:\.\d+)?(?!i))"
+# although the section 6.1 regex omits them. They also allow balanced, unnested parentheses
+# for Unimod names such as HexNAc(2) (section 4.4.7). The two alternatives of _REFERENCE_NAME
+# start with different characters, so the repetition cannot backtrack catastrophically.
+_REFERENCE_NAME_CHAR = r"[A-Za-z0-9:\._\-]"
+_REFERENCE_NAME = rf"(?:{_REFERENCE_NAME_CHAR}|\({_REFERENCE_NAME_CHAR}*\))+"
+NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[{_REFERENCE_NAME}(?:\[[A-Za-z0-9\.:\-]+\])?\]|\d+(?:\.\d+)?(?!i))"
 ADDUCT_REGEX_PATTERN = rf"([+-])(\d*)({_ATOM_TOKEN}+)"
 
 
