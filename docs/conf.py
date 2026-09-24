@@ -38,6 +38,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+# Serve the repo-root llms.txt and llms-full.txt at the site root (llmstxt.org).
+html_extra_path = ["../llms.txt", "../llms-full.txt"]
 html_logo = "_static/paftacular_logo.png"
 html_theme_options = {
     "collapse_navigation": False,
