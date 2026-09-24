@@ -128,9 +128,8 @@ Scientific conventions:
 - Named modifications (Unimod, PSI-MOD, ...) add their listed database mass through
   peptacular's default mass path, never `calculate_with_composition=True`, the same rule as
   peptacular. Plain fragment and precursor ions match peptacular to 1e-9 Da
-  (`tests/test_peptacular_agreement.py`). Ions with neutral losses or isotope peaks are
-  xfail there until peptacular's `frag(deltas=/isotopes=)` keeps listed masses; un-xfail
-  them then. Unimod reference names in `lookup_reference` keep the listed mass too; mzPAF
+  (`tests/test_peptacular_agreement.py`), and so do ions with neutral losses or isotope
+  peaks (peptacular 5 keeps listed masses there too). Unimod reference names in `lookup_reference` keep the listed mass too; mzPAF
   reference-list entries keep exact formula masses. Composition is only the fallback, and
   is used under a global isotope label (`<13C>`) in both packages. Labile mods count only
   for precursor ions (fragments lose them, like peptacular).
