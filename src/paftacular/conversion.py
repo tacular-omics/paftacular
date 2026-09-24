@@ -259,7 +259,7 @@ def _immonium_label_isotopes(
     if removed:
         comp.update(removed)
     isotopes: list[IsotopeSpecification] = []
-    for template, replaced in annot._map_isotopes().items():
+    for template, replaced in annot.map_isotopes().items():
         if count := comp[template]:
             isotopes.append(IsotopeSpecification(count, element=f"{replaced.mass_number}{template.symbol}"))
     return tuple(isotopes)

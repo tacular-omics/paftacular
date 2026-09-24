@@ -104,7 +104,7 @@ def _isotope_label_map(annot: pt.ProFormaAnnotation | None) -> dict[ElementInfo,
     """The global isotope labels (<13C>) of a sequence as {ordinary element: isotope}."""
     if annot is None or not annot.has_isotope_mods:
         return {}
-    return annot._map_isotopes()
+    return annot.map_isotopes()
 
 
 def _sequence_mass(annot: pt.ProFormaAnnotation, monoisotopic: bool) -> float:
