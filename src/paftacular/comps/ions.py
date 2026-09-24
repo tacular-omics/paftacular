@@ -73,7 +73,7 @@ class PeptideIon(Serializable, CompositionProvider, MassProvider):
         comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[_SERIES_LOOKUP_KEY.get(self.series, self.series)].composition
         if comp is None:
             raise ValueError(f"Composition not available for ion series: {self.series}")
-        return comp
+        return Counter(comp)  # tacular caches this Counter, so hand out a copy
 
     def serialize(self, include_sequence: bool = True) -> str:
         result = f"{self.series}{self.position}"
@@ -187,7 +187,7 @@ class InternalFragment(Serializable, CompositionProvider, MassProvider):
         comp: Counter[ElementInfo] = FRAGMENT_ION_LOOKUP[self._fragment_ion_key].composition
         if comp is None:
             raise ValueError("Composition not available for internal fragment")
-        return comp
+        return Counter(comp)
 
 
 @dataclass(frozen=True, slots=True)
@@ -308,7 +308,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        return self.reference.composition
+        return Counter(self.reference.composition)
 
     def serialize(self) -> str:
         return f"r[{self.name}]"
@@ -549,7 +549,7 @@ class PrecursorIon(Serializable, CompositionProvider, MassProvider):
 
     @property
     def composition(self) -> Counter[ElementInfo]:
-        return FRAGMENT_ION_LOOKUP["p"].composition
+        return Counter(FRAGMENT_ION_LOOKUP["p"].composition)
 
 
 # Type aliases for cleaner code

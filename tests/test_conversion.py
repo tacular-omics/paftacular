@@ -126,3 +126,60 @@ def test_conversion_z_and_c_variants(ion_type, expected):
     annotation = paf.to_mzpaf(frag)
     assert str(annotation) == expected
     assert annotation.mass() == pytest.approx(frag.mass, rel=0, abs=1e-6)
+
+
+PROTON = 1.007276466812
+SIDE_CHAIN_PEPTIDE = "PVTIKDEWTLR"
+
+
+def _side_chain_fragment(ion_type: str, position: int, charge: int):
+    # Built directly so the test does not depend on how the installed peptacular
+    # validates or weighs these series (4.0.0 and earlier used other formulas).
+    return pt.Fragment(
+        ion_type=pt.IonType(ion_type),
+        position=position,
+        mass=0.0,
+        monoisotopic=True,
+        charge_state=charge,
+        parent_sequence=f"{SIDE_CHAIN_PEPTIDE}/{charge}",
+        parent_sequence_length=len(SIDE_CHAIN_PEPTIDE),
+    )
+
+
+# peptacular flags d, v, da, db, wa and wb as FORWARD|AA_SPECIFIC_FWD or
+# BACKWARD|AA_SPECIFIC_BWD, so to_mzpaf must test flag membership, not equality.
+# Expected m/z values follow mzPAF 1.0.1 section 4.4.3 (they match peptacular main).
+@pytest.mark.parametrize(
+    ("ion_type", "position", "expected", "mz"),
+    [
+        ("d-valine", 2, "d2{PV}", 154.110064),
+        ("d", 5, "d5{PVTIK}", 453.294571),
+        ("v", 2, "v2{LR}", 230.124766),
+        ("w", 2, "w2{LR}", 229.129517),
+        ("w-valine", 10, "w10{VTIKDEWTLR}", 1229.652464),
+        ("da-threonine", 3, "da3{PVT}", 255.157743),
+        ("db-threonine", 3, "db3{PVT}", 253.178478),
+        ("da-isoleucine", 4, "da4{PVTI}", 368.241807),
+        ("db-isoleucine", 4, "db4{PVTI}", 354.226157),
+        ("wa-threonine", 3, "wa3{TLR}", 358.208495),
+        ("wb-threonine", 3, "wb3{TLR}", 356.229231),
+        ("wa-isoleucine", 8, "wa8{IKDEWTLR}", 1029.536372),
+        ("wb-isoleucine", 8, "wb8{IKDEWTLR}", 1015.520721),
+    ],
+)
+@pytest.mark.parametrize("charge", [1, 2])
+def test_conversion_side_chain_ions(ion_type, position, expected, mz, charge):
+    annotation = paf.to_mzpaf(_side_chain_fragment(ion_type, position, charge))
+    assert str(annotation) == (expected if charge == 1 else f"{expected}^{charge}")
+    expected_mz = (mz + (charge - 1) * PROTON) / charge
+    assert annotation.mz() == pytest.approx(expected_mz, rel=0, abs=1e-5)
+    parsed = paf.parse_single(annotation.serialize())
+    assert parsed == annotation
+    assert parsed.mz() == pytest.approx(expected_mz, rel=0, abs=1e-5)
+
+
+@pytest.mark.parametrize(("ion_type", "position"), [("d", 5), ("v", 2), ("da-threonine", 3), ("wb-isoleucine", 8)])
+def test_conversion_side_chain_ions_negative_charge(ion_type, position):
+    # mzPAF 1.0.1 charges are positive integers, as for every other series.
+    with pytest.raises(ValueError, match="Charge"):
+        paf.to_mzpaf(_side_chain_fragment(ion_type, position, -1))
