@@ -18,7 +18,7 @@ from paftacular.mcp.server import create_server
 # Old or non-shared spellings that must not reappear in any input or output schema.
 BANNED = re.compile(
     r"^(unit|tolerance_type|.*_tolerance_type|retention_time.*|inverse_reduced.*|ion_mobility_.*|target_mz|"
-    r"scan_start_time|ce|tic|TIC|time|one_over_k0.*|mz_begin|mz_end|window_group|monoisotopic_mz|ion_series)$"
+    r"scan_start_time|ce|tic|TIC|time|one_over_k0.*|mz_begin|mz_end|window_group|monoisotopic_mz|ion_series|resolvable_series)$"
 )
 
 # Property names ending in "unit" that are not a Da/ppm tolerance switch.
@@ -113,6 +113,14 @@ def test_tools_covered(tools):
 def test_no_banned_names(tools):
     offenders = [path for path, name, _ in all_props(tools) if BANNED.match(name)]
     assert not offenders
+
+
+def test_capability_names(tools):
+    # Lists of ion kinds are plural ion_types, like peptacular. The singular is a per-record field there.
+    capabilities = next(tool for tool in tools if tool.name == "get_capabilities")
+    names = {name for path, name, _ in schema_props(capabilities.output_schema) if "<Capabilities>" in path}
+    assert {"ion_types", "resolvable_ion_types"} <= names
+    assert not names & {"ion_type", "ion_series", "resolvable_series"}
 
 
 def test_tolerance_switches(tools):

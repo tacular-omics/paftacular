@@ -193,8 +193,8 @@ class Matches(Model):
 class Capabilities(Model):
     dependencies: dict[str, str | None]
     integrations: dict[str, bool]
-    ion_type: list[str]
-    resolvable_series: list[str]
+    ion_types: list[str]
+    resolvable_ion_types: list[str]
     limits: dict[str, int]
     mass_types: list[str] = Field(default_factory=lambda: ["monoisotopic"])
     transport: str = "stdio"

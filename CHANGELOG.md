@@ -35,8 +35,8 @@ Every rename and removal, with the replacement, is in the
   is rejected with a clear error. `mz_th` stays mass / |charge|.
 - MCP tools reject unknown arguments at the top level (they were silently ignored), as
   they already did inside `request`. The input schemas now say `additionalProperties: false`.
-- MCP `get_capabilities`: `ion_series` is renamed `ion_type`, the library and peptacular MCP
-  name. Same values (every mzPAF ion series code). No alias.
+- MCP `get_capabilities`: `ion_series` is renamed `ion_types` and `resolvable_series` is
+  renamed `resolvable_ion_types` (plural lists, as in peptacular's MCP). Same values. No alias.
 - `parse(s)` returns exactly one `PafAnnotation` and raises `PafParseError` for comma input
   or empty text. `parse_multi(s)` always returns a list.
 - `get_mass(*, monoisotopic=True)` replaces `mass()`, matching tacular 2.0. Optional
