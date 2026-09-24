@@ -2,8 +2,33 @@
 
 ## [Unreleased]
 
+### Changed
+
+Behaviour changes since 1.3.2 that callers can notice:
+
+- `PafAnnotation.peptacular_ion_type` returns `pt.IonType.Z_RADICAL` for a `z` ion (was
+  `pt.IonType.Z`), and `to_mzpaf` labels a peptacular `z` fragment as `z3-H` (was `z3`).
+- `PeptideIon("d"|"v"|"w", n)` without a sequence returns the section 4.4.3 series
+  composition (`C2H4N`, `C2H3NO2`, `C3H4O2`), so `mass()`, `composition` and `formula` differ
+  from 1.3.2 (`C2H3N`, `C2H2NO`, `C3H3O`).
+- `PeptideIon("da"|"db"|"wa"|"wb", n)` without a sequence still raises `ValueError` from
+  `mass()`, `composition` and `formula`, now with "needs a sequence" in the message. With a
+  sequence they return the residue-specific value.
+- Unknown reference names in `r[...]`, `ReferenceIon` and `-[...]` losses raise `ValueError`
+  from `mass()`, `composition` and `formula` (`r[...]` and `ReferenceIon` raised `KeyError`).
+  Unimod names that used to raise, such as `r[Hex]`, now resolve.
+- `d` and `w` ions on a residue where the series is undefined (G, A, P; plain `d`/`w` on
+  T or I; a modified residue n) raise `ValueError` when a sequence is given.
+
 ### Fixed
 
+- `to_mzpaf` converts peptacular `d`, `v`, `da`, `db`, `wa` and `wb` fragments, including the
+  residue-specific `d-valine`, `w-valine`, `da-threonine` and similar types. It raised
+  "Cannot convert fragment" because peptacular also sets `AA_SPECIFIC_FWD`/`AA_SPECIFIC_BWD`
+  on these series.
+- `PeptideIon`, `InternalFragment`, `PrecursorIon` and `ReferenceIon` return a copy from
+  `composition`. They returned tacular's cached `Counter`, so mutating the result changed
+  every later mass and formula in the process.
 - `z` ions now follow mzPAF 1.0.1 section 4.4.3 (the z-dot radical, sum + H2O - NH2).
   They were 1.007825 Da light. `peptacular_ion_type` maps `z` to `IonType.Z_RADICAL`, and
   `to_mzpaf` writes peptacular `z`, `z+H` and `c-H` fragments as `z3-H`, `z3+H` and `c3-H`

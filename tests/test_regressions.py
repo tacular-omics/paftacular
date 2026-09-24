@@ -156,3 +156,17 @@ def test_embedded_sequence_length_match_is_silent(text):
         warnings.simplefilter("error")
         annotation.mass()
         annotation.comp()
+
+
+@pytest.mark.parametrize("text", ["b3", "y3", "z3", "w3", "m2:4", "m2:4-CO", "p", "r[TMT126]"])
+def test_ion_composition_is_a_copy(text):
+    # PeptideIon, InternalFragment, PrecursorIon and ReferenceIon used to hand out
+    # tacular's cached Counter itself, so mutating it changed every later calculation.
+    before = p.PeptideIon("y", 3).mass()
+    ion = p.parse_single(text).ion_type
+    expected = dict(ion.composition)
+    ion.composition.clear()
+    ion.composition[ELEMENT_LOOKUP["C"]] += 99
+    assert dict(ion.composition) == expected
+    assert dict(p.parse_single(text).ion_type.composition) == expected
+    assert p.PeptideIon("y", 3).mass() == before

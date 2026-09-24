@@ -52,7 +52,8 @@ def to_mzpaf(
         ion_info: pt.FragmentIonInfo = pt.FRAGMENT_ION_LOOKUP[frag.ion_type]
 
         match ion_info.properties:
-            case pt.IonTypeProperty.FORWARD | pt.IonTypeProperty.BACKWARD:
+            # d, v, w and their a/b variants also carry AA_SPECIFIC_FWD or AA_SPECIFIC_BWD.
+            case properties if properties & (pt.IonTypeProperty.FORWARD | pt.IonTypeProperty.BACKWARD):
                 if not isinstance(frag.position, int):
                     position = -1
                 else:
