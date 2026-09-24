@@ -352,9 +352,8 @@ A generic `+i` adds the 13C minus 12C mass difference. To check `get_mass()` aga
 masses from `comp()`, subtract `charge` times the electron mass, and use an absolute tolerance
 of about 1e-6 Da because the upstream ion offsets are rounded. A named modification (Unimod,
 PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass, the same rule as peptacular, and
-`comp()` can differ from `get_mass()` by up to ~1e-6 Da for it. Plain fragment and precursor ions
-agree with peptacular to 1e-9 Da. Ions with neutral losses or isotope peaks will agree once the
-matching peptacular fix lands. A global isotope label (`<13C>`, `<15N>`) uses composition in both
+`comp()` can differ from `get_mass()` by up to ~1e-6 Da for it. Fragment and precursor ions, including
+neutral losses and isotope peaks, agree with peptacular 5 to 1e-9 Da. A global isotope label (`<13C>`, `<15N>`) uses composition in both
 packages. Unimod reference names (`r[Hex]`) use the listed 6-decimal mass; mzPAF reference-list
 entries (`r[TMT6plex]`) keep exact formula masses. Labile modifications (`{Glycan:Hex}`) count
 only for precursor ions: fragments lose them.

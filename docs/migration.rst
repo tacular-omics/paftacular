@@ -156,9 +156,8 @@ Behaviour changes
   masses move by up to ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
 - **Listed modification masses.** A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO)
   in an embedded or resolved sequence counts at its listed database mass (Oxidation
-  15.994915), the same rule as peptacular. Plain fragment and precursor ions agree with
-  peptacular to 1e-9 Da. Ions with neutral losses or isotope peaks will agree once the
-  matching peptacular fix lands. Composition is used only when there is no listed mass
+  15.994915), the same rule as peptacular. Fragment and precursor ions, including neutral losses
+  and isotope peaks, agree with peptacular 5 to 1e-9 Da. Composition is used only when there is no listed mass
   (formula modifications, glycans), and under a global isotope label (``<13C>``, ``<15N>``)
   in both packages. Unimod reference names (``r[Hex]``, ``-[Hex]``) use the listed 6-decimal
   mass too. mzPAF reference-list entries (``r[TMT6plex]``) keep their exact formula masses. ``comp()`` is

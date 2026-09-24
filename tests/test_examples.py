@@ -4,12 +4,13 @@ from pathlib import Path
 import pytest
 
 
-def test_readme_python_examples():
+@pytest.mark.parametrize("name", ["README.md", "llms-full.txt"])
+def test_markdown_python_examples(name):
     pytest.importorskip("peptacular")
     root = Path(__file__).resolve().parents[1]
     namespace = {"__name__": "__example__"}
-    for code in re.findall(r"```python\n(.*?)```", (root / "README.md").read_text(), flags=re.DOTALL):
-        exec(compile(code, "README.md", "exec"), namespace)
+    for code in re.findall(r"```python\n(.*?)```", (root / name).read_text(), flags=re.DOTALL):
+        exec(compile(code, name, "exec"), namespace)
 
 
 def test_usage_code_blocks():

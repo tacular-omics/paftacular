@@ -70,8 +70,8 @@ Every rename and removal, with the replacement, is in the
   ~4e-7 Da (y by 3.2e-7, immonium by 3.8e-7).
 - A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) in an embedded or resolved
   sequence counts at its listed database mass (Oxidation 15.994915), the same rule as
-  peptacular. Plain fragment and precursor ions agree with peptacular to 1e-9 Da. Ions with
-  neutral losses or isotope peaks will agree once the matching peptacular fix lands.
+  peptacular. Fragment and precursor ions, including neutral losses and isotope peaks,
+  agree with peptacular 5 to 1e-9 Da.
   Composition is used only for modifications with no listed mass (formulas, glycans), and
   under a global isotope label (`<13C>`, `<15N>`) in both packages.
   A Unimod name used as a reference ion or loss (`r[Hex]`, `-[Hex]`) also uses the listed

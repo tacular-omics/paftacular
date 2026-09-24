@@ -519,7 +519,7 @@ to convert its ``Fragment`` objects directly into ``PafAnnotation`` objects via 
    import paftacular as pft
 
    # Generate fragment ions from a peptide sequence
-   fragments = pt.fragment("PEPTIDE", charges=[1, 2], ion_types=["y", "b"])
+   fragments = pt.fragment("PEPTIDE", charges=[1, 2], ion_types=["b", "y"])
 
    # Convert each fragment to a PafAnnotation
    annotations = [pft.to_mzpaf(f) for f in fragments]
@@ -665,9 +665,8 @@ charge to compare with ``get_mass()``. ``mz()`` divides by the absolute charge. 
 so numerical comparisons should allow approximately one microdalton.
 
 A named modification (Unimod, PSI-MOD, RESID, XLMOD, GNO) adds its listed database mass,
-the same rule as peptacular. Plain fragment and precursor ions agree with peptacular to
-1e-9 Da. Ions with neutral losses or isotope peaks will agree once the matching peptacular
-fix lands. A global isotope label (``<13C>``, ``<15N>``) uses composition in both packages.
+the same rule as peptacular. Fragment and precursor ions, including neutral losses and isotope
+peaks, agree with peptacular 5 to 1e-9 Da. A global isotope label (``<13C>``, ``<15N>``) uses composition in both packages.
 Unimod reference names (``r[Hex]``) use the listed 6-decimal mass, while mzPAF
 reference-list entries (``r[TMT6plex]``) keep their exact formula masses. Labile
 modifications (``{Glycan:Hex}``) count only for precursor ions: fragments lose them. The listed
