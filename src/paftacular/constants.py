@@ -129,7 +129,10 @@ ISOTOPE_REGEX_PATTERN = rf"([+-]?)(\d*)i({_ISOTOPE_ELEMENT})?"
 # count-prefixed formula like "-2H2O" isn't misread as a bare mass of "-2" with "H2O" dropped. The
 # bare-mass alternative also excludes being followed by "i" so e.g. "+2i13C" is left whole for the
 # isotope component instead of being split into a bare-mass loss of "+2" plus a dangling "i13C".
-NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[(?:[A-Za-z0-9:\.]+)(?:\[[A-Za-z0-9\.:\-]+\])?\]|\d+(?:\.\d+)?(?!i))"
+# Bracketed names also allow "_" and "-": section 4.5 permits any reference molecule name there
+# (Appendix B has TMTpro_zero, sidechain_A, TMT126-ETD) and the section 6.2 grammar allows both,
+# although the section 6.1 regex omits them.
+NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:\d*{_ATOM_TOKEN}+|\d*\[(?:[A-Za-z0-9:\._\-]+)(?:\[[A-Za-z0-9\.:\-]+\])?\]|\d+(?:\.\d+)?(?!i))"
 ADDUCT_REGEX_PATTERN = rf"([+-])(\d*)({_ATOM_TOKEN}+)"
 
 

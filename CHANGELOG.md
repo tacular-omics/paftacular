@@ -22,6 +22,11 @@ Behaviour changes since 1.3.2 that callers can notice:
 
 ### Fixed
 
+- Bracketed neutral losses and gains accept reference molecule names containing `-` or `_`,
+  such as `p-[TMT126-ETD]`, `a1+[TMTpro_zero]` and `y2-[sidechain_A]` (34 of the 71 mzPAF
+  Appendix B names). They raised `PafParseError`. mzPAF 1.0.1 section 4.5 allows any reference
+  molecule name as a loss and the section 6.2 grammar allows both characters; the section 6.1
+  regex omits them. `r[...]` reference ions already accepted these names.
 - `to_mzpaf` converts peptacular `d`, `v`, `da`, `db`, `wa` and `wb` fragments, including the
   residue-specific `d-valine`, `w-valine`, `da-threonine` and similar types. It raised
   "Cannot convert fragment" because peptacular also sets `AA_SPECIFIC_FWD`/`AA_SPECIFIC_BWD`
