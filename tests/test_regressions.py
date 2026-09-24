@@ -162,11 +162,11 @@ def test_embedded_sequence_length_match_is_silent(text):
 def test_ion_composition_is_a_copy(text):
     # PeptideIon, InternalFragment, PrecursorIon and ReferenceIon used to hand out
     # tacular's cached Counter itself, so mutating it changed every later calculation.
-    before = p.parse_single("y3{PEK}").formula()
+    before = p.PeptideIon("y", 3).mass()
     ion = p.parse_single(text).ion_type
     expected = dict(ion.composition)
     ion.composition.clear()
     ion.composition[ELEMENT_LOOKUP["C"]] += 99
     assert dict(ion.composition) == expected
     assert dict(p.parse_single(text).ion_type.composition) == expected
-    assert p.parse_single("y3{PEK}").formula() == before
+    assert p.PeptideIon("y", 3).mass() == before
