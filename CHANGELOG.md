@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-### 2.0.0 (unreleased, breaking)
+## [2.0.0] (2026-09-24)
 
-Every rename and removal, with the replacement, is in the
+**Breaking:** major release with removed and renamed APIs, keyword-only arguments, a new
+`PaftacularError` hierarchy and changed masses; every rename and removal, with the
+replacement, is in the
 [migration guide](https://paftacular.readthedocs.io/en/latest/migration.html)
 (`docs/migration.rst`).
 
