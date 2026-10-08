@@ -54,7 +54,7 @@ class MassError(Serializable):
 class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     """Represents isotope information"""
 
-    count: int = 0  # number of isotopes above/below monoisotope
+    count: int  # number of isotopes above/below monoisotope, nonzero
     _: KW_ONLY
     element: str | None = None  # e.g., "13C", "15N"
     is_average: bool = False  # True for averaged isotopomers
@@ -79,9 +79,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         return f"{sign}{count_str}"
 
     def serialize(self) -> str:
-        if self.count == 0:
-            return ""
-
         if self.is_average is True:
             return f"{self._prefix}iA"
         elif self.element is not None:
@@ -113,9 +110,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         if monoisotopic is False:
             raise PaftacularError("Cannot calculate mass shift for average isotopomer specification")
 
-        if self.count == 0:
-            return 0.0
-
         if self.is_average:
             raise PaftacularError("Cannot calculate mass shift for average isotopomer specification")
 
@@ -135,9 +129,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     @property
     def composition(self) -> Counter[ElementInfo]:
         # lose mono and gain isotope
-        if self.count == 0:
-            return Counter()
-
         if self.is_average:
             raise PaftacularError("Cannot calculate composition for average isotopomer specification")
 

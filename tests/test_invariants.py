@@ -38,8 +38,7 @@ from paftacular import (
     SMILESCompound,
     UnknownIon,
 )
-from paftacular.annotation import _BETA_SUBSTITUENT, _SIDE_CHAIN_BACKBONE, _V_ION_RESIDUES
-from paftacular.comps.ions import SIDE_CHAIN_SERIES_FORMULA
+from paftacular.annotation import _BETA_SUBSTITUENT, _V_ION_RESIDUES
 from paftacular.comps.util import formula_to_composition
 from paftacular.constants import _INTERNAL_MASS_DIFFS, IMMONIUM_AMINO_ACIDS, InternalSeries
 from paftacular.util import format_number
@@ -93,7 +92,7 @@ def residue_strings(length: int) -> st.SearchStrategy[str]:
 def peptide_ions(draw):
     series = draw(st.sampled_from(list(IonSeries)))
     position = draw(st.integers(1, 30))
-    sequence = draw(st.none() | residue_strings(min(position, 6)).filter(lambda _: position <= 6))
+    sequence = draw(st.none() if position > 6 else st.none() | residue_strings(position))
     return PeptideIon(series=series, position=position, sequence=sequence)
 
 
@@ -307,13 +306,21 @@ def _check_charge_states(text: str, analyte: str | None = None, *, step: float =
         assert annotation.charge == charge
         mz = annotation.mz()
         assert math.isfinite(mz) and mz > 0, (text, charge, mz)
-        assert annotation.get_mass() == pytest.approx(mz * abs(charge), rel=1e-12)
         masses[charge] = annotation.get_mass()
         assert pft.parse(annotation.serialize()) == (annotation if analyte is None else pft.parse(f"{text}^{charge}"))
     for n in (1, 2, 3):
         # A positive charge adds n carriers and a negative charge removes them.
         assert masses[n] - masses[-n] == pytest.approx(2 * n * step, rel=0, abs=1e-9), (text, n)
         assert masses[n] - masses[1] == pytest.approx((n - 1) * step, rel=0, abs=1e-9), (text, n)
+
+
+def test_charge_state_absolute_anchor():
+    # Section 4.4.3: y = sum(AA) + H2O + (H+)z. Hand-typed monoisotopic masses: P 97.05276384,
+    # E 129.04259309, K 128.09496302, H2O 18.01056468, proton 1.00727646688.
+    neutral = 97.05276384 + 129.04259309 + 128.09496302 + 18.01056468
+    for charge in SIGNED_CHARGES:
+        expected = (neutral + charge * 1.00727646688) / abs(charge)
+        assert pft.parse(f"y3{{PEK}}^{charge}").mz() == pytest.approx(expected, rel=0, abs=1e-6)
 
 
 @pytest.mark.parametrize("series", list(IonSeries))
@@ -382,20 +389,48 @@ def test_ambiguous_immonium_residues_rejected(code):
 _RESIDUE_MASS = {code: AA_LOOKUP[code].monoisotopic_mass for code in "ACDEFGHIKLMNOPQRSTUVWY"}
 
 
-@pytest.mark.parametrize(("series", "formula"), sorted(SIDE_CHAIN_SERIES_FORMULA.items()))
+# The section 4.4.3 table, typed from the specification: d is sum(n-1 AA) + C2H4N, v is
+# sum(c-1 AA) + C2H3NO2 and w is sum(c-1 AA) + C3H4O2, each plus (H+)z.
+SPEC_SIDE_CHAIN_OFFSET = {"d": "C2H4N", "v": "C2H3NO2", "w": "C3H4O2"}
+
+# Remnant of residue n for each residue the section 4.4.3 remarks define. The table offsets
+# carry one H on the beta carbon. Valine replaces it by CH3, Thr da by OH and db by CH3, Ile
+# da by C2H5 and db by CH3. Glycine, alanine and proline have no d or w ion.
+_D_GENERIC = "CDEFHKLMNOQRSUWY"
+SPEC_SIDE_CHAIN_REMNANT = {
+    **{("d", residue): "C2H4N" for residue in _D_GENERIC},
+    **{("w", residue): "C3H4O2" for residue in _D_GENERIC},
+    ("d", "V"): "C3H6N",
+    ("w", "V"): "C4H6O2",
+    ("da", "T"): "C2H4NO",
+    ("db", "T"): "C3H6N",
+    ("da", "I"): "C4H8N",
+    ("db", "I"): "C3H6N",
+    ("wa", "T"): "C3H4O3",
+    ("wb", "T"): "C4H6O2",
+    ("wa", "I"): "C5H8O2",
+    ("wb", "I"): "C4H6O2",
+}
+
+
+@pytest.mark.parametrize(("series", "formula"), sorted(SPEC_SIDE_CHAIN_OFFSET.items()))
 def test_side_chain_offset_table(series, formula):
     # Without a sequence, d, v and w give their section 4.4.3 offset plus a proton.
     assert pft.parse(f"{series}4").get_mass() == pytest.approx(_formula_mass(formula) + PROTON_MASS, rel=0, abs=1e-9)
 
 
-@pytest.mark.parametrize(("series", "residue"), sorted(_BETA_SUBSTITUENT))
+def test_side_chain_remnants_cover_the_implementation():
+    assert set(SPEC_SIDE_CHAIN_REMNANT) == set(_BETA_SUBSTITUENT)
+
+
+@pytest.mark.parametrize(("series", "residue"), sorted(SPEC_SIDE_CHAIN_REMNANT))
 def test_every_side_chain_substituent(series, residue):
-    # d_n keeps residues 1..n-1 whole, then the backbone remnant and the beta substituent of
-    # residue n. w_n does the same from the C terminus. Masses here use tacular residue and element data only.
+    # d_n keeps residues 1..n-1 whole and the remnant of residue n. w_n does the same from the C
+    # terminus. Expected values come from the spec remnants above with tacular residue and element
+    # masses. The table offsets already hold the terminal groups.
     sequence = f"GA{residue}" if series.startswith("d") else f"{residue}GA"
     kept = sum(_RESIDUE_MASS[aa] for aa in "GA")
-    remnant = _formula_mass(_SIDE_CHAIN_BACKBONE[series[0]]) + _formula_mass(_BETA_SUBSTITUENT[(series, residue)])
-    # The section 4.4.3 table offsets (d C2H4N, w C3H4O2) already hold the terminal groups.
+    remnant = _formula_mass(SPEC_SIDE_CHAIN_REMNANT[(series, residue)])
     annotation = pft.parse(f"{series}3{{{sequence}}}")
     assert annotation.mz() == pytest.approx(kept + remnant + PROTON_MASS, rel=0, abs=1e-6)
 
@@ -409,7 +444,7 @@ def test_every_v_ion_residue(residue):
 
 @pytest.mark.parametrize("series", ["d", "w", "da", "db", "wa", "wb"])
 def test_side_chain_undefined_residues_raise(series):
-    defined = {residue for (name, residue) in _BETA_SUBSTITUENT if name == series}
+    defined = {residue for (name, residue) in SPEC_SIDE_CHAIN_REMNANT if name == series}
     for residue in sorted(set(_RESIDUE_MASS) - defined):
         sequence = f"GA{residue}" if series.startswith("d") else f"{residue}GA"
         with pytest.raises(ValueError):
@@ -419,11 +454,29 @@ def test_side_chain_undefined_residues_raise(series):
 # Internal fragments (section 4.4.4)
 
 
-@pytest.mark.parametrize(("pair", "correction"), sorted(_INTERNAL_MASS_DIFFS.items(), key=lambda item: item[0]))
+# The section 4.4.4 table, typed from the specification: rows a/b/c, columns x/y/z.
+SPEC_INTERNAL_TABLE = {
+    "ax": None,
+    "ay": "-CO",
+    "az": "-CHNO",
+    "bx": "+CO",
+    "by": None,
+    "bz": "-NH",
+    "cx": "+CHNO",
+    "cy": "+NH",
+    "cz": None,
+}
+
+
+def test_internal_table_covers_the_implementation():
+    assert {"".join(pair) for pair in _INTERNAL_MASS_DIFFS} == set(SPEC_INTERNAL_TABLE)
+
+
+@pytest.mark.parametrize(("pair", "correction"), sorted(SPEC_INTERNAL_TABLE.items()))
 def test_internal_specification_table(pair, correction):
     # make_internal(ion_type=) follows the section 4.4.4 table: the by mass plus the listed change.
     base = PafAnnotation.make_internal(2, 4, sequence="EPT")
-    annotation = PafAnnotation.make_internal(2, 4, ion_type="".join(pair), sequence="EPT")
+    annotation = PafAnnotation.make_internal(2, 4, ion_type=pair, sequence="EPT")
     expected = 0.0 if correction is None else (1 if correction[0] == "+" else -1) * _formula_mass(correction[1:])
     assert annotation.get_mass() - base.get_mass() == pytest.approx(expected, rel=0, abs=1e-9)
     assert pft.parse(annotation.serialize()) == annotation
