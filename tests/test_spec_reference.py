@@ -49,6 +49,7 @@ SPEC_EXAMPLES = [
     "m3:6-CO-H2O^2",
     "m3:4/1.1ppm,m4:5/1.1ppm",
     "m3:5",
+    "m1:3",  # section 4.4.4 prints it as the discouraged spelling of b3-C2H3NO, but it is valid syntax
     "IY",
     "IH",
     "IL-CH2",
@@ -119,6 +120,7 @@ SPEC_EXAMPLES = [
     "&1@y7/-0.002",
     "&y7/-0.001",
     "&y7/0.001",
+    "&y7/0.002",
     "b6-H2O/-0.005,&y7/0.003",
     "y12/3.4ppm*0.85,b9-NH3/5.2ppm*0.05",
     "1@y7-H2O+i[M+NH4]^2/-0.2ppm*0.5",
@@ -140,6 +142,7 @@ def _serialize(text: str) -> str:
 @pytest.mark.parametrize("text", SPEC_EXAMPLES)
 def test_spec_example_round_trips(text):
     assert _serialize(text) == text
+    assert pft.parse_multi(_serialize(text)) == pft.parse_multi(text)
 
 
 @pytest.mark.parametrize(("text", "canonical"), CANONICAL_FORM.items())
