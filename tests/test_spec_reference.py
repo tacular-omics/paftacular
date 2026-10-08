@@ -6,14 +6,19 @@ atomic data. It does not use paftacular, tacular or peptacular.
 """
 
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
+from tacular import ELEMENT_LOOKUP
+from tacular.constants import PROTON_MASS
 
 import paftacular as pft
 from paftacular import PafAnnotation, PafParseError
 
 pytest.importorskip("peptacular")
+
+_H = ELEMENT_LOOKUP["H"]
 
 REFERENCE = json.loads((Path(__file__).parent / "reference" / "mzpaf_reference.json").read_text())
 
@@ -200,10 +205,37 @@ def test_spec_example_charge_before_adduct():
     pft.parse_multi("1@y7-H2O+i^2[M+NH4]/-0.2ppm*0.5")
 
 
-@pytest.mark.xfail(strict=True, raises=PafParseError, reason="spec 4.4.10 electron adducts are outside the 6.1 regex; deferred")
-@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^2"])
+@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
 def test_spec_electron_adducts(text):
-    pft.parse_multi(text)
+    # Section 4.4.10: an ion formed by losing or gaining electrons only MUST use [M-e] / [M+ne].
+    (annotation,) = pft.parse_multi(text)
+    assert annotation.serialize() == text
+    assert pft.parse(annotation.serialize()) == annotation
+
+
+@pytest.mark.parametrize(
+    ("text", "electrons_gained"),
+    [("y1{K}[M-e]", -1), ("y1{K}[M+2e]^-2", 2), ("y1{K}[M-2e]^2", -2)],
+)
+def test_electron_adduct_mass(text, electrons_gained):
+    from tacular.constants import ELECTRON_MASS
+
+    annotation = PafAnnotation.parse(text)
+    neutral = PafAnnotation.parse(text.split("[")[0]).get_mass() - PafAnnotation.parse(text.split("[")[0]).charge * PROTON_MASS
+    assert annotation.get_mass() == pytest.approx(neutral + electrons_gained * ELECTRON_MASS, rel=0, abs=1e-9)
+    assert annotation.comp() == PafAnnotation.parse(text.split("[")[0]).comp(calculate_sequence=True) - Counter({_H: 1})
+
+
+def test_electron_adduct_component():
+    from tacular.constants import ELECTRON_MASS
+
+    adduct = pft.Adduct.parse("+2e")
+    assert adduct.is_electron and adduct.composition == Counter() and adduct.serialize() == "+2e"
+    assert adduct.get_mass() == pytest.approx(2 * ELECTRON_MASS, rel=0, abs=1e-15)
+    assert pft.Adduct.parse("-e").get_mass() == pytest.approx(-ELECTRON_MASS, rel=0, abs=1e-15)
+    # A radical cation [M-e] and a protonated ion [M+H] differ by a proton plus an electron.
+    difference = PafAnnotation.parse("y1{K}[M+H]").get_mass() - PafAnnotation.parse("y1{K}[M-e]").get_mass()
+    assert difference == pytest.approx(PROTON_MASS + ELECTRON_MASS, rel=0, abs=1e-9)
 
 
 @pytest.mark.parametrize(
@@ -215,7 +247,7 @@ def test_unknown_reference_raises_value_error(text):
         PafAnnotation.parse(text).get_mass()
 
 
-@pytest.mark.parametrize("text", ["d1{G}", "d2{PA}", "w1{P}", "d3{PET}", "w3{IEK}", "da3{PEL}", "wb3{LEK}", "d3{PEK[Acetyl]}"])
+@pytest.mark.parametrize("text", ["d1{G}", "d2{PA}", "w1{P}", "d3{PET}", "w3{IEK}", "da3{PEL}", "wb3{LEK}", "d3{PEA[Acetyl]}"])
 def test_side_chain_ion_undefined_residue_raises(text):
     with pytest.raises(ValueError):
         PafAnnotation.parse(text).get_mass()
@@ -224,6 +256,29 @@ def test_side_chain_ion_undefined_residue_raises(text):
 def test_side_chain_v_ion_drops_side_chain_modification():
     plain = PafAnnotation.parse("v3{SEK}").get_mass()
     assert PafAnnotation.parse("v3{S[Phospho]EK}").get_mass() == pytest.approx(plain, abs=1e-9)
+
+
+@pytest.mark.parametrize(
+    ("modified", "plain"),
+    [
+        ("d3{PEK[Acetyl]}", "d3{PEK}"),
+        ("w3{M[Oxidation]FQ}", "w3{MFQ}"),
+        ("da3{PET[Phospho]}", "da3{PET}"),
+        ("wb3{I[Methyl]EK}", "wb3{IEK}"),
+        ("d3{<[Oxidation]@M>FQM}", "d3{FQM}"),
+    ],
+)
+def test_side_chain_d_w_ions_drop_modification_on_cleaved_residue(modified, plain):
+    # Section 4.4.3: residue n contributes only the fixed remnant (C2H4N or C3H4O2 plus the beta
+    # substituent), so its modification leaves with the side chain, as for v.
+    assert PafAnnotation.parse(modified).get_mass() == pytest.approx(PafAnnotation.parse(plain).get_mass(), rel=0, abs=1e-9)
+    assert PafAnnotation.parse(modified).comp() == PafAnnotation.parse(plain).comp()
+
+
+@pytest.mark.parametrize(("modified", "plain", "delta"), [("d3{P[Acetyl]EK}", "d3{PEK}", 42.010565), ("w3{MF[Phospho]Q}", "w3{MFQ}", 79.966331)])
+def test_side_chain_d_w_ions_keep_modification_on_other_residues(modified, plain, delta):
+    shift = PafAnnotation.parse(modified).get_mass() - PafAnnotation.parse(plain).get_mass()
+    assert shift == pytest.approx(delta, rel=0, abs=1e-6)
 
 
 @pytest.mark.parametrize("text", ["da3", "db3", "wa3", "wb3"])

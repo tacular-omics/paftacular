@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+#### Fixed
+
+- Electron adducts (`[M-e]`, `[M+2e]`) parse, with the electron mass and no atoms.
+- Unimod names with nested brackets or colons (`Cation:Fe[III]`, `Dimethyl:2H(6)`) parse
+  inside immonium modifications, neutral losses and reference ions. A bracketed atom token
+  must now be a full isotope (`[13C]`), so `[2HPG]` is read as a name.
+- Neutral-loss names accept every character the spec allows, with balanced brackets.
+- Immonium ions accept J, O and U (`IJ`, `IO`, `IU`).
+- d and w ions on a modified residue drop the modification with the side chain, as v ions
+  already did, instead of raising.
+
 ## [2.0.0] (2026-09-24)
 
 **Breaking:** major release with removed and renamed APIs, keyword-only arguments, a new

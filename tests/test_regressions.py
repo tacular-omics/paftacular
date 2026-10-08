@@ -206,6 +206,63 @@ def test_reference_name_loss_rejects_unbalanced_parentheses(text):
         p.parse(text)
 
 
+def _unimod_names() -> list[str]:
+    from tacular import UNIMOD_LOOKUP
+
+    return sorted({entry.name for entry in UNIMOD_LOOKUP.values()})
+
+
+@pytest.mark.parametrize("template", ["p-[{}]", "y2-2[{}]^2", "p+[{}]+i[M+H]^2/1ppm*0.5", "IK[{}]", "IK[{}]-H2O", "r[{}]"])
+def test_every_unimod_name_parses_in_brackets(template):
+    # Sections 4.4.5 and 4.5 accept any Unimod entry name in square brackets. Names use
+    # characters the section 6.1 regex omits (Met->Hse, Myristoyl+Delta:H(-4), spaces, "/"),
+    # brackets (Xlink:DSS[156], Cation:Fe[III]) or a leading digit (2HPG).
+    failed = []
+    for name in _unimod_names():
+        text = template.format(name)
+        try:
+            annotation = p.parse(text)
+        except p.PafParseError:
+            failed.append(name)
+            continue
+        assert annotation.serialize() == text
+        names = [loss.base_reference for loss in annotation.neutral_losses] + [
+            getattr(annotation.ion_type, "modification", None),
+            getattr(annotation.ion_type, "name", None),
+        ]
+        assert name in names
+    assert failed == []
+
+
+@pytest.mark.parametrize("name", ["Xlink:DSS[156]", "Cation:Fe[III]", "Met->Hse", "Myristoyl+Delta:H(-4)", "2HPG", "Dimethyl:2H(6)", "Label:13C(6)15N(2)"])
+def test_unimod_name_component_parsers(name):
+    assert p.NeutralLoss.parse(f"-[{name}]").base_reference == name
+    assert p.NeutralLoss.parse(f"-2[{name}]").count == -2
+    assert p.ImmoniumIon.parse(f"IK[{name}]").modification == name
+    assert p.ReferenceIon.parse(f"r[{name}]").name == name
+
+
+@pytest.mark.parametrize("text", ["y2-[Xlink:DSS[156]", "y2-[Xlink:DSS[156]]]", "IK[Cation:Fe[III]", "r[a[b[c]]]"])
+def test_bracketed_name_rejects_unbalanced_brackets(text):
+    with pytest.raises(p.PafParseError):
+        p.parse(text)
+
+
+def test_bracketed_unimod_name_masses():
+    pytest.importorskip("peptacular")
+    from tacular import UNIMOD_LOOKUP
+
+    listed = UNIMOD_LOOKUP["Xlink:DSS[156]"].monoisotopic_mass
+    assert p.parse("p-[Xlink:DSS[156]]").get_mass() == pytest.approx(p.parse("p").get_mass() - listed, rel=0, abs=1e-9)
+    assert p.parse("IK[Xlink:DSS[156]]").get_mass() == pytest.approx(p.parse("IK").get_mass() + listed, rel=0, abs=1e-6)
+    assert p.parse("IK[Cation:Fe[III]]").get_mass() == pytest.approx(
+        p.parse("IK").get_mass() + UNIMOD_LOOKUP["Cation:Fe[III]"].monoisotopic_mass, rel=0, abs=1e-6
+    )
+    assert p.parse("IK[Dimethyl:2H(6)]").get_mass() == pytest.approx(
+        p.parse("IK").get_mass() + UNIMOD_LOOKUP["Dimethyl:2H(6)"].monoisotopic_mass, rel=0, abs=1e-6
+    )
+
+
 @pytest.mark.parametrize(
     ("text", "formula", "count"),
     [("y2-H2O", "H2O", -1), ("y2-2H2O", "H2O", -2), ("y2+H2[18O1]", "H2[18O1]", 1), ("y2-NH3-H2O", "H2O", -1)],

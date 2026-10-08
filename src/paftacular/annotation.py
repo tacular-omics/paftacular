@@ -378,21 +378,22 @@ class PafAnnotation:
         if series == "v":
             if residue not in _V_ION_RESIDUES:
                 raise PaftacularError(f"{label} is not defined for residue {residue}")
-            # The side chain leaves whole, so a modification on it leaves too.
-            annot = annot.copy()
-            annot.clear_internal_mod_at_index(index)
-            if index in static_mods:
-                _drop_static_mods_at(annot, static_mods, index)
             kept = formula_to_composition("C2H3NO2")
         else:
             substituent = _BETA_SUBSTITUENT.get((series, residue))
             if substituent is None:
                 hint = f" Use {series}a or {series}b." if residue in "TI" and len(series) == 1 else ""
                 raise PaftacularError(f"{label} is not defined for residue {residue}.{hint}")
-            if annot.has_internal_mods_at_index(index) or index in static_mods:
-                raise PaftacularError(f"{label} is not defined when residue {residue} carries a modification")
             kept = formula_to_composition(_SIDE_CHAIN_BACKBONE[series[0]])
             kept.update(formula_to_composition(substituent))
+        # The section 4.4.3 formulas replace residue n by a fixed remnant (C2H3NO2 for v, the
+        # backbone part plus the beta substituent for d and w) and sum modified masses only for
+        # the other n-1 residues. A modification on residue n leaves with its side chain.
+        if annot.has_internal_mods_at_index(index) or index in static_mods:
+            annot = annot.copy()
+            annot.clear_internal_mod_at_index(index)
+            if index in static_mods:
+                _drop_static_mods_at(annot, static_mods, index)
         kept.subtract(AA_LOOKUP[residue].composition)
         return annot, kept
 
@@ -464,9 +465,12 @@ class PafAnnotation:
         elif self.adducts:
             # An H carrier with the sign of the charge is a proton (or a removed proton), so
             # [M+H] and [M-H]^-1 give exactly the mass of the default charge. [M+H]^-1 adds a
-            # hydrogen atom and an electron.
+            # hydrogen atom and an electron. Electron carriers ([M-e]) add no atoms, and the
+            # charge term below already removes or adds their electrons.
             protons = 0
             for adduct in self.adducts:
+                if adduct.is_electron:
+                    continue
                 if adduct.base_formula == "H" and (adduct.count > 0) == (self.charge > 0):
                     protons += adduct.count
                 else:

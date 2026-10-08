@@ -26,6 +26,7 @@ from .comps.ions import immonium_amino_acid
 from .comps.util import _formula_items
 from .constants import (
     ADDUCT_REGEX_PATTERN,
+    ELECTRON_CARRIER,
     FULL_PAF_PATTERN,
     ISOTOPE_REGEX_PATTERN,
     MAX_CACHE_SIZE,
@@ -143,7 +144,8 @@ def _adducts(text: str) -> tuple[Adduct, ...]:
     adducts: list[Adduct] = []
     for sign, count_text, formula in _ADDUCT_TOKEN.findall(text[1:]):
         count = int(count_text) if count_text else 1
-        _check_formula(formula, "adduct")
+        if formula != ELECTRON_CARRIER:
+            _check_formula(formula, "adduct")
         adducts.append(Adduct(-count if sign == "-" else count, formula))
     return tuple(adducts)
 

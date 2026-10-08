@@ -257,10 +257,9 @@ def test_v_ion_drops_a_global_fixed_modification():
     assert pft.parse("v3{<[Carbamidomethyl]@C>CFQ}").formula() == pft.parse("v3{CFQ}").formula()
 
 
-@pytest.mark.parametrize("text", ["w3{<[Oxidation]@M>MFQ}", "d3{<[Oxidation]@M>FQM}"])
-def test_w_and_d_ions_refuse_a_global_fixed_modification(text):
-    with pytest.raises(PaftacularError, match="carries a modification"):
-        pft.parse(text).get_mass()
+@pytest.mark.parametrize(("text", "plain"), [("w3{<[Oxidation]@M>MFQ}", "w3{MFQ}"), ("d3{<[Oxidation]@M>FQM}", "d3{FQM}")])
+def test_w_and_d_ions_drop_a_global_fixed_modification_on_the_cleaved_residue(text, plain):
+    assert pft.parse(text).get_mass() == pytest.approx(pft.parse(plain).get_mass(), rel=0, abs=1e-9)
 
 
 @pytest.mark.parametrize(("adduct", "default"), [("y2{DE}[M+H]", "y2{DE}"), ("y2{DE}[M-H]^-1", "y2{DE}^-1"), ("y2{DE}[M+2H]^2", "y2{DE}^2")])
