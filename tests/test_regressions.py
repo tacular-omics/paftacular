@@ -212,7 +212,7 @@ def _unimod_names() -> list[str]:
     return sorted({entry.name for entry in UNIMOD_LOOKUP.values()})
 
 
-@pytest.mark.parametrize("template", ["p-[{}]", "y2-2[{}]^2", "p+[{}]+i[M+H]^2/1ppm*0.5", "IK[{}]", "IK[{}]-H2O", "r[{}]"])
+@pytest.mark.parametrize("template", ["p-[{}]", "y2-2[{}]^2", "p+[{}]+i[M+2H]^2/1ppm*0.5", "IK[{}]", "IK[{}]-H2O", "r[{}]"])
 def test_every_unimod_name_parses_in_brackets(template):
     # Sections 4.4.5 and 4.5 accept any Unimod entry name in square brackets. Names use
     # characters the section 6.1 regex omits (Met->Hse, Myristoyl+Delta:H(-4), spaces, "/"),

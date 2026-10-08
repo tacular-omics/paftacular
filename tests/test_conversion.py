@@ -336,3 +336,26 @@ def test_uncharged_fragment_is_refused():
     fragment = pt.parse("PEK").frag(ion_type="b", position=2, charge=0)
     with pytest.raises(ValueError, match="charge"):
         paf.to_mzpaf(fragment)
+
+
+@pytest.mark.parametrize(
+    ("charge", "message"),
+    [
+        ("Na:z+2", r"\[M\+Na\] carry charge \+1, which does not match charge 2"),
+        ("Cl:z+1", r"\[M\+Cl\] carry charge -1, which does not match the fragment charge 1"),
+    ],
+)
+def test_to_mzpaf_rejects_carriers_that_disagree_with_the_charge(charge, message):
+    # Section 4.7: [M+Na] is a 1+ ion and [M+2Na] MUST be followed by ^2, so a carrier declared
+    # with another charge has no mzPAF annotation.
+    fragment = pt.parse("PEPTIDE").frag(ion_type="y", position=3, charge=charge)
+    with pytest.raises(paf.PaftacularError, match=message):
+        paf.to_mzpaf(fragment)
+
+
+@pytest.mark.parametrize(("charge", "text"), [("Na:z+1^2", "y3{IDE}[M+2Na]^2"), ("Cl:z-1", "y3{IDE}[M+Cl]^-1"), ("Fe:z+3", "y3{IDE}[M+Fe]^3")])
+def test_to_mzpaf_adduct_charge_matches(charge, text):
+    fragment = pt.parse("PEPTIDE").frag(ion_type="y", position=3, charge=charge)
+    annotation = paf.to_mzpaf(fragment)
+    assert annotation.serialize() == text
+    assert annotation.mz() == pytest.approx(fragment.mz, rel=0, abs=1e-6)

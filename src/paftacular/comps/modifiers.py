@@ -316,6 +316,20 @@ class NeutralLoss(
         raise PaftacularError(f"Could not parse neutral loss: '{loss_str}'")
 
 
+# Charge of one unit of a common charge carrier, keyed by its element counts with isotopes
+# ignored ([15N1]H4 is ammonium). mzPAF section 4.4.10 reads what follows the M as charged
+# ions: [M+Na] adds Na+, [M+HCOO] adds formate HCOO-. A carrier made of hydrogen only is that
+# many protons ([2H2] is two deuterons). Carriers not listed here have no known charge.
+_CARRIER_UNIT_CHARGES: dict[frozenset[tuple[str, int]], int] = {
+    frozenset({(symbol, 1)}): charge
+    for symbol, charge in (("Li", 1), ("Na", 1), ("K", 1), ("Rb", 1), ("Cs", 1), ("Ag", 1), ("Mg", 2), ("Ca", 2), ("F", -1), ("Cl", -1), ("Br", -1), ("I", -1))
+} | {
+    frozenset({("N", 1), ("H", 4)}): 1,  # ammonium
+    frozenset({("C", 1), ("H", 1), ("O", 2)}): -1,  # formate
+    frozenset({("C", 2), ("H", 3), ("O", 2)}): -1,  # acetate
+}
+
+
 @dataclass(frozen=True, slots=True)
 class Adduct(Serializable, ScalableComposition, MassProvider):
     """Represents a charge-carrier adduct such as ``+Na``, ``+2H`` or an electron, ``-e``
@@ -337,6 +351,27 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
     def is_electron(self) -> bool:
         """True for an electron carrier (``-e``, ``+2e``)."""
         return self.base_formula == ELECTRON_CARRIER
+
+    @property
+    def charge(self) -> int | None:
+        """The charge this carrier adds, or None when the carrier's charge is not known.
+
+        ``+2Na`` adds 2, ``-2H`` adds -2 (two protons removed), ``+2e`` adds -2 and ``+HCOO``
+        adds -1. A carrier outside the common list (``+Fe``) gives None.
+        """
+        if self.is_electron:
+            return -self.count
+        try:
+            composition = self._single_composition
+        except ValueError:
+            return None
+        symbols: Counter[str] = Counter()
+        for element, count in composition.items():
+            symbols[element.symbol] += count
+        if set(symbols) == {"H"}:
+            return self.count * symbols["H"]
+        unit = _CARRIER_UNIT_CHARGES.get(frozenset(symbols.items()))
+        return None if unit is None else self.count * unit
 
     @property
     def _single_composition(self) -> Counter[ElementInfo]:

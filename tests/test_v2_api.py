@@ -313,10 +313,7 @@ def test_removed_deuteron_is_labelled():
     assert pft.parse("b2{<2H>PE}[M-H]^-1").formula() == removed.formula()
 
 
-def test_h_adduct_of_the_opposite_sign_is_a_hydride():
-    from tacular import ELEMENT_LOOKUP
-    from tacular.constants import ELECTRON_MASS, PROTON_MASS
-
-    # [M+H]^-1 adds an H atom and an electron. The default +1 charge adds a proton.
-    shift = pft.parse("y2{DE}[M+H]^-1").get_mass() - pft.parse("y2{DE}").get_mass()
-    assert shift == pytest.approx(ELEMENT_LOOKUP["H"].get_mass() + ELECTRON_MASS - PROTON_MASS, rel=0, abs=1e-12)
+def test_h_adduct_of_the_opposite_sign_is_rejected():
+    # An H carrier is a proton (section 4.4.10), so [M+H] is a 1+ ion and cannot carry ^-1.
+    with pytest.raises(PafParseError, match=r"carry charge \+1, which does not match charge -1"):
+        pft.parse("y2{DE}[M+H]^-1")

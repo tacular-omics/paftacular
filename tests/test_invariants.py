@@ -151,27 +151,45 @@ isotopes = st.one_of(
 formula_adducts = st.builds(lambda count, formula: Adduct(count=count, base_formula=formula), signed_counts, st.sampled_from(ADDUCT_FORMULAS))
 mass_errors = st.builds(MassError, value=decimals(-50, 50, 4), unit=st.sampled_from(["da", "ppm"]))
 charges = st.integers(1, 4).flatmap(lambda n: st.sampled_from([n, -n]))
+# Carriers outside paftacular's list of known charges, so any charge is allowed with them.
+unknown_adducts = st.builds(lambda count, formula: Adduct(count=count, base_formula=formula), signed_counts, st.sampled_from(["Fe", "Zn", "Cu"]))
+
+
+def _carrier_charge(adducts) -> int:
+    return sum(adduct.charge for adduct in adducts)
 
 
 @st.composite
 def adducts_and_charge(draw, ion) -> tuple[tuple[Adduct, ...], int]:
-    """A charge with adducts that fit it: none, formula carriers, electrons only, or both."""
-    charge = draw(charges)
+    """A charge with adducts that fit it: none, formula carriers, electrons only, both, or a
+    carrier of unknown charge (any charge).
+
+    Sections 4.7 and 4.8: known carriers fix the charge magnitude ([M+2Na]^2), and the written
+    charge has no minus sign, so a negative net carrier charge may be written unsigned ([M-2H]^2)
+    and is stored negative. The paftacular ^-n form must carry the carriers' own sign.
+    """
     if isinstance(ion, ImmoniumIon) and ion.modification is None:
         # IA[M+H] reads as an immonium modification named "M+H" (section 6.1), see test_properties.
-        return (), charge
-    kind = draw(st.sampled_from(["none", "formula", "electron", "mixed"]))
+        return (), draw(charges)
+    kind = draw(st.sampled_from(["none", "formula", "electron", "mixed", "unknown"]))
     if kind == "none":
-        return (), charge
+        return (), draw(charges)
+    if kind == "unknown":
+        return (draw(unknown_adducts), *draw(st.lists(formula_adducts, max_size=1))), draw(charges)
     if kind == "formula":
-        return tuple(draw(st.lists(formula_adducts, min_size=1, max_size=3))), charge
-    if kind == "electron":
+        adducts = tuple(draw(st.lists(formula_adducts, min_size=1, max_size=3).filter(lambda a: _carrier_charge(a) != 0)))
+    elif kind == "electron":
         # Section 4.4.10: [M-e] is the 1+ ion and [M+2e] the 2- ion, so electrons gained = -charge.
-        electrons = -charge
+        electrons = -draw(charges)
         split = draw(st.integers(-2, 2).filter(lambda k: k not in (0, electrons)))
         parts = [electrons] if draw(st.booleans()) else [split, electrons - split]
-        return tuple(Adduct(count=count, base_formula="e") for count in parts), charge
-    return (draw(formula_adducts), Adduct(count=draw(signed_counts), base_formula="e")), charge
+        adducts = tuple(Adduct(count=count, base_formula="e") for count in parts)
+    else:
+        adducts = draw(
+            st.tuples(formula_adducts, st.builds(lambda n: Adduct(count=n, base_formula="e"), signed_counts)).filter(lambda a: _carrier_charge(a) != 0)
+        )
+    net = _carrier_charge(adducts)
+    return adducts, draw(st.sampled_from([net, abs(net)]))
 
 
 @st.composite
@@ -547,3 +565,60 @@ def test_zero_isotope_component_rejected():
         IsotopeSpecification(0)
     with pytest.raises(ValueError):
         PafAnnotation.make_peptide("y", 5, isotopes=[0])
+
+
+# Adduct charge must match the charge state (sections 4.7 and 4.8)
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        # One Na+ each: two of them make a 2+ ion, which MUST be written ^2.
+        ("y3{PEK}[M+2Na]", r"\[M\+2Na\] carry charge \+2, which does not match charge 1"),
+        # One proton cannot make a 2+ ion.
+        ("y3{PEK}[M+H]^2", r"\[M\+H\] carry charge \+1, which does not match charge 2"),
+        ("y3{PEK}[M+H+Na]", r"carry charge \+2, which does not match charge 1"),
+        # An explicit ^-n must agree with the carriers' sign.
+        ("y3{PEK}[M+2H]^-2", r"carry charge \+2, which does not match charge -2"),
+    ],
+)
+def test_adduct_charge_mismatch_raises(text, message):
+    with pytest.raises(pft.PafParseError, match=message):
+        pft.parse(text)
+
+
+@pytest.mark.parametrize(
+    ("text", "charge", "mz"),
+    [
+        ("y3{PEK}[M+2Na]^2", 2, None),
+        ("y3{PEK}[M+H]", 1, "y3{PEK}"),
+        ("y3{PEK}[M+H+Na]^2", 2, None),
+        ("y3{PEK}[M+2H]^2", 2, "y3{PEK}^2"),
+        # Section 4.8: negative-mode charges carry no minus sign, so [M-2H]^2 is the 2- ion.
+        ("y3{PEK}[M-2H]^2", -2, "y3{PEK}^-2"),
+        ("y3{PEK}[M-H]", -1, "y3{PEK}^-1"),
+        ("y3{PEK}[M-2H]^-2", -2, "y3{PEK}^-2"),
+        ("y3{PEK}[M+HCOO]", -1, None),
+        # A carrier with no known charge is not checked.
+        ("y3{PEK}[M+Fe]^3", 3, None),
+    ],
+)
+def test_adduct_charge_matching_charge_parses(text, charge, mz):
+    annotation = pft.parse(text)
+    assert annotation.charge == charge
+    assert pft.parse(annotation.serialize()) == annotation
+    assert pft.parse(annotation.serialize(signed_charge=False)) == annotation
+    if mz is not None:
+        assert annotation.mz() == pytest.approx(pft.parse(mz).mz(), rel=0, abs=1e-9)
+
+
+def test_adduct_charge_check_applies_to_construction():
+    ion = pft.PeptideIon(series=pft.IonSeries.Y, position=3, sequence="PEK")
+    with pytest.raises(pft.PaftacularError, match="does not match charge 1"):
+        PafAnnotation(ion, adducts=(Adduct(2, "Na"),))
+    assert PafAnnotation(ion, adducts=(Adduct(-2, "H"),), charge=2).charge == -2
+
+
+def test_protonated_two_plus_mz():
+    # The real 2+ y3{PEK} ion, which [M+H]^2 used to misreport as 186.60.
+    assert pft.parse("y3{PEK}[M+2H]^2").mz() == pytest.approx(187.108, abs=1e-3)

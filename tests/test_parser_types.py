@@ -502,7 +502,7 @@ def test_adduct_simple():
 
 
 def test_adduct_multiple():
-    ann = parse_one("y5[M+H+Na]")
+    ann = parse_one("y5[M+H+Na]^2")
     assert ann.adducts and len(ann.adducts) == 2
     # Check compositions
     comp_h = ann.adducts[0].composition
@@ -514,7 +514,7 @@ def test_adduct_multiple():
 
 
 def test_adduct_count():
-    ann = parse_one("y5[M+2H]")
+    ann = parse_one("y5[M+2H]^2")
     assert ann.adducts and len(ann.adducts) == 1
     adduct = ann.adducts[0]
     assert adduct.count == 2
@@ -579,7 +579,7 @@ def test_adduct_average_mass():
 
 def test_adduct_formula_property():
     """Test formula property returns sign + formula"""
-    ann = parse_one("y5[M+2Na]")
+    ann = parse_one("y5[M+2Na]^2")
     adduct = ann.adducts[0]
 
     # Formula should include sign and count
@@ -868,7 +868,7 @@ def test_neutral_loss_validation():
 
 def test_serialization_roundtrip_simple():
     """Test that serialization produces parseable output"""
-    original = "y5-H2O+i13C[M+H]^2/-0.55ppm*0.85"
+    original = "y5-H2O+i13C[M+2H]^2/-0.55ppm*0.85"
     ann = parse_one(original)
     serialized = ann.serialize()
     reparsed = parse_one(serialized)

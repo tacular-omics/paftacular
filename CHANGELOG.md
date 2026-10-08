@@ -6,6 +6,13 @@
 
 - Electron adducts (`[M-e]`, `[M+2e]^-2`) parse, with the electron mass and no atoms. When
   the adducts are electrons only, the charge must match them (`[M+2e]` is the 2- ion).
+- Adduct charges must match the charge state (mzPAF 4.7: `[M+2Na]` MUST be followed by `^2`).
+  `y3{PEK}[M+2Na]` used to give a 1+ ion at m/z 418.18 and `y3{PEK}[M+H]^2` m/z 186.60
+  instead of 187.108; both now raise `PafParseError`. The check runs when every carrier has a
+  known charge (`Adduct.charge`), for parsing and construction alike, and replaces the
+  electron-only check. An unsigned charge takes the carriers' sign (4.8: no minus sign), so
+  `[M-2H]^2` and `[M+2e]^2` are 2- ions; an explicit `^-n` must agree, so `[M+H]^-1` raises.
+  `to_mzpaf` raises for a peptacular carrier whose declared charge disagrees (`Na:z+2`).
 - Unimod names with nested brackets or colons (`Cation:Fe[III]`, `Dimethyl:2H(6)`) parse
   inside immonium modifications, neutral losses and reference ions. A bracketed atom token
   must now be a full isotope (`[13C]`), so `[2HPG]` is read as a name.

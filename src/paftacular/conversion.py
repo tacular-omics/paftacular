@@ -324,7 +324,7 @@ def to_mzpaf(
     else:
         losses = tuple(deltas)
 
-    return PafAnnotation(
+    annotation = PafAnnotation(
         ion,
         neutral_losses=losses,
         isotopes=(*label_isotopes, *_isotopes(frag)) if label_isotopes else _isotopes(frag),
@@ -334,6 +334,12 @@ def to_mzpaf(
         confidence=confidence,
         resolved_sequence=sequence if kind == _PRECURSOR else None,
     )
+    if annotation.charge != charge:
+        # The carriers' known charges have the opposite sign to the fragment's (Cl:z+1 is [M+Cl],
+        # a 1- ion), so no mzPAF annotation names this fragment.
+        carriers = "".join(adduct.serialize() for adduct in adducts)
+        raise PaftacularError(f"Adducts [M{carriers}] carry charge {annotation.charge:+d}, which does not match the fragment charge {charge}")
+    return annotation
 
 
 _UNKNOWN, _TERMINAL, _IMMONIUM, _INTERNAL, _PRECURSOR = range(5)

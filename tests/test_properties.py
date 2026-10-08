@@ -116,6 +116,8 @@ isotopes = st.one_of(
     st.builds(lambda count: IsotopeSpecification(count=count, is_average=True), signed_counts),
 )
 adducts = st.builds(lambda count, formula: Adduct(count=count, base_formula=formula), st.integers(1, 3), st.sampled_from(ADDUCT_FORMULAS))
+# Carriers with no known charge, so the charge is free (no section 4.7 match check).
+unknown_charge_adducts = st.builds(lambda count, formula: Adduct(count=count, base_formula=formula), st.integers(1, 3), st.sampled_from(["Fe", "Zn", "Cu"]))
 mass_errors = st.builds(MassError, value=decimals(-50, 50, 4), unit=st.sampled_from(["da", "ppm"]))
 
 
@@ -129,14 +131,16 @@ def _adducts_allowed(ion) -> bool:
 @st.composite
 def annotations(draw, ions=any_ion, with_adducts: bool = True):
     ion = draw(ions)
+    ion_adducts = tuple(draw(st.lists(adducts, max_size=2))) if with_adducts and _adducts_allowed(ion) else ()
     return PafAnnotation(
         ion_type=ion,
         analyte_reference=draw(st.none() | st.integers(0, 9)),
         is_auxiliary=draw(st.booleans()),
         neutral_losses=tuple(draw(st.lists(neutral_losses, max_size=3))),
         isotopes=tuple(draw(st.lists(isotopes, max_size=2))),
-        adducts=tuple(draw(st.lists(adducts, max_size=2))) if with_adducts and _adducts_allowed(ion) else (),
-        charge=draw(st.integers(1, 4)),
+        adducts=ion_adducts,
+        # Section 4.7: every carrier here is 1+, so [M+2Na] MUST be followed by ^2.
+        charge=sum(adduct.count for adduct in ion_adducts) if ion_adducts else draw(st.integers(1, 4)),
         mass_error=draw(st.none() | mass_errors),
         confidence=draw(st.none() | decimals(0, 1, 3)),
     )
@@ -206,7 +210,7 @@ def test_charge_adds_one_proton_per_charge(ion, losses, charge):
     assert _quiet(charged.mz) * charge == pytest.approx(mass, rel=1e-12, abs=1e-9)
 
 
-@given(computable_ions, st.lists(adducts, min_size=1, max_size=2), st.integers(1, 5))
+@given(computable_ions, st.lists(unknown_charge_adducts, min_size=1, max_size=2), st.integers(1, 5))
 def test_adduct_mass_independent_of_charge_except_electrons(ion, ion_adducts, charge):
     assume(not isinstance(ion, ChemicalFormula))
     single = PafAnnotation(ion_type=ion, adducts=tuple(ion_adducts))
