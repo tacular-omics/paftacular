@@ -327,6 +327,11 @@ _CARRIER_UNIT_CHARGES: dict[frozenset[tuple[str, int]], int] = {
     frozenset({("N", 1), ("H", 4)}): 1,  # ammonium
     frozenset({("C", 1), ("H", 1), ("O", 2)}): -1,  # formate
     frozenset({("C", 2), ("H", 3), ("O", 2)}): -1,  # acetate
+    # Neutrals carry no charge. Section 4.4.10 says they SHOULD be written as losses, but
+    # [M+H-H2O]^3 must still be checked rather than skipped.
+    frozenset({("H", 2), ("O", 1)}): 0,  # water
+    frozenset({("N", 1), ("H", 3)}): 0,  # ammonia
+    frozenset({("C", 1), ("O", 2)}): 0,  # carbon dioxide
 }
 
 
@@ -357,7 +362,8 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
         """The charge this carrier adds, or None when the carrier's charge is not known.
 
         ``+2Na`` adds 2, ``-2H`` adds -2 (two protons removed), ``+2e`` adds -2 and ``+HCOO``
-        adds -1. A carrier outside the common list (``+Fe``) gives None.
+        adds -1, and a neutral (``-H2O``, ``-NH3``, ``-CO2``) adds 0. A carrier outside the
+        common list (``+Fe``) gives None.
         """
         if self.is_electron:
             return -self.count

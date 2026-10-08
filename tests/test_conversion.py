@@ -353,7 +353,7 @@ def test_to_mzpaf_rejects_carriers_that_disagree_with_the_charge(charge, message
         paf.to_mzpaf(fragment)
 
 
-@pytest.mark.parametrize(("charge", "text"), [("Na:z+1^2", "y3{IDE}[M+2Na]^2"), ("Cl:z-1", "y3{IDE}[M+Cl]^-1"), ("Fe:z+3", "y3{IDE}[M+Fe]^3")])
+@pytest.mark.parametrize(("charge", "text"), [("Na:z+1^2", "y3{IDE}[M+2Na]^2"), ("Cl:z-1", "y3{IDE}[M+Cl]"), ("Fe:z+3", "y3{IDE}[M+Fe]^3")])
 def test_to_mzpaf_adduct_charge_matches(charge, text):
     fragment = pt.parse("PEPTIDE").frag(ion_type="y", position=3, charge=charge)
     annotation = paf.to_mzpaf(fragment)

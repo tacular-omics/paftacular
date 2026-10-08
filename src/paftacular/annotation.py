@@ -209,6 +209,19 @@ class PafAnnotation:
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise PaftacularError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
+    def _carrier_charge(self) -> int | None:
+        """The summed charge of the adduct carriers, or None without adducts or with a carrier
+        of unknown charge."""
+        if not self.adducts:
+            return None
+        net = 0
+        for adduct in self.adducts:
+            carrier_charge = adduct.charge
+            if carrier_charge is None:
+                return None
+            net += carrier_charge
+        return net
+
     def _check_adduct_charge(self) -> None:
         """Check the charge against the charge carriers, when every carrier's charge is known.
 
@@ -218,12 +231,9 @@ class PafAnnotation:
         carriers: [M-2H]^2 and [M+2e]^2 are 2- ions and are stored with charge -2. An explicit
         negative charge (``^-2``, a paftacular extension) must agree in sign too.
         """
-        net = 0
-        for adduct in self.adducts:
-            carrier_charge = adduct.charge
-            if carrier_charge is None:
-                return
-            net += carrier_charge
+        net = self._carrier_charge()
+        if net is None:
+            return
         if abs(net) != abs(self.charge) or (self.charge < 0 and net > 0):
             carriers = "".join(adduct.serialize() for adduct in self.adducts)
             raise PaftacularError(f"Adducts [M{carriers}] carry charge {net:+d}, which does not match charge {self.charge}")
@@ -627,9 +637,10 @@ class PafAnnotation:
     def serialize(self, *, include_sequence: bool = True, signed_charge: bool = True) -> str:
         """Serialize the annotation back to mzPAF string format.
 
-        A negative charge is written as ``^-n`` by default so the text round trips. mzPAF 1.0.1
-        section 4.8 says the charge MUST NOT include the minus sign (negative mode is a property
-        of the spectrum), so pass ``signed_charge=False`` to write only the magnitude.
+        mzPAF 1.0.1 section 4.8 says the charge MUST NOT include the minus sign. When the adducts
+        all have known charges they fix the sign, so only the magnitude is written
+        (``[M-2H]^2``). Otherwise a negative charge is written as ``^-n`` by default so the text
+        round trips; pass ``signed_charge=False`` to write only the magnitude.
         """
         parts: list[str] = []
 
@@ -664,7 +675,7 @@ class PafAnnotation:
             parts.append(f"[{adduct_str}]")
 
         # Charge state (charge 1 is implied)
-        charge = self.charge if signed_charge else abs(self.charge)
+        charge = self.charge if signed_charge and self._carrier_charge() is None else abs(self.charge)
         if charge != 1:
             parts.append(f"^{charge}")
 

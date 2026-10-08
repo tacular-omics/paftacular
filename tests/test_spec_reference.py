@@ -207,7 +207,7 @@ def test_spec_example_charge_before_adduct():
     pft.parse_multi("1@y7-H2O+i^2[M+NH4]/-0.2ppm*0.5")
 
 
-@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^-2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
+@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
 def test_spec_electron_adducts(text):
     # Section 4.4.10: an ion formed by losing or gaining electrons only MUST use [M-e] / [M+ne].
     (annotation,) = pft.parse_multi(text)

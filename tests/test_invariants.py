@@ -15,7 +15,7 @@ import pytest
 pytest.importorskip("hypothesis")
 pytest.importorskip("peptacular")
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis import strategies as st
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, REFMOL_LOOKUP, UNIMOD_LOOKUP
 from tacular.constants import ELECTRON_MASS, PROTON_MASS
@@ -48,7 +48,10 @@ RESIDUE_MODS = [None, None, None, "Oxidation", "Phospho", "Carbamidomethyl", "+1
 UNIMOD_NAMES = sorted({entry.name for entry in UNIMOD_LOOKUP.values()})
 REFERENCE_NAMES = sorted(REFMOL_LOOKUP.keys())
 LOSS_FORMULAS = ["H2O", "NH3", "CO", "CO2", "H3PO4", "HPO3", "CH4OS", "C2H3NO", "H", "H2[18O1]", "[2H1]"]
-ADDUCT_FORMULAS = ["H", "Na", "K", "NH4", "Li", "[2H2]", "[15N1]H4"]
+# Charge of one unit of each carrier, typed in from mzPAF 4.4.10 and 4.7 rather than read from
+# paftacular: [M+Na] adds Na+, [M+HCOO] formate HCOO-, [2H2] two deuterons, e one electron.
+CARRIER_CHARGES = {"H": 1, "Na": 1, "K": 1, "NH4": 1, "Li": 1, "Mg": 2, "[2H2]": 2, "[15N1]H4": 1, "HCOO": -1, "Cl": -1, "H2O": 0, "e": -1}
+ADDUCT_FORMULAS = [formula for formula in CARRIER_CHARGES if formula != "e"]
 ISOTOPE_ELEMENTS = [None, "13C", "15N", "18O", "2H", "34S"]
 SMILES = ["CN=C=O", "CCO", "c1ccccc1", "OCC(O)CO", "COc(c1)cccc1C#N"]
 
@@ -156,7 +159,7 @@ unknown_adducts = st.builds(lambda count, formula: Adduct(count=count, base_form
 
 
 def _carrier_charge(adducts) -> int:
-    return sum(adduct.charge for adduct in adducts)
+    return sum(adduct.count * CARRIER_CHARGES[adduct.base_formula] for adduct in adducts)
 
 
 @st.composite
@@ -622,3 +625,38 @@ def test_adduct_charge_check_applies_to_construction():
 def test_protonated_two_plus_mz():
     # The real 2+ y3{PEK} ion, which [M+H]^2 used to misreport as 186.60.
     assert pft.parse("y3{PEK}[M+2H]^2").mz() == pytest.approx(187.108, abs=1e-3)
+
+
+@given(
+    st.lists(st.one_of(formula_adducts, st.builds(lambda n: Adduct(count=n, base_formula="e"), signed_counts)), min_size=1, max_size=3),
+    st.integers(-5, 5).filter(lambda c: c != 0),
+)
+def test_adduct_charge_that_differs_from_the_carriers_raises(adducts, charge):
+    # Section 4.7: the written charge is the carriers' net charge, written unsigned (4.8) or with
+    # paftacular's ^-n when negative.
+    net = _carrier_charge(adducts)
+    assume(abs(charge) != abs(net) or (charge < 0 and net > 0))
+    text = "y4{PEPT}[M" + "".join(adduct.serialize() for adduct in adducts) + "]" + ("" if charge == 1 else f"^{charge}")
+    with pytest.raises(pft.PafParseError, match="does not match charge"):
+        pft.parse(text)
+
+
+@pytest.mark.parametrize("text", ["y4{PEPT}[M-H]", "y4{PEPT}[M-2H]^2", "y4{PEPT}[M+2e]^2", "y4{PEPT}[M+Na-2H]", "y4{PEPT}[M+HCOO]", "y4{PEPT}[M+Cl]"])
+def test_negative_mode_adduct_text_round_trips_without_a_minus_sign(text):
+    # Section 4.8: the charge MUST NOT include the minus sign. Known carriers fix the sign.
+    annotation = pft.parse(text)
+    assert annotation.charge < 0
+    assert str(annotation) == text
+    assert str(pft.parse(str(annotation))) == text
+
+
+@pytest.mark.parametrize(
+    ("text", "valid"), [("y4{PEPT}[M+H-H2O]^3", False), ("y4{PEPT}[M+H-NH3]^2", False), ("y4{PEPT}[M+H-CO2]^2", False), ("y4{PEPT}[M+H-H2O]", True)]
+)
+def test_neutral_inside_the_adduct_keeps_the_check(text, valid):
+    # A neutral carries no charge, so it must not switch the check off.
+    if valid:
+        assert pft.parse(text).charge == 1
+    else:
+        with pytest.raises(pft.PafParseError, match="carry charge \\+1"):
+            pft.parse(text)
