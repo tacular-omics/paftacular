@@ -4,8 +4,20 @@
 
 #### Fixed
 
-- Electron adducts (`[M-e]`, `[M+2e]^-2`) parse, with the electron mass and no atoms. When
-  the adducts are electrons only, the charge must match them (`[M+2e]` is the 2- ion).
+- Electron adducts (`[M-e]`, `[M+2e]^2`) parse, with the electron mass and no atoms
+  (`[M+2e]^2` is the 2- ion; see the adduct charge rule below).
+- Adduct charges must match the charge state (mzPAF 4.7: `[M+2Na]` MUST be followed by `^2`).
+  `y3{PEK}[M+2Na]` used to give a 1+ ion at m/z 418.18 and `y3{PEK}[M+H]^2` m/z 186.60
+  instead of 187.108; both now raise `PafParseError`. The check runs when every carrier has a
+  known charge (`Adduct.charge`), for parsing and construction alike, and replaces the
+  electron-only check. An unsigned charge takes the carriers' sign (4.8: no minus sign), so
+  `[M-2H]^2` and `[M+2e]^2` are 2- ions; an explicit `^-n` must agree, so `[M+H]^-1` raises.
+  `to_mzpaf` raises for a peptacular carrier whose declared charge disagrees (`Na:z+2`).
+  Neutrals inside the adduct (`H2O`, `NH3`, `CO2`) count as charge 0, so `[M+H-H2O]^3`
+  raises too.
+- When the adducts fix the sign, `serialize()` writes the charge without a minus sign, as
+  section 4.8 requires: `[M-H]`, `[M-2H]^2`, `[M+2e]^2`. `^-n` remains only for a negative
+  charge without adducts or with a carrier of unknown charge.
 - Unimod names with nested brackets or colons (`Cation:Fe[III]`, `Dimethyl:2H(6)`) parse
   inside immonium modifications, neutral losses and reference ions. A bracketed atom token
   must now be a full isotope (`[13C]`), so `[2HPG]` is read as a name.
@@ -15,6 +27,10 @@
   already did, instead of raising. Thr da and wa keep it, since their remnant keeps the OH.
 - Any Unimod entry name works as a neutral loss, composition changes such as `Met->Hse`
   included. Reference ions (`r[...]`) still reject composition changes.
+- A zero isotope count is rejected. `y5+0i` used to parse and then vanish on serialization,
+  and section 4.6 forbids an isotope component on the monoisotopic ion. `IsotopeSpecification`
+  now requires `count`, so `IsotopeSpecification()`, `IsotopeSpecification(0)` and
+  `make_*(isotopes=[0])` raise.
 
 ## [2.0.0] (2026-09-24)
 

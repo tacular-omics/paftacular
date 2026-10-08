@@ -176,8 +176,7 @@ Behaviour changes
   add its mass. Precursor ions keep it.
 - **Charge carrier mass.** Monoisotopic charge is tacular's CODATA ``PROTON_MASS``, for the
   default charge and for an ``H`` carrier alike, so ``y2{DE}[M+H]`` equals ``y2{DE}``.
-  An ``H`` carrier of the opposite sign (``[M+H]^-1``) is a hydride, an H atom plus an
-  electron. Average charge is natural-abundance H less an electron, 1.16e-4 Da per charge
+  Average charge is natural-abundance H less an electron, 1.16e-4 Da per charge
   heavier than 1.x.
 - **Global isotope labels** (``<13C>``) in an embedded sequence replace their element in
   the ion offset and formula deltas too, like peptacular 5. ``a2{<13C>RY}`` has 14 13C,
@@ -194,6 +193,12 @@ Behaviour changes
 - **Formula tokens are checked at parse time.** ``IK[M+Methyl]``, ``y2{DE}[M+Methyl]`` and
   ``y2{DE}-Methyl`` raise ``PafParseError`` from ``parse()``. 1.x parsed them and failed in
   ``get_mass()``.
+- **Adduct charges must match the charge.** When every carrier has a known charge, their sum
+  must equal the charge in magnitude (mzPAF 4.7), so ``y3{PEK}[M+2Na]`` and
+  ``y3{PEK}[M+H]^2`` raise ``PafParseError``; write ``[M+2Na]^2`` and ``[M+2H]^2``. An
+  unsigned charge takes the carriers' sign (4.8), so ``[M-2H]^2`` is the 2- ion, and an
+  explicit ``^-n`` must agree, so ``[M+H]^-1`` raises. Unknown carriers (``[M+Fe]``) are
+  not checked.
 - **Caching.** Parsing the same substring twice shares one immutable component
   (``parse("y5-H2O").neutral_losses is parse("b3-H2O").neutral_losses``). Constructors no
   longer return interned objects, so compare components with ``==``, never ``is``.

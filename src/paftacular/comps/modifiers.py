@@ -54,7 +54,7 @@ class MassError(Serializable):
 class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     """Represents isotope information"""
 
-    count: int = 0  # number of isotopes above/below monoisotope
+    count: int  # number of isotopes above/below monoisotope, nonzero
     _: KW_ONLY
     element: str | None = None  # e.g., "13C", "15N"
     is_average: bool = False  # True for averaged isotopomers
@@ -62,6 +62,10 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     def __post_init__(self):
         if type(self.count) is not int or type(self.is_average) is not bool:
             raise PaftacularError("Isotope count must be an integer and is_average must be a boolean")
+        if self.count == 0:
+            # Section 4.6: the monoisotopic ion MUST NOT have an isotope component, and a zero
+            # count would serialize to nothing and not survive a round trip.
+            raise PaftacularError("Isotope count must be a nonzero integer")
         if self.element is not None and (not isinstance(self.element, str) or not _ISOTOPE_ELEMENT.fullmatch(self.element)):
             raise PaftacularError("An isotope element requires a nucleon count and element symbol")
         if self.is_average and self.element is not None:
@@ -75,9 +79,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         return f"{sign}{count_str}"
 
     def serialize(self) -> str:
-        if self.count == 0:
-            return ""
-
         if self.is_average is True:
             return f"{self._prefix}iA"
         elif self.element is not None:
@@ -109,9 +110,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
         if monoisotopic is False:
             raise PaftacularError("Cannot calculate mass shift for average isotopomer specification")
 
-        if self.count == 0:
-            return 0.0
-
         if self.is_average:
             raise PaftacularError("Cannot calculate mass shift for average isotopomer specification")
 
@@ -131,9 +129,6 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     @property
     def composition(self) -> Counter[ElementInfo]:
         # lose mono and gain isotope
-        if self.count == 0:
-            return Counter()
-
         if self.is_average:
             raise PaftacularError("Cannot calculate composition for average isotopomer specification")
 
@@ -321,6 +316,25 @@ class NeutralLoss(
         raise PaftacularError(f"Could not parse neutral loss: '{loss_str}'")
 
 
+# Charge of one unit of a common charge carrier, keyed by its element counts with isotopes
+# ignored ([15N1]H4 is ammonium). mzPAF section 4.4.10 reads what follows the M as charged
+# ions: [M+Na] adds Na+, [M+HCOO] adds formate HCOO-. A carrier made of hydrogen only is that
+# many protons ([2H2] is two deuterons). Carriers not listed here have no known charge.
+_CARRIER_UNIT_CHARGES: dict[frozenset[tuple[str, int]], int] = {
+    frozenset({(symbol, 1)}): charge
+    for symbol, charge in (("Li", 1), ("Na", 1), ("K", 1), ("Rb", 1), ("Cs", 1), ("Ag", 1), ("Mg", 2), ("Ca", 2), ("F", -1), ("Cl", -1), ("Br", -1), ("I", -1))
+} | {
+    frozenset({("N", 1), ("H", 4)}): 1,  # ammonium
+    frozenset({("C", 1), ("H", 1), ("O", 2)}): -1,  # formate
+    frozenset({("C", 2), ("H", 3), ("O", 2)}): -1,  # acetate
+    # Neutrals carry no charge. Section 4.4.10 says they SHOULD be written as losses, but
+    # [M+H-H2O]^3 must still be checked rather than skipped.
+    frozenset({("H", 2), ("O", 1)}): 0,  # water
+    frozenset({("N", 1), ("H", 3)}): 0,  # ammonia
+    frozenset({("C", 1), ("O", 2)}): 0,  # carbon dioxide
+}
+
+
 @dataclass(frozen=True, slots=True)
 class Adduct(Serializable, ScalableComposition, MassProvider):
     """Represents a charge-carrier adduct such as ``+Na``, ``+2H`` or an electron, ``-e``
@@ -342,6 +356,28 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
     def is_electron(self) -> bool:
         """True for an electron carrier (``-e``, ``+2e``)."""
         return self.base_formula == ELECTRON_CARRIER
+
+    @property
+    def charge(self) -> int | None:
+        """The charge this carrier adds, or None when the carrier's charge is not known.
+
+        ``+2Na`` adds 2, ``-2H`` adds -2 (two protons removed), ``+2e`` adds -2 and ``+HCOO``
+        adds -1, and a neutral (``-H2O``, ``-NH3``, ``-CO2``) adds 0. A carrier outside the
+        common list (``+Fe``) gives None.
+        """
+        if self.is_electron:
+            return -self.count
+        try:
+            composition = self._single_composition
+        except ValueError:
+            return None
+        symbols: Counter[str] = Counter()
+        for element, count in composition.items():
+            symbols[element.symbol] += count
+        if set(symbols) == {"H"}:
+            return self.count * symbols["H"]
+        unit = _CARRIER_UNIT_CHARGES.get(frozenset(symbols.items()))
+        return None if unit is None else self.count * unit
 
     @property
     def _single_composition(self) -> Counter[ElementInfo]:

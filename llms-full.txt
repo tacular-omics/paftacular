@@ -315,8 +315,9 @@ print(round(pft.parse("s{CN=C=O}").get_mass(), 6))  # 58.02874
 ```
 
 **Modifiers and charge carriers.** Adducts replace the default protons. An `H` carrier is a
-proton when its sign matches the charge, so `y2{DE}[M+H]` equals `y2{DE}`. `[M+H]^-1` is a
-hydride, an H atom plus an electron. Monoisotopic charge uses CODATA `PROTON_MASS`, and
+proton when its sign matches the charge, so `y2{DE}[M+H]` equals `y2{DE}`. Carriers of known
+charge must add up to the charge (`[M+2Na]^2`, not `[M+2Na]`), and an unsigned charge takes
+their sign, so `y2{DE}[M-2H]^2` is the 2- ion. Monoisotopic charge uses CODATA `PROTON_MASS`, and
 average charge natural-abundance H less an electron. Formula ions (`f{...}`) already list
 every atom of the charged species, so their adducts add no atoms.
 

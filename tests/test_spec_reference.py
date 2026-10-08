@@ -49,6 +49,7 @@ SPEC_EXAMPLES = [
     "m3:6-CO-H2O^2",
     "m3:4/1.1ppm,m4:5/1.1ppm",
     "m3:5",
+    "m1:3",  # section 4.4.4 prints it as the discouraged spelling of b3-C2H3NO, but it is valid syntax
     "IY",
     "IH",
     "IL-CH2",
@@ -119,9 +120,9 @@ SPEC_EXAMPLES = [
     "&1@y7/-0.002",
     "&y7/-0.001",
     "&y7/0.001",
+    "&y7/0.002",
     "b6-H2O/-0.005,&y7/0.003",
     "y12/3.4ppm*0.85,b9-NH3/5.2ppm*0.05",
-    "1@y7-H2O+i[M+NH4]^2/-0.2ppm*0.5",
     "m5:8-H2O/14.4ppm",
     "p/-1.7ppm",
 ]
@@ -140,6 +141,7 @@ def _serialize(text: str) -> str:
 @pytest.mark.parametrize("text", SPEC_EXAMPLES)
 def test_spec_example_round_trips(text):
     assert _serialize(text) == text
+    assert pft.parse_multi(_serialize(text)) == pft.parse_multi(text)
 
 
 @pytest.mark.parametrize(("text", "canonical"), CANONICAL_FORM.items())
@@ -205,7 +207,7 @@ def test_spec_example_charge_before_adduct():
     pft.parse_multi("1@y7-H2O+i^2[M+NH4]/-0.2ppm*0.5")
 
 
-@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^-2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
+@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
 def test_spec_electron_adducts(text):
     # Section 4.4.10: an ion formed by losing or gaining electrons only MUST use [M-e] / [M+ne].
     (annotation,) = pft.parse_multi(text)
@@ -226,11 +228,26 @@ def test_electron_adduct_mass(text, electrons_gained):
     assert annotation.comp() == PafAnnotation.parse(text.split("[")[0]).comp(calculate_sequence=True) - Counter({_H: 1})
 
 
-@pytest.mark.parametrize("text", ["y1{K}[M+2e]^2", "y1{K}[M-e]^-1", "y1{K}[M+e]", "s{CN=C=O}[M-2e]^-2", "y1{K}[M-e+2e]^-2"])
+@pytest.mark.parametrize("text", ["y1{K}[M-e]^-1", "s{CN=C=O}[M-2e]^-2", "y1{K}[M-e+2e]^-2", "y1{K}[M+e]^2"])
 def test_electron_adduct_charge_must_match(text):
     # Section 4.4.10: [M+2e] stands for the 2- ion and [M-e] for the 1+ ion.
-    with pytest.raises(ValueError, match="Electron adducts"):
+    with pytest.raises(ValueError, match="does not match charge"):
         PafAnnotation.parse(text)
+
+
+@pytest.mark.parametrize(("text", "charge"), [("y1{K}[M+2e]^2", -2), ("y1{K}[M+e]", -1)])
+def test_unsigned_charge_takes_its_sign_from_electron_adducts(text, charge):
+    # Section 4.8: the charge MUST NOT include the minus sign, and [M+2e] is the 2- ion.
+    annotation = PafAnnotation.parse(text)
+    assert annotation.charge == charge
+    assert annotation.serialize(signed_charge=False) == text
+
+
+def test_spec_example_with_one_ammonium_at_charge_two_is_rejected():
+    # The section 5.2 example 1@y7-H2O+i^2[M+NH4] puts one NH4+ on a 2+ ion, which section 4.7
+    # forbids ([M+2Na] MUST be followed by ^2). Its JSON also says charge 2 with one NH4.
+    with pytest.raises(PafParseError, match=r"\[M\+NH4\] carry charge \+1, which does not match charge 2"):
+        pft.parse("1@y7-H2O+i[M+NH4]^2/-0.2ppm*0.5")
 
 
 def test_electron_adduct_component():

@@ -196,8 +196,9 @@ class TestModifiers:
                 Adduct(count=2, base_formula="H"),
                 Adduct(count=1, base_formula="Na"),
             ),
+            charge=3,
         )
-        assert annotation.serialize() == "b2[M+2H+Na]"
+        assert annotation.serialize() == "b2[M+2H+Na]^3"
 
     def test_charge_state(self):
         """Test charge state annotation"""
@@ -248,7 +249,7 @@ class TestComplexAnnotations:
             is_auxiliary=True,
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
             isotopes=(IsotopeSpecification(count=1),),
-            adducts=(Adduct(count=1, base_formula="Na"),),
+            adducts=(Adduct(count=1, base_formula="H"), Adduct(count=1, base_formula="Na")),
             charge=2,
             mass_error=MassError(value=5.0, unit="ppm"),
             confidence=0.9,
@@ -258,7 +259,7 @@ class TestComplexAnnotations:
         assert "b2{PEP}" in serialized
         assert "-H2O" in serialized
         assert "+i" in serialized
-        assert "[M+Na]" in serialized
+        assert "[M+H+Na]" in serialized
         assert "^2" in serialized
         assert "/5ppm" in serialized
         assert "*0.9" in serialized
@@ -447,7 +448,7 @@ class TestParsing:
             "b2",
             "y3{PEP}",
             "b2-H2O",
-            "b2[M+Na]^2",
+            "b2[M+H+Na]^2",
             "m2:5",
             "IA",
             "p",
@@ -522,7 +523,7 @@ class TestToDictMethod:
             is_auxiliary=True,
             neutral_losses=(NeutralLoss(count=-1, base_formula="H2O"),),
             isotopes=(IsotopeSpecification(count=1),),
-            adducts=(Adduct(count=1, base_formula="Na"),),
+            adducts=(Adduct(count=1, base_formula="H"), Adduct(count=1, base_formula="Na")),
             charge=2,
             mass_error=MassError(0.5, unit="ppm"),
             confidence=0.95,
@@ -532,7 +533,7 @@ class TestToDictMethod:
         assert result["is_auxiliary"] is True
         assert len(result["neutral_losses"]) == 1
         assert len(result["isotopes"]) == 1
-        assert len(result["adducts"]) == 1
+        assert len(result["adducts"]) == 2
         assert result["charge"] == 2
         assert result["mass_error"] is not None
         assert result["confidence"] == 0.95
