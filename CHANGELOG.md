@@ -15,6 +15,9 @@
   already did, instead of raising. Thr da and wa keep it, since their remnant keeps the OH.
 - Any Unimod entry name works as a neutral loss, composition changes such as `Met->Hse`
   included. Reference ions (`r[...]`) still reject composition changes.
+- A zero isotope count (`y5+0i`, `IsotopeSpecification(0)`) is rejected. It used to parse and
+  then vanish on serialization, and section 4.6 forbids an isotope component on the
+  monoisotopic ion.
 
 ## [2.0.0] (2026-09-24)
 

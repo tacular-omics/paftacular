@@ -479,3 +479,18 @@ def test_every_isotope_shift():
             failed.append(label)
     assert len(ISOTOPE_CASES) > 200
     assert failed == []
+
+
+@pytest.mark.parametrize("text", ["y5+0i", "y5-0i13C", "y5+00iA", "y5+i+0i"])
+def test_zero_isotope_count_rejected(text):
+    # Section 4.6: the monoisotopic ion MUST NOT carry an isotope component. +0i used to parse
+    # and vanish on serialization.
+    with pytest.raises(pft.PafParseError):
+        pft.parse(text)
+
+
+def test_zero_isotope_component_rejected():
+    with pytest.raises(ValueError, match="nonzero"):
+        IsotopeSpecification(0)
+    with pytest.raises(ValueError):
+        PafAnnotation.make_peptide("y", 5, isotopes=[0])

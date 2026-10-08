@@ -62,6 +62,10 @@ class IsotopeSpecification(Serializable, CompositionProvider, MassProvider):
     def __post_init__(self):
         if type(self.count) is not int or type(self.is_average) is not bool:
             raise PaftacularError("Isotope count must be an integer and is_average must be a boolean")
+        if self.count == 0:
+            # Section 4.6: the monoisotopic ion MUST NOT have an isotope component, and a zero
+            # count would serialize to nothing and not survive a round trip.
+            raise PaftacularError("Isotope count must be a nonzero integer")
         if self.element is not None and (not isinstance(self.element, str) or not _ISOTOPE_ELEMENT.fullmatch(self.element)):
             raise PaftacularError("An isotope element requires a nucleon count and element symbol")
         if self.is_average and self.element is not None:
