@@ -1,7 +1,7 @@
 """Tests for PafAnnotation static make_* factory methods"""
 
 import pytest
-from tacular import AminoAcid
+from tacular import AA_LOOKUP, AminoAcid
 
 from paftacular import PafAnnotation, PaftacularError, parse
 from paftacular.comps import (
@@ -173,13 +173,26 @@ class TestMakeImmonium:
         assert type(PafAnnotation.make_immonium("K").ion_type.amino_acid) is AminoAcid
         assert type(ImmoniumIon.parse("IK").amino_acid) is AminoAcid
 
-    @pytest.mark.parametrize("code", ["B", "J", "O", "U", "X", "Z"])
-    def test_immonium_rejects_nonstandard_codes(self, code):
-        """Only the 20 standard amino acids make immonium ions, as before tacular's enum was used"""
+    @pytest.mark.parametrize("code", ["B", "X", "Z"])
+    def test_immonium_rejects_codes_without_one_mass(self, code):
+        """B, X and Z have no single residue mass, so they make no immonium ion"""
         with pytest.raises(PaftacularError, match="Invalid immonium amino acid"):
             PafAnnotation.make_immonium(code)
         with pytest.raises(PaftacularError):
             parse(f"I{code}")
+
+    @pytest.mark.parametrize("code", ["J", "O", "U"])
+    def test_immonium_accepts_rare_and_leucine_isoleucine_codes(self, code):
+        """U, O and J name one residue mass, so section 4.4.5 immonium ions IU, IO and IJ are valid"""
+        ann = parse(f"I{code}")
+        assert ann.serialize() == f"I{code}"
+        assert ann == PafAnnotation.make_immonium(code)
+        expected = AA_LOOKUP[code].monoisotopic_mass + parse("IG").get_mass() - AA_LOOKUP["G"].monoisotopic_mass
+        assert ann.get_mass() == pytest.approx(expected, abs=1e-9)
+
+    def test_immonium_j_matches_leucine_and_isoleucine(self):
+        assert parse("IJ").get_mass() == pytest.approx(parse("IL").get_mass(), abs=1e-12)
+        assert parse("IJ").comp() == parse("II").comp()
 
     def test_immonium_with_modification(self):
         """Test immonium ion with modification"""

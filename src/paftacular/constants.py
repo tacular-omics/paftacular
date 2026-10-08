@@ -92,9 +92,10 @@ class AnnotationName(StrEnum):
     INTERNAL = "internal"
 
 
-# mzPAF immonium ions use the 20 standard amino acids. tacular.AminoAcid also lists
-# ambiguous (B, J, X, Z) and rare (O, U) codes, which paftacular does not accept here.
-IMMONIUM_AMINO_ACIDS: frozenset[AminoAcid] = frozenset(AminoAcid(code) for code in "ACDEFGHIKLMNPQRSTVWY")
+# mzPAF immonium ions name one amino acid by its one-letter code (section 4.4.5). paftacular
+# accepts the 20 standard codes, selenocysteine (U), pyrrolysine (O) and J (I or L, which share
+# one mass). B, X and Z have no single mass, so they are rejected.
+IMMONIUM_AMINO_ACIDS: frozenset[AminoAcid] = frozenset(AminoAcid(code) for code in "ACDEFGHIJKLMNOPQRSTUVWY")
 
 
 # A single chemical-formula "atom" token: either a plain element+count (e.g. "H2") or an
@@ -105,7 +106,10 @@ IMMONIUM_AMINO_ACIDS: frozenset[AminoAcid] = frozenset(AminoAcid(code) for code 
 # backtracking (ReDoS) shape -- an anchored non-match on a long single-letter run (e.g. "y1+HHHH...!"
 # via parse) would hang. Nothing that legitimately follows an atom run starts with an
 # alnum char, so refusing to give characters back never rejects a valid annotation.
-_ATOM_TOKEN = r"(?:\[[0-9]+[A-Z][A-Za-z0-9]*+\]|[A-Z][A-Za-z0-9]*+)"
+# The bracketed form is the section 6.2 grammar's isotope atom (ATOM_COUNT): a nucleon count, one
+# element symbol and an optional count. A looser form would read a Unimod name that starts with
+# a digit (``-[2HPG]``) as a malformed isotope instead of a reference name.
+_ATOM_TOKEN = r"(?:\[[0-9]+[A-Z][a-z]?[0-9]*\]|[A-Z][A-Za-z0-9]*+)"
 
 # Isotope-nucleon-count is mandatory once an element is specified (mzPAF: "+iN" with no count is
 # invalid); at most one lowercase letter follows the element symbol (real element symbols are 1-2
@@ -118,15 +122,21 @@ ISOTOPE_REGEX_PATTERN = rf"([+-]?)([0-9]*)i({_ISOTOPE_ELEMENT})?"
 # count-prefixed formula like "-2H2O" isn't misread as a bare mass of "-2" with "H2O" dropped. The
 # bare-mass alternative also excludes being followed by "i" so e.g. "+2i13C" is left whole for the
 # isotope component instead of being split into a bare-mass loss of "+2" plus a dangling "i13C".
-# Bracketed names also allow "_" and "-": section 4.5 permits any reference molecule name there
-# (Appendix B has TMTpro_zero, sidechain_A, TMT126-ETD) and the section 6.2 grammar allows both,
-# although the section 6.1 regex omits them. They also allow balanced, unnested parentheses
-# for Unimod names such as HexNAc(2) (section 4.4.7). The two alternatives of _REFERENCE_NAME
-# start with different characters, so the repetition cannot backtrack catastrophically.
-_REFERENCE_NAME_CHAR = r"[A-Za-z0-9:\._\-]"
-_REFERENCE_NAME = rf"(?:{_REFERENCE_NAME_CHAR}|\({_REFERENCE_NAME_CHAR}*\))+"
-NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:[0-9]*{_ATOM_TOKEN}+|[0-9]*\[{_REFERENCE_NAME}(?:\[[A-Za-z0-9\.:\-]+\])?\]|[0-9]+(?:\.[0-9]+)?(?!i))"
-ADDUCT_REGEX_PATTERN = rf"([+-])([0-9]*)({_ATOM_TOKEN}+)"
+# A bracketed name is any reference molecule or Unimod entry name (sections 4.4.5, 4.4.7 and
+# 4.5). Unimod names use characters the section 6.1 regex omits (Met->Hse, Hex(1)HexNAc(1),
+# Myristoyl+Delta:H(-4), names with spaces or "/"), and some end in a bracketed group
+# (Xlink:DSS[156], Cation:Fe[III]). The section 6.2 grammar (BRACE_ENCLOSED_CONTENT) allows one
+# nested bracket group, so a name is any run of characters other than brackets and line breaks,
+# with balanced one-level bracket groups. A neutral-loss name also keeps its parentheses
+# balanced and unnested, as every Unimod name does. The alternatives of each name start with
+# different characters, so the repetition cannot backtrack catastrophically.
+BRACKETED_NAME = r"(?:[^\[\]\r\n]|\[[^\[\]\r\n]+\])+"
+_LOSS_NAME_CHAR = r"[^\[\]()\r\n]"
+_LOSS_NAME = rf"(?:{_LOSS_NAME_CHAR}|\({_LOSS_NAME_CHAR}*\)|\[{_LOSS_NAME_CHAR}+\])+"
+NEUTRAL_LOSS_REGEX_PATTERN = rf"[+-](?:[0-9]*{_ATOM_TOKEN}+|[0-9]*\[{_LOSS_NAME}\]|[0-9]+(?:\.[0-9]+)?(?!i))"
+# An adduct carrier is a formula or an electron, "e" (section 4.4.10: [M-e], [M+2e]).
+ELECTRON_CARRIER = "e"
+ADDUCT_REGEX_PATTERN = rf"([+-])([0-9]*)({_ATOM_TOKEN}+|{ELECTRON_CARRIER})"
 
 
 # Bound for the parser's component caches (keyed by annotation substring).
@@ -143,9 +153,9 @@ _INTERNAL = r"(?P<series_internal>m(?P<internal_start>[0-9]+):(?P<internal_end>[
 _PRECURSOR = r"(?P<precursor>p)"
 # Adduct text inside the brackets, ``M+H+Na``. An immonium modification never matches it, so
 # ``IK[M+K]`` is the K immonium ion with a K+ adduct.
-_ADDUCT_BODY = rf"M(?:[+-][0-9]*{_ATOM_TOKEN}+)+"
-_IMMONIUM = rf"(?:I(?P<immonium>[A-Z])(?:\[(?!{_ADDUCT_BODY}\])(?P<immonium_modification>(?:[^\]]+))\])?)"
-_REFERENCE = r"(?P<reference>r(?:(?:\[(?P<reference_label>[^\]]+)\])))"
+_ADDUCT_BODY = rf"M(?:[+-][0-9]*(?:{_ATOM_TOKEN}+|{ELECTRON_CARRIER}))+"
+_IMMONIUM = rf"(?:I(?P<immonium>[A-Z])(?:\[(?!{_ADDUCT_BODY}\])(?P<immonium_modification>{BRACKETED_NAME})\])?)"
+_REFERENCE = rf"(?P<reference>r(?:(?:\[(?P<reference_label>{BRACKETED_NAME})\])))"
 _FORMULA = r"(?:f\{(?P<formula>[A-Za-z0-9\[\]]+)\})"
 _NAMED = r"(?:_\{(?P<named_compound>[^\{\}/]+)\})"
 _SMILES = r"(?:s\{(?P<smiles>[^\}]+)\})"

@@ -289,7 +289,8 @@ modifications). It is used as written. When its residue count differs from the p
 A named modification counts at the exact mass of its composition, not its 6-decimal Unimod
 mass. A global isotope label (`<13C>`) replaces its element in the whole neutral ion, ion
 offset and formula deltas included (`a2{<13C>RY}` has 14 13C). A global fixed modification
-counts like an explicit one: a v ion loses it with the side chain, and w and d ions raise.
+counts like an explicit one: d, v and w ions drop it with the side chain of the cleaved residue (spec section 4.4.3),
+except Thr da and wa, which keep the OH that carries it.
 
 ```python
 import paftacular as pft
@@ -480,7 +481,7 @@ reinterpreted. Supply both cleavage fields together, one from a/b/c and one from
 
 - `IonSeries`: `a b c d v w x y z da db wa wb` (StrEnum).
 - `BackboneCleavageType`: `a b c x y z`.
-- Immonium amino acids are `tacular.AminoAcid` members, limited to the 20 standard codes.
+- Immonium amino acids are `tacular.AminoAcid` members: the 20 standard codes plus J, O and U.
 - `AnnotationName`: `precursor immonium reference named_compound formula smiles unannotated series internal`.
 - `paftacular.constants.InternalSeries` (not exported): `ax bx cx ay by cy az bz cz`.
 - `PaftacularError`, `PafParseError`, `PafUnknownReferenceError`: the error classes.

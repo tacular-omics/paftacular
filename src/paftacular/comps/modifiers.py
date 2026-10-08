@@ -6,8 +6,9 @@ from dataclasses import KW_ONLY, dataclass
 from typing import Literal
 
 from tacular import ELEMENT_LOOKUP, ElementInfo, RefMolInfo
+from tacular.constants import ELECTRON_MASS
 
-from ..constants import _ATOM_TOKEN, ADDUCT_REGEX_PATTERN, ISOTOPE_REGEX_PATTERN
+from ..constants import _ATOM_TOKEN, _LOSS_NAME, ADDUCT_REGEX_PATTERN, ELECTRON_CARRIER, ISOTOPE_REGEX_PATTERN
 from ..errors import PaftacularError, PafUnknownReferenceError
 from ..util import format_number, validate_number
 from .base import CompositionProvider, MassProvider, ScalableComposition, Serializable
@@ -16,7 +17,7 @@ from .util import composition_to_proforma_formula_string, formula_to_composition
 _ISOTOPE_ELEMENT = re.compile(r"[0-9]+[A-Z][a-z]?")
 _MASS_CONTENT = re.compile(r"[0-9]+(?:\.[0-9]+)?")
 _FORMULA_CONTENT = re.compile(rf"([0-9]*)({_ATOM_TOKEN}+)")
-_REFERENCE_CONTENT = re.compile(r"([0-9]*)\[([^\]]+)\]")
+_REFERENCE_CONTENT = re.compile(rf"([0-9]*)\[({_LOSS_NAME})\]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,7 +190,7 @@ class NeutralLoss(
         if self.base_reference is None:
             return None
         try:
-            return lookup_reference(self.base_reference)
+            return lookup_reference(self.base_reference, allow_change=True)
         except PafUnknownReferenceError:
             return self.base_reference
 
@@ -212,7 +213,7 @@ class NeutralLoss(
                     raise RuntimeError("Invalid state: formula is None")
                 return formula_to_composition(self.base_formula)
             case "reference":
-                return lookup_reference(str(self.base_reference)).composition
+                return lookup_reference(str(self.base_reference), allow_change=True).composition
             case "mass":
                 raise PaftacularError(f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). Use a formula or reference instead.")
 
@@ -229,7 +230,7 @@ class NeutralLoss(
                     raise RuntimeError("Formula is None for formula-based loss")
                 return self.base_formula
             case "reference":
-                return lookup_reference(str(self.base_reference)).formula
+                return lookup_reference(str(self.base_reference), allow_change=True).formula
             case "mass":
                 raise PaftacularError(f"Cannot get formula for mass-based loss: {self.base_mass}")
             case _:
@@ -255,7 +256,7 @@ class NeutralLoss(
                     m += elem.get_mass(monoisotopic=monoisotopic) * count
                 return m
             case "reference":
-                return lookup_reference(str(self.base_reference)).get_mass(monoisotopic=monoisotopic)
+                return lookup_reference(str(self.base_reference), allow_change=True).get_mass(monoisotopic=monoisotopic)
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
         return self._mass_single(monoisotopic=monoisotopic) * self.count
@@ -322,7 +323,11 @@ class NeutralLoss(
 
 @dataclass(frozen=True, slots=True)
 class Adduct(Serializable, ScalableComposition, MassProvider):
-    """Represents a charge-carrier adduct such as ``+Na`` or ``+2H``"""
+    """Represents a charge-carrier adduct such as ``+Na``, ``+2H`` or an electron, ``-e``
+
+    mzPAF section 4.4.10: ``[M-e]`` is the 1+ ion formed by losing an electron and ``[M+2e]`` the
+    2- ion formed by gaining two. An electron carrier has no atoms.
+    """
 
     count: int
     base_formula: str
@@ -334,8 +339,21 @@ class Adduct(Serializable, ScalableComposition, MassProvider):
             raise PaftacularError("Formula cannot be empty")
 
     @property
+    def is_electron(self) -> bool:
+        """True for an electron carrier (``-e``, ``+2e``)."""
+        return self.base_formula == ELECTRON_CARRIER
+
+    @property
     def _single_composition(self) -> Counter[ElementInfo]:
+        if self.is_electron:
+            return Counter()
         return formula_to_composition(self.base_formula)  # Use helper!
+
+    def get_mass(self, *, monoisotopic: bool = True) -> float:
+        """The mass the carrier adds: its atoms, or the electron mass per electron gained."""
+        if self.is_electron:
+            return self.count * ELECTRON_MASS
+        return sum(element.get_mass(monoisotopic=monoisotopic) * count for element, count in self.composition.items())
 
     @property
     def formula(self) -> str:

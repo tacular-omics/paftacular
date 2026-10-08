@@ -96,7 +96,7 @@ Everything is exported from `paftacular/__init__.py`:
   `PrecursorIon`. `IonType` is their union type alias.
 - **Modifiers:** `NeutralLoss`, `IsotopeSpecification`, `Adduct`, `MassError`.
 - **Enums and tables:** `IonSeries` (a b c d v w x y z da db wa wb), `BackboneCleavageType`,
-  `AnnotationName`. Immonium amino acids are `tacular.AminoAcid` (20 standard codes only). The spec section 4.4.4 table is private
+  `AnnotationName`. Immonium amino acids are `tacular.AminoAcid` (20 standard codes plus J, O and U). The spec section 4.4.4 table is private
   (`constants._INTERNAL_MASS_DIFFS`).
   `InternalSeries` (ax..cz) lives in `paftacular.constants` and is not exported.
 - **Other:** `resolve(annotation, analytes)`, `to_mzpaf(fragment, ...)` (needs peptacular).

@@ -15,7 +15,7 @@ else:
         pt = None
 from tacular import AA_LOOKUP, ELEMENT_LOOKUP, FRAGMENT_ION_LOOKUP, AminoAcid, ElementInfo, RefMolInfo
 
-from ..constants import _ADDUCT_BODY, IMMONIUM_AMINO_ACIDS, IonSeries
+from ..constants import _ADDUCT_BODY, BRACKETED_NAME, IMMONIUM_AMINO_ACIDS, IonSeries
 from ..errors import PaftacularError, PafUnsupportedCalculationError, reraise_as_paftacular
 from ..util import to_enum, validate_integer
 from .base import CompositionProvider, MassProvider, Serializable
@@ -256,7 +256,7 @@ class ImmoniumIon(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "ImmoniumIon":
         """Parse immonium ion string like 'IK', 'IM[Oxidation]'"""
         s = s.strip()
-        match = re.fullmatch(r"I([A-Z])(?:\[([^\]]+)\])?", s)
+        match = re.fullmatch(rf"I([A-Z])(?:\[({BRACKETED_NAME})\])?", s)
         if not match:
             raise PaftacularError(f"Invalid immonium ion: '{s}'")
 
@@ -335,7 +335,7 @@ class ReferenceIon(Serializable, CompositionProvider, MassProvider):
     def parse(s: str) -> "ReferenceIon":
         """Parse reference ion string like 'r[Phospho]'"""
         s = s.strip()
-        match = re.fullmatch(r"r\[([^\]]+)\]", s)
+        match = re.fullmatch(rf"r\[({BRACKETED_NAME})\]", s)
         if not match:
             raise PaftacularError(f"Invalid reference ion: '{s}'")
         return ReferenceIon(name=match.group(1))

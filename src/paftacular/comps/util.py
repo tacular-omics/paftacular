@@ -63,12 +63,16 @@ def _listed_or_summed(listed: float | None, composition: Counter[ElementInfo], *
 
 
 @lru_cache(maxsize=1024)
-def lookup_reference(name: str) -> RefMolInfo:
+def lookup_reference(name: str, *, allow_change: bool = False) -> RefMolInfo:
     """Find a reference molecule by name.
 
     mzPAF 1.0.1 sections 4.4.7 and 4.5: the mzPAF reference molecule list takes priority,
     then a Unimod entry name (for example ``Hex`` or ``HexNAc(2)``). A Unimod entry keeps its
     listed masses, like peptacular, and its composition only supplies the formula.
+
+    A Unimod entry with negative counts (``Met->Hse``) is a composition change, not a
+    molecule. Section 4.5 allows any Unimod entry as a neutral loss, so ``allow_change``
+    accepts it there, while a reference ion (section 4.4.7) still rejects it.
     """
     try:
         return REFMOL_LOOKUP[name]
@@ -81,13 +85,15 @@ def lookup_reference(name: str) -> RefMolInfo:
     composition = Counter(unimod.composition) if unimod is not None and unimod.name == name and unimod.composition else None
     if unimod is None or not composition:
         raise PafUnknownReferenceError(name)
-    if any(count < 0 for count in composition.values()):
+    is_change = any(count < 0 for count in composition.values())
+    if is_change and not allow_change:
         raise PafUnknownReferenceError(name, f"Unimod entry '{name}' is a composition change, not a molecule, so it cannot be a reference")
+    mixed = is_change and any(count > 0 for count in composition.values())
     return RefMolInfo(
         name=name,
         label_type="Unimod",
         molecule_type="modification",
-        formula=composition_to_formula_string(composition),
+        formula=composition_to_proforma_formula_string(composition) if mixed else composition_to_formula_string(composition),
         monoisotopic_mass=_listed_or_summed(unimod.monoisotopic_mass, composition, monoisotopic=True),
         average_mass=_listed_or_summed(unimod.average_mass, composition, monoisotopic=False),
         dict_composition={str(element): count for element, count in composition.items()},
