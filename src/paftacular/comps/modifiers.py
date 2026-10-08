@@ -190,7 +190,7 @@ class NeutralLoss(
         if self.base_reference is None:
             return None
         try:
-            return lookup_reference(self.base_reference)
+            return lookup_reference(self.base_reference, allow_change=True)
         except PafUnknownReferenceError:
             return self.base_reference
 
@@ -213,7 +213,7 @@ class NeutralLoss(
                     raise RuntimeError("Invalid state: formula is None")
                 return formula_to_composition(self.base_formula)
             case "reference":
-                return lookup_reference(str(self.base_reference)).composition
+                return lookup_reference(str(self.base_reference), allow_change=True).composition
             case "mass":
                 raise PaftacularError(f"Cannot calculate composition for mass-based loss ({self.base_mass} Da). Use a formula or reference instead.")
 
@@ -230,7 +230,7 @@ class NeutralLoss(
                     raise RuntimeError("Formula is None for formula-based loss")
                 return self.base_formula
             case "reference":
-                return lookup_reference(str(self.base_reference)).formula
+                return lookup_reference(str(self.base_reference), allow_change=True).formula
             case "mass":
                 raise PaftacularError(f"Cannot get formula for mass-based loss: {self.base_mass}")
             case _:
@@ -256,7 +256,7 @@ class NeutralLoss(
                     m += elem.get_mass(monoisotopic=monoisotopic) * count
                 return m
             case "reference":
-                return lookup_reference(str(self.base_reference)).get_mass(monoisotopic=monoisotopic)
+                return lookup_reference(str(self.base_reference), allow_change=True).get_mass(monoisotopic=monoisotopic)
 
     def get_mass(self, *, monoisotopic: bool = True) -> float:
         return self._mass_single(monoisotopic=monoisotopic) * self.count

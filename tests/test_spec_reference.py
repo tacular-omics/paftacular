@@ -205,7 +205,7 @@ def test_spec_example_charge_before_adduct():
     pft.parse_multi("1@y7-H2O+i^2[M+NH4]/-0.2ppm*0.5")
 
 
-@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
+@pytest.mark.parametrize("text", ["y1[M-e]", "s{CN=C=O}[M-e]", "s{CN=C=O}[M+2e]^-2", "p[M+H-e]^2", "f{C13H9}[M-e]"])
 def test_spec_electron_adducts(text):
     # Section 4.4.10: an ion formed by losing or gaining electrons only MUST use [M-e] / [M+ne].
     (annotation,) = pft.parse_multi(text)
@@ -224,6 +224,13 @@ def test_electron_adduct_mass(text, electrons_gained):
     neutral = PafAnnotation.parse(text.split("[")[0]).get_mass() - PafAnnotation.parse(text.split("[")[0]).charge * PROTON_MASS
     assert annotation.get_mass() == pytest.approx(neutral + electrons_gained * ELECTRON_MASS, rel=0, abs=1e-9)
     assert annotation.comp() == PafAnnotation.parse(text.split("[")[0]).comp(calculate_sequence=True) - Counter({_H: 1})
+
+
+@pytest.mark.parametrize("text", ["y1{K}[M+2e]^2", "y1{K}[M-e]^-1", "y1{K}[M+e]", "s{CN=C=O}[M-2e]^-2", "y1{K}[M-e+2e]^-2"])
+def test_electron_adduct_charge_must_match(text):
+    # Section 4.4.10: [M+2e] stands for the 2- ion and [M-e] for the 1+ ion.
+    with pytest.raises(ValueError, match="Electron adducts"):
+        PafAnnotation.parse(text)
 
 
 def test_electron_adduct_component():
@@ -263,7 +270,7 @@ def test_side_chain_v_ion_drops_side_chain_modification():
     [
         ("d3{PEK[Acetyl]}", "d3{PEK}"),
         ("w3{M[Oxidation]FQ}", "w3{MFQ}"),
-        ("da3{PET[Phospho]}", "da3{PET}"),
+        ("db3{PET[Phospho]}", "db3{PET}"),
         ("wb3{I[Methyl]EK}", "wb3{IEK}"),
         ("d3{<[Oxidation]@M>FQM}", "d3{FQM}"),
     ],
@@ -273,6 +280,23 @@ def test_side_chain_d_w_ions_drop_modification_on_cleaved_residue(modified, plai
     # substituent), so its modification leaves with the side chain, as for v.
     assert PafAnnotation.parse(modified).get_mass() == pytest.approx(PafAnnotation.parse(plain).get_mass(), rel=0, abs=1e-9)
     assert PafAnnotation.parse(modified).comp() == PafAnnotation.parse(plain).comp()
+
+
+@pytest.mark.parametrize(
+    ("text", "mass"),
+    [
+        # P C5H7NO 97.052764 + E C5H7NO3 129.042593 + C2H3N 41.026549 + OH 17.002740
+        # + HPO3 79.966331 + proton 1.007276
+        ("da3{PET[Phospho]}", 365.098253),
+        # E 129.042593 + K C6H12N2O 128.094963 + C3H3O2 71.013304 + OH 17.002740
+        # + HPO3 79.966331 + proton 1.007276
+        ("wa3{T[Phospho]EK}", 426.127207),
+        ("da3{<[Phospho]@T>PET}", 365.098253),
+    ],
+)
+def test_side_chain_thr_da_wa_keep_modification(text, mass):
+    # Section 4.4.3: Thr da and wa keep the OH (O gamma), where Phospho and HexNAc sit.
+    assert PafAnnotation.parse(text).get_mass() == pytest.approx(mass, rel=0, abs=1e-5)
 
 
 @pytest.mark.parametrize(("modified", "plain", "delta"), [("d3{P[Acetyl]EK}", "d3{PEK}", 42.010565), ("w3{MF[Phospho]Q}", "w3{MFQ}", 79.966331)])
@@ -292,7 +316,7 @@ def test_offset_only_ion_formula(text, formula):
     assert PafAnnotation.parse(text).ion_type.formula == formula
 
 
-@pytest.mark.parametrize("text", ["r[Deamidated]", "p-[Deamidated]"])
+@pytest.mark.parametrize("text", ["r[Deamidated]", "r[Met->Hse]"])
 def test_unimod_composition_change_is_not_a_reference(text):
     with pytest.raises(ValueError, match="not a molecule"):
         PafAnnotation.parse(text).get_mass()
@@ -302,3 +326,12 @@ def test_unimod_reference_formula_and_loss():
     assert PafAnnotation.parse("r[Hex]").formula() == "C6H11O5"
     loss = PafAnnotation.parse("p-[Hex]").neutral_losses[0]
     assert loss.formula == "-C6H10O5"
+
+
+@pytest.mark.parametrize(("name", "delta"), [("Deamidated", 0.984016), ("Met->Hse", -29.992806), ("Dimethyl:2H(6)", 34.068961)])
+def test_unimod_composition_change_as_neutral_loss(name, delta):
+    # Section 4.5 allows any Unimod entry name as a loss. A composition change resolves to its delta.
+    plain = PafAnnotation.parse("y1{K}")
+    loss = PafAnnotation.parse(f"y1{{K}}-[{name}]")
+    assert plain.get_mass() - loss.get_mass() == pytest.approx(delta, rel=0, abs=1e-5)
+    assert pft.parse(loss.serialize()) == loss

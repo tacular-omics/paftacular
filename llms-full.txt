@@ -289,7 +289,8 @@ modifications). It is used as written. When its residue count differs from the p
 A named modification counts at the exact mass of its composition, not its 6-decimal Unimod
 mass. A global isotope label (`<13C>`) replaces its element in the whole neutral ion, ion
 offset and formula deltas included (`a2{<13C>RY}` has 14 13C). A global fixed modification
-counts like an explicit one: d, v and w ions drop it with the side chain of the cleaved residue (spec section 4.4.3).
+counts like an explicit one: d, v and w ions drop it with the side chain of the cleaved residue (spec section 4.4.3),
+except Thr da and wa, which keep the OH that carries it.
 
 ```python
 import paftacular as pft

@@ -204,6 +204,12 @@ class PafAnnotation:
                 embedded = self.ion_type.sequence
                 if embedded is not None and embedded != self.resolved_sequence:
                     raise PaftacularError("Embedded and resolved sequences must agree")
+        if self.adducts and all(adduct.is_electron for adduct in self.adducts):
+            # Section 4.4.10: [M-e] is the 1+ ion and [M+2e] the 2- ion, so the charge is the
+            # negative of the net electrons added.
+            electrons = sum(adduct.count for adduct in self.adducts)
+            if self.charge != -electrons:
+                raise PaftacularError(f"Electron adducts adding {electrons} electrons give charge {-electrons}, got {self.charge}")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
             raise PaftacularError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
 
@@ -388,8 +394,11 @@ class PafAnnotation:
             kept.update(formula_to_composition(substituent))
         # The section 4.4.3 formulas replace residue n by a fixed remnant (C2H3NO2 for v, the
         # backbone part plus the beta substituent for d and w) and sum modified masses only for
-        # the other n-1 residues. A modification on residue n leaves with its side chain.
-        if annot.has_internal_mods_at_index(index) or index in static_mods:
+        # the other n-1 residues. A modification on residue n leaves with its side chain, except
+        # on Thr da and wa, whose remnant keeps the OH (O gamma) that carries Phospho or HexNAc.
+        # Ser d and w lose O gamma, and the Ile and Val remnants have no heteroatom.
+        keeps_mod_site = residue == "T" and series in ("da", "wa")
+        if not keeps_mod_site and (annot.has_internal_mods_at_index(index) or index in static_mods):
             annot = annot.copy()
             annot.clear_internal_mod_at_index(index)
             if index in static_mods:
