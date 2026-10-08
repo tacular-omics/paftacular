@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.0.1] (2026-10-08)
+
 #### Fixed
 
 - Electron adducts (`[M-e]`, `[M+2e]^2`) parse, with the electron mass and no atoms

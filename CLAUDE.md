@@ -5,7 +5,7 @@
 paftacular parses and serializes HUPO-PSI mzPAF 1.0.1 peak annotations (`y5-H2O^2/1.2ppm*0.95`)
 and calculates ion masses, m/z and elemental compositions. Users are people reading or writing
 fragment annotations from spectral libraries and search-engine output. Python 3.12 or newer.
-Imported as `pft` by convention. Current release: 2.0.0, a breaking major
+Imported as `pft` by convention. Current release: 2.0.1. 2.0.0 was a breaking major
 (1.x migration in `docs/migration.rst`).
 
 Place in the tacular-omics graph (tier 1):
