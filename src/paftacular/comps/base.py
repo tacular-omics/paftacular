@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import fields, is_dataclass
+from typing import TYPE_CHECKING
 
 from tacular import ElementInfo
 
@@ -61,7 +62,15 @@ class CompositionProvider(ABC):
 class ScalableComposition(CompositionProvider):
     """Mixin for compositions that scale by count and sign"""
 
-    count: int
+    if TYPE_CHECKING:
+        # Declared read-only: every subclass is a frozen dataclass whose ``count`` field is
+        # read-only, and a plain ``count: int`` here would be a writable attribute they
+        # cannot override. It stays behind TYPE_CHECKING because a real property object
+        # would be picked up as a dataclass field default.
+        @property
+        def count(self) -> int:
+            """Signed multiplier applied to the single-instance composition."""
+            ...
 
     @property
     @abstractmethod
