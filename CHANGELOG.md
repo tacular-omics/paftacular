@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.0.2] (2026-10-26)
+
+### Changed
+
+- Updated development and test dependencies. No changes to the library.
+
 ## [2.0.1] (2026-10-08)
 
 #### Fixed
