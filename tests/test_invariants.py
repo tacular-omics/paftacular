@@ -75,6 +75,19 @@ def _mass_or_error(annotation: PafAnnotation) -> float | str:
         return type(error).__name__
 
 
+def _assert_same_mass(actual: PafAnnotation, expected: PafAnnotation) -> None:
+    """Compare two annotations by mass, or by error type when the mass cannot be calculated.
+
+    ``_mass_or_error`` returns an error name for ``+iA`` and named compounds, and
+    ``pytest.approx`` rejects a string outright from pytest 9.2 on, so only numbers go to it.
+    """
+    actual_mass, expected_mass = _mass_or_error(actual), _mass_or_error(expected)
+    if isinstance(actual_mass, str) or isinstance(expected_mass, str):
+        assert actual_mass == expected_mass
+    else:
+        assert actual_mass == pytest.approx(expected_mass, rel=0, abs=1e-9)
+
+
 # Strategies
 
 
@@ -232,7 +245,7 @@ def test_explicit_internal_cleavage_round_trip(annotation):
     parsed = pft.parse(canonical)
     assert parsed.serialize() == canonical
     assert pft.parse(parsed.serialize()) == parsed
-    assert _mass_or_error(parsed) == pytest.approx(_mass_or_error(annotation), rel=0, abs=1e-9)
+    _assert_same_mass(parsed, annotation)
 
 
 @given(st.lists(annotations(), min_size=1, max_size=5))
