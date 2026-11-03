@@ -6,6 +6,7 @@ import os
 import shutil
 import socket
 import sys
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,14 @@ import paftacular as pft
 from paftacular.mcp import create_server, handlers
 from paftacular.mcp.guidance import EXAMPLES
 from paftacular.mcp.models import MAX_REQUEST_BYTES, MAX_TEXT_BYTES
+
+_MCP_VERSION = tuple(int(part) for part in version("mcp").split(".")[:2])
+# The server itself runs on 2.0.0. Only driving the SDK's own client over a subprocess needs the
+# unified client transport API, which arrived in 2.1.0.
+requires_client_transport = pytest.mark.skipif(
+    _MCP_VERSION < (2, 1),
+    reason="mcp 2.0.x Client does not accept StdioServerParameters as an async context manager",
+)
 
 
 def call(name, request=None):
@@ -400,6 +409,7 @@ def test_unexpected_failure_is_sanitized(monkeypatch):
     assert "private diagnostic" not in result.content[0].text
 
 
+@requires_client_transport
 @pytest.mark.parametrize("launch", ["module", "command"])
 @pytest.mark.parametrize("mode", ["auto", "legacy"])
 def test_stdio_connection(launch, mode, tmp_path):

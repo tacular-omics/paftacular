@@ -41,13 +41,13 @@ DOI = "https://doi.org/10.5281/zenodo.19076277"
 # pin networkx~=2.0, so a lower floor would silently drag a user's networkx back to 2.x.
 smiles = ["pysmiles>=1.1.2"]
 peptacular = ["peptacular>=5.0,<6"]
-# mcp>=2.1.0 here, while packages that only use the server side of the SDK can floor at 2.0.0.
-# That difference is deliberate: mcp 2.0.x Client will not take StdioServerParameters as an
-# async context manager (tests/test_mcp.py), and the unified client transport API arrived in
-# 2.1.0. pydantic is imported directly by paftacular.mcp, so it is declared here rather than
-# inherited from the SDK.
-mcp = ["mcp>=2.1.0,<3", "pydantic>=2.12,<3", "peptacular>=5.0,<6"]
-all = ["pysmiles>=1.1.2", "peptacular>=5.0,<6", "mcp>=2.1.0,<3", "pydantic>=2.12,<3"]
+# The server imports and serves on mcp 2.0.0: verified over a real stdio subprocess with raw
+# JSON-RPC and no SDK client, all 9 tools, 4 resources and 2 prompts. Only one test needs the
+# unified client transport API that arrived in 2.1.0, and it is gated in tests/test_mcp.py, so
+# the floor states what the package needs rather than what the harness needs. pydantic is
+# imported directly by paftacular.mcp, so it is declared here rather than inherited from the SDK.
+mcp = ["mcp>=2.0.0,<3", "pydantic>=2.12,<3", "peptacular>=5.0,<6"]
+all = ["pysmiles>=1.1.2", "peptacular>=5.0,<6", "mcp>=2.0.0,<3", "pydantic>=2.12,<3"]
 
 [project.scripts]
 paftacular-mcp = "paftacular.mcp.cli:main"
@@ -75,8 +75,10 @@ only-include = [
 
 [dependency-groups]
 dev = [
-    "mcp>=2.1.1,<3",
-    "pysmiles>=2.0.1",
+    # Matches the extra's floor so the lowest-direct CI job actually installs 2.0.0 and
+    # exercises the version gate in tests/test_mcp.py. Other jobs resolve to the newest SDK.
+    "mcp>=2.0.0,<3",
+    "pysmiles>=1.1.2",
     "peptacular>=5.0,<6",
     "pytest>=9.0.2",
     "ruff>=0.16.8",

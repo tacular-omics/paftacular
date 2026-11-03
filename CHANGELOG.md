@@ -12,8 +12,11 @@
 - `smiles` and `all` extras: `pysmiles>=1.1.2` (was `>=2.0.1`). Every release back to 1.0.0
   passes the suite, but 1.0.0-1.1.1 resolve `networkx~=2.0` and would pull a user's networkx
   back to 2.x. 1.1.2 is the first release with an unbounded networkx.
-- `mcp` and `all` extras: `mcp>=2.1.0,<3` (was `>=2.1.1,<3`). 2.1.0 is the release that
-  introduced the unified client transport API this package uses. 2.0.x cannot run it.
+- `mcp` and `all` extras: `mcp>=2.0.0,<3` (was `>=2.1.1,<3`). The server imports and serves
+  on 2.0.0, verified over a real stdio subprocess with raw JSON-RPC. Only the test that drives
+  the SDK's own client needs the unified client transport API from 2.1.0, and it is now gated
+  on the installed SDK version, so the floor states what the package needs rather than what the
+  test harness needs.
 
 ## [2.0.2] (2026-10-26)
 
