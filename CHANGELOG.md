@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- `mcp` and `all` extras: `pydantic>=2.12,<3`. The MCP subpackage has always imported
+  pydantic at module level and never declared it. It only arrived transitively through mcp.
+
+### Changed
+
+- `smiles` and `all` extras: `pysmiles>=1.1.2` (was `>=2.0.1`). Every release back to 1.0.0
+  passes the suite, but 1.0.0-1.1.1 resolve `networkx~=2.0` and would pull a user's networkx
+  back to 2.x. 1.1.2 is the first release with an unbounded networkx.
+- `mcp` and `all` extras: `mcp>=2.1.0,<3` (was `>=2.1.1,<3`). 2.1.0 is the release that
+  introduced the unified client transport API this package uses. 2.0.x cannot run it.
+
 ## [2.0.2] (2026-10-26)
 
 ### Changed

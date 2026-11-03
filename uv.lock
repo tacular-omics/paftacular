@@ -694,11 +694,13 @@ dependencies = [
 all = [
     { name = "mcp" },
     { name = "peptacular" },
+    { name = "pydantic" },
     { name = "pysmiles" },
 ]
 mcp = [
     { name = "mcp" },
     { name = "peptacular" },
+    { name = "pydantic" },
 ]
 peptacular = [
     { name = "peptacular" },
@@ -724,13 +726,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mcp", marker = "extra == 'all'", specifier = ">=2.1.1,<3" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.1.1,<3" },
+    { name = "mcp", marker = "extra == 'all'", specifier = ">=2.1.0,<3" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.1.0,<3" },
     { name = "peptacular", marker = "extra == 'all'", specifier = ">=5.0,<6" },
     { name = "peptacular", marker = "extra == 'mcp'", specifier = ">=5.0,<6" },
     { name = "peptacular", marker = "extra == 'peptacular'", specifier = ">=5.0,<6" },
-    { name = "pysmiles", marker = "extra == 'all'", specifier = ">=2.0.1" },
-    { name = "pysmiles", marker = "extra == 'smiles'", specifier = ">=2.0.1" },
+    { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.12,<3" },
+    { name = "pydantic", marker = "extra == 'mcp'", specifier = ">=2.12,<3" },
+    { name = "pysmiles", marker = "extra == 'all'", specifier = ">=1.1.2" },
+    { name = "pysmiles", marker = "extra == 'smiles'", specifier = ">=1.1.2" },
     { name = "tacular", specifier = ">=2.0,<3" },
 ]
 provides-extras = ["all", "mcp", "peptacular", "smiles"]
