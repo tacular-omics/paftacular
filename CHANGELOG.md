@@ -24,6 +24,15 @@
 ### Changed
 
 - Updated development and test dependencies. No changes to the library.
+- **Correction (2026-11-02):** the line above is wrong. 2.0.2 also changed
+  `src/paftacular/comps/base.py`. `ScalableComposition.count` moved from a runtime
+  annotation to a read-only property declared only for type checkers, so the mixin no
+  longer carries a `count` annotation at runtime. No behaviour changed, verified against
+  both published versions: `dataclasses.fields()` is identical for `NeutralLoss`,
+  `IsotopeSpecification` and `Adduct` in 2.0.1 and 2.0.2, as are construction, `count`,
+  `serialize()` and `composition`. `tests/test_dataclass_defaults.py` was added in the same
+  release and guards the shape where a real `property` on a mixin is picked up as a
+  dataclass field default.
 
 ## [2.0.1] (2026-10-08)
 
