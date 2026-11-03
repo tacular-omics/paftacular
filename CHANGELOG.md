@@ -2,11 +2,6 @@
 
 ## [Unreleased]
 
-### Added
-
-- `mcp` and `all` extras: `pydantic>=2.12,<3`. The MCP subpackage has always imported
-  pydantic at module level and never declared it. It only arrived transitively through mcp.
-
 ### Changed
 
 - `smiles` and `all` extras: `pysmiles>=1.1.2` (was `>=2.0.1`). Every release back to 1.0.0
@@ -17,6 +12,9 @@
   the SDK's own client needs the unified client transport API from 2.1.0, and it is now gated
   on the installed SDK version, so the floor states what the package needs rather than what the
   test harness needs.
+- `mcp` and `all` extras: `pydantic>=2.12,<3` is now declared. The MCP subpackage has always
+  imported pydantic at module level and never declared it. It only arrived transitively
+  through mcp.
 
 ## [2.0.2] (2026-10-26)
 
