@@ -14,7 +14,9 @@
   test harness needs.
 - `mcp` and `all` extras: `pydantic>=2.12,<3` is now declared. The MCP subpackage has always
   imported pydantic at module level and never declared it. It only arrived transitively
-  through mcp.
+  through mcp. No installable resolution changes, because mcp 2.0.0 already requires
+  `pydantic>=2.12.0` and pydantic has no 3.x release for the `<3` cap to exclude, so the
+  declaration only makes the direct import explicit.
 
 ## [2.0.2] (2026-10-26)
 
