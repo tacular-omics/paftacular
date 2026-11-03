@@ -14,9 +14,10 @@
   test harness needs.
 - `mcp` and `all` extras: `pydantic>=2.12,<3` is now declared. The MCP subpackage has always
   imported pydantic at module level and never declared it. It only arrived transitively
-  through mcp. No installable resolution changes, because mcp 2.0.0 already requires
-  `pydantic>=2.12.0` and pydantic has no 3.x release for the `<3` cap to exclude, so the
-  declaration only makes the direct import explicit.
+  through mcp. Nothing installable resolves differently today, because mcp 2.0.0 already
+  requires `pydantic>=2.12.0` and masks this floor. The declaration binds over the package's
+  lifetime instead: the `mcp>=2.0.0,<3` cap admits any mcp 2.x, and a release in that range
+  may lower its own pydantic floor, at which point paftacular's floor is the one that holds.
 
 ## [2.0.2] (2026-10-26)
 
