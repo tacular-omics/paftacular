@@ -593,6 +593,29 @@ own charge and adducts determine the final charged species.
    PE
    2@b2
 
+A modification the analyte assigns to no residue cannot be selected by a slice.
+An unlocalized modification (``[Phospho]?PEPTIDE``) sits on the analyte rather
+than on a residue, so no fragment may claim it: ``resolve()`` excludes it from
+the resolved sequence and from the mass, and warns that it did. A labile
+modification (``{Glycan:Hex}PEPTIDE``) is lost by every fragment, which the mass
+already reflected, so it is dropped from the resolved sequence without a
+warning. A precursor keeps both. An embedded sequence is used as written, so
+``b2{[Phospho]?PE}`` does count its own modification.
+
+.. testcode::
+
+   import warnings
+
+   with warnings.catch_warnings():
+       warnings.simplefilter("ignore")
+       print(pft.parse("b2").resolve("[Phospho]?PEPTIDE").sequence)
+   print(pft.parse("p^2").resolve("[Phospho]?PEPTIDE").sequence)
+
+.. testoutput::
+
+   PE
+   [Phospho]?PEPTIDE
+
 Resolved context is deliberately separate from mzPAF text. Use ``to_dict()``
 when persisting it. Parsing ``resolved.serialize()`` requires resolving the
 analyte again before computing a complete mass.

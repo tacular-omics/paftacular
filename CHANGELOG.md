@@ -19,6 +19,21 @@
   lifetime instead: the `mcp>=2.0.0,<3` cap admits any mcp 2.x, and a release in that range
   may lower its own pydantic floor, at which point paftacular's floor is the one that holds.
 
+### Fixed
+
+- `resolve()` no longer claims an analyte's unlocalized modification on every fragment.
+  peptacular's `slice` carries an analyte-level modification into every slice, which is right
+  for a sequence slice, so paftacular asserted the modification on fragments that may not
+  carry it and published one theoretical m/z as if it were certain. The error was the whole
+  modification mass, on every fragment of a modified analyte:
+  `resolve(parse("b2^1"), "[Phospho]?PEPTIDE/2").mz()` returned 307.068964 and now returns
+  227.102633, lower by the 79.966331 Da phospho mass, and the same ion as y2 returned
+  343.053708 and now returns 263.087377. The resolved sequence drops the modification too, and
+  `resolve()` warns that the mass excludes it. A labile modification is now dropped from the
+  resolved sequence as well, where it was spurious text only, because the mass path already
+  excluded it. A precursor keeps both. An embedded sequence is still used as written, so
+  `b2{[Phospho]?PE}` counts its own modification.
+
 ## [2.0.2] (2026-10-26)
 
 ### Changed
