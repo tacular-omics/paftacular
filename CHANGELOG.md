@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.1.0] (2026-11-06)
+
 ### Changed
 
 - `smiles` and `all` extras: `pysmiles>=1.1.2` (was `>=2.0.1`). Every release back to 1.0.0
