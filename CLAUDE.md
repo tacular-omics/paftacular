@@ -133,6 +133,13 @@ Scientific conventions:
   reference-list entries keep exact formula masses. Composition is only the fallback, and
   is used under a global isotope label (`<13C>`) in both packages. Labile mods count only
   for precursor ions (fragments lose them, like peptacular).
+- `resolve()` drops the analyte modifications a slice cannot claim. An unlocalized
+  modification (`[Phospho]?PEPTIDE`) is assigned to no residue, so no fragment may claim it:
+  it leaves both the resolved sequence and the mass, with a `UserWarning`. A labile one
+  leaves the resolved sequence, where it was text only. A precursor keeps both. peptacular's
+  `slice` and fragmenter carry both into every fragment, which is correct for them and not
+  for a fragment, so `tests/test_peptacular_agreement.py` records the divergence instead of
+  asserting agreement. An embedded sequence is still used as written.
 - Without an embedded or resolved sequence, peptide, internal and precursor calculations
   return only the ion offset and modifiers (`y5` gives 19.0178, `b5` gives 1.0073). Preserve
   this. `mz()` raises for those instead, because an offset has no meaningful m/z. Use `resolve()` to select the complete fragment sequence from an analyte.

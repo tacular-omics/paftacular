@@ -26,6 +26,9 @@ PEPTIDES = [
     "{Glycan:Hex}PEM[Oxidation]TIDEK",
 ]
 
+# An unlocalized modification ([Phospho]?PEPTIDEK) is deliberately not in PEPTIDES: the two
+# packages disagree there by design. See test_unlocalized_modification_diverges.
+
 # mzPAF z is the z-dot radical, which peptacular calls "z.".
 SERIES = {"a": "a", "b": "b", "c": "c", "x": "x", "y": "y", "z": "z."}
 
@@ -88,3 +91,22 @@ def test_delta_and_isotope_ion_is_plain_ion_plus_delta(peptide, annotation, plai
     assert plain_ion.get_mass() == pytest.approx(pt.parse(peptide).frag(**plain_kwargs).mass, rel=0, abs=1e-9)
     delta = pft.parse(annotation).get_mass(calculate_sequence=False) - pft.parse(plain).get_mass(calculate_sequence=False)
     assert pft.parse(annotation).resolve(peptide).get_mass() == pytest.approx(plain_ion.get_mass() + delta, rel=0, abs=1e-9)
+
+
+def test_unlocalized_modification_diverges():
+    """peptacular carries an analyte's unlocalized modification into every fragment, paftacular does not.
+
+    peptacular's slice and fragmenter are right for their own contract, which is a sequence
+    slice. A fragment is a different claim: an unlocalized modification is assigned to no
+    residue, so no fragment may be said to carry it. paftacular excludes it and warns.
+    """
+    peptide = "[Phospho]?PEPTIDEK"
+    for series, position in (("b", 2), ("y", 2)):
+        expected = pt.parse(peptide).frag(ion_type=series, charge=1, position=position)
+        with pytest.warns(UserWarning, match="unlocalized modification"):
+            resolved = pft.parse(f"{series}{position}^1").resolve(peptide)
+        assert expected.mz - resolved.mz() == pytest.approx(79.966331, rel=0, abs=1e-6)
+        # peptacular's own mzPAF text embeds the modification, and an embedded sequence counts
+        assert pft.parse(expected.to_mzpaf() + "^1").mz() == pytest.approx(expected.mz, rel=0, abs=1e-9)
+    # the precursor carries it in both packages
+    assert pft.parse("p^2").resolve(peptide).mz() == pytest.approx(pt.parse(peptide).mz(charge=2), rel=0, abs=1e-9)
