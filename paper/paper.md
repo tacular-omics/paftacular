@@ -80,7 +80,7 @@ annotation text, and it requires a strictly positive charge. Pyteomics
 [@goloborodko-2013; @levitsky-2019] provides the mass calculations that both of these
 packages use, but its current release (5.0.1) contains no mzPAF module. In Rust, the
 mzcore project [@Schulte_mzcore] reads and writes mzPAF in its `mzannotate` crate as part of
-a spectrum annotator [@schulte-2025]; its Python bindings return the mzPAF label of a
+a spectrum annotator [@schulte-2025]. Its Python bindings return the mzPAF label of a
 generated fragment.
 
 paftacular differs from these in three ways. It computes monoisotopic and average mass, m/z
@@ -92,7 +92,7 @@ position and annotation index, so that a tool can point a user to the problem.
 # Software design
 
 **Parsing and serialization.** `parse()` accepts exactly one annotation and `parse_multi()`
-a comma-separated list; `iter_parse()` processes many records lazily and keeps each failure
+a comma-separated list. `iter_parse()` processes many records lazily and keeps each failure
 with its index instead of stopping the batch. Parsed components are frozen dataclasses, and
 repeated ion and modifier text shares components through bounded, thread-safe caches.
 `serialize()` writes canonical mzPAF, and `to_dict()`/`from_dict()` provide a versioned JSON
@@ -137,8 +137,8 @@ generating fragment series and matching candidates to an observed m/z within a p
 tolerance, plus four reference resources and two prompts. The tools call the public Python
 API, and the base installation does not import the MCP SDK.
 
-The package requires Python 3.12 or later and tacular; peptacular, SMILES support
-(pysmiles) and MCP are optional extras. Continuous integration runs the tests on Python
+The package requires Python 3.12 or later and tacular, with peptacular, SMILES support
+(pysmiles) and MCP as optional extras. Continuous integration runs the tests on Python
 3.12 to 3.14 on Linux, and on Python 3.13 on macOS and Windows. The full suite (1940 passed, 4 expected
 failures) was run for this paper against the development versions of paftacular, peptacular
 and tacular.
