@@ -452,7 +452,7 @@ class SMILESCompound(Serializable, CompositionProvider, MassProvider):
         try:
             import pysmiles
         except ImportError as e:
-            raise ImportError("pysmiles is required for SMILES parsing. Install with: pip install pysmiles") from e
+            raise ImportError("pysmiles is required for SMILES parsing. Install it with: pip install paftacular[smiles]") from e
 
         try:
             mol = pysmiles.read_smiles(self.smiles, explicit_hydrogen=True)

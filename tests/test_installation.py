@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -56,3 +57,18 @@ def test_core_operations_need_no_extras():
     assert annotation.formula() == "C[13C]H4"
     assert p.PafAnnotation.from_dict(annotation.to_dict()) == annotation
     assert [result.ok for result in p.iter_parse(["y2", "bad"])] == [True, False]
+
+
+def test_import_errors_name_the_extra_and_the_command():
+    sites = []
+    raises = 0
+    for path in sorted(Path(p.__file__).resolve().parent.rglob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        raises += len(re.findall(r"raise ImportError", text))
+        for match in re.finditer(r'raise ImportError\(\s*"([^"]*)"', text):
+            sites.append((path.name, match.group(1)))
+    assert len(sites) >= 5, sites
+    assert len(sites) == raises, f"{raises} raise sites but {len(sites)} readable messages, so the scan misses one: {sites}"
+    for name, message in sites:
+        assert re.search(r"paftacular\[[a-z]+\]", message), f"{name} does not name the extra: {message}"
+        assert "pip install" in message, f"{name} does not name the install command: {message}"

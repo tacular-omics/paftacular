@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The `ImportError` raised when `pysmiles` is missing now names the extra and the command
+  that installs it (`pip install paftacular[smiles]`) rather than `pip install pysmiles`,
+  which matches the four other optional-dependency messages. `tests/test_installation.py`
+  now asserts that every `ImportError` in the package names an extra and an install command.
+
 ## [2.1.0] (2026-11-06)
 
 ### Changed
