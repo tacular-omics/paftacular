@@ -20,14 +20,18 @@ just pre-release
 `just install` is `uv sync --all-extras`, so it installs the three optional extras
 (`smiles`, `peptacular` and `mcp`, with `all` as their union) alongside the dev group.
 The tests for those parts call `pytest.importorskip` in two places, and the two behave
-differently. At module scope a whole test file is never collected, which lowers the
-collected total and produces no skip. Inside a single test the test is collected and
-then skipped, which leaves the total unchanged and moves the skip count. A missing extra
-therefore shows up in one number or the other, so read the collected total together with
-the passed and skipped counts. Neither on its own tells you whether the parts you
-changed ran. Some tests are guarded by neither and fail with paftacular's own
-`ImportError` naming the extra, so a partial install can also show failures that are not
-about your change.
+differently. At module scope the file's tests are never collected and the run reports a
+single skip standing for the whole file, so the collected total falls by however many
+tests that file holds and the skip count rises by one. Inside a single test the test is
+collected and then skipped, so the collected total is unchanged and the skip count rises
+by one. Neither count on its own tells the two apart. A subtraction does: add the
+passed, failed, skipped, xfailed, xpassed and error counts, leave out any subtest count,
+and subtract the collected total. The difference is the number of files skipped at
+collection, and it is zero when every extra is installed. pytest prints that number on
+the collection line too, as `collected N items / M skipped`, but `-q` drops the line and
+the final summary never carries it. Some tests are guarded by neither and fail with
+paftacular's own `ImportError` naming the extra, so a partial install can also show
+failures that are not about your change.
 
 Install the commit hooks once per clone with `uvx pre-commit install`. On every
 commit they run `ruff check`, `ruff format --check` and a few file checks
