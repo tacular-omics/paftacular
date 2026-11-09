@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Interchange type errors now name the top-level annotation field that failed,
+  matching the context already provided for ion and modifier fields.
+
+### Fixed
+
 - The `ImportError` raised when `pysmiles` is missing now names the extra and the command
   that installs it (`pip install paftacular[smiles]`) rather than `pip install pysmiles`,
   which matches the four other optional-dependency messages. `tests/test_installation.py`
