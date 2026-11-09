@@ -56,3 +56,31 @@ def test_docstring_examples():
         failed += result.failed
     assert failed == 0, f"{failed} of {attempted} docstring examples failed"
     assert attempted >= MIN_EXAMPLES, f"only {attempted} examples ran, expected >= {MIN_EXAMPLES}"
+
+
+def test_needs_extra_gate_agrees_with_reality():
+    # NEEDS_EXTRA is a declaration, and nothing else in the suite checks it against what actually
+    # happens. A key naming the wrong root makes the gate skip a module in an environment where it
+    # imports fine, or claim the extra is present where it is absent, and MIN_IMPORTED cannot see
+    # either because it is a subtraction. So compute the gate's verdict the way the runner does,
+    # then import the module for real and compare. Do not assert that every gated module fails:
+    # whether a sibling fails depends on whether the gated subtree's __init__ imports the failing
+    # root, which varies by package and by how much of an extra is installed.
+    for name, required in sorted(NEEDS_EXTRA.items()):
+        predicted_absent = importlib.util.find_spec(required) is None
+        failures = []
+        try:
+            importlib.import_module(name)
+        except ImportError as error:
+            failures.append(error)
+        # Checked before the verdict so that a failure naming an unlisted root is reported as the
+        # broken module it is, rather than as a disagreement about the extra.
+        for error in failures:
+            root = (getattr(error, "name", None) or "").split(".")[0]
+            unnamed = root or "an import the error does not name"
+            assert root == required, f"{name} failed on {unnamed}, which its key does not list, so it is broken rather than gated: {error}"
+        # Ordered before the equality so that a verdict stuck at absent, which skips the subtree
+        # while every floor still passes, is reported as that and not as a count.
+        assert not (predicted_absent and not failures), f"the gate says {required} is absent, but {name} imported, so the key is wrong or the verdict is stuck"
+        verdict = "absent" if predicted_absent else "present"
+        assert predicted_absent == bool(failures), f"the gate says {required} is {verdict}, but importing {name} gave {failures}"
