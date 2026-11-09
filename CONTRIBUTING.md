@@ -38,6 +38,6 @@ commit they run `ruff check`, `ruff format --check` and a few file checks
 (`uvx pre-commit run --all-files` runs them on everything). Type checks and
 tests are not in the hooks. Run `just check` for those.
 
-Changes should include tests for new behavior and user-facing documentation when applicable. Keep pull requests focused, explain the motivation, and describe how the change was validated.
+Changes should include tests for new behavior and user-facing documentation when applicable. Keep pull requests focused, explain the motivation, and describe how the change was validated. AI-assisted contributions are welcome; you are responsible for reviewing and testing what you submit.
 
 By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
