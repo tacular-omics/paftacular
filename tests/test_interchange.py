@@ -57,6 +57,22 @@ def test_reject_invalid_interchange_fields(field, value):
         p.PafAnnotation.from_dict(data)
 
 
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("charge", 1.2),
+        ("charge", True),
+        ("is_auxiliary", "false"),
+        ("resolved_sequence", 12),
+    ],
+)
+def test_from_dict_names_failing_top_level_field(field, value):
+    data = p.parse("y2").to_dict()
+    data[field] = value
+    with pytest.raises(p.PaftacularError, match=f"Invalid PafAnnotation\\.{field}:"):
+        p.PafAnnotation.from_dict(data)
+
+
 @pytest.mark.parametrize("change", ["unknown", "missing", "ion_type", "ion_extra", "ion_position", "modifier"])
 def test_reject_invalid_interchange_structure(change):
     data = p.parse("y2-H2O").to_dict()
