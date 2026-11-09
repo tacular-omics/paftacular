@@ -59,14 +59,34 @@ def test_docstring_examples():
 
 
 def test_needs_extra_gate_agrees_with_reality():
-    # NEEDS_EXTRA is a declaration, and nothing else in the suite checks it against what actually
-    # happens. A key naming the wrong root makes the gate skip a module in an environment where it
-    # imports fine, or claim the extra is present where it is absent, and MIN_IMPORTED cannot see
-    # either because it is a subtraction. So compute the gate's verdict the way the runner does,
-    # then import the module for real and compare. Do not assert that every gated module fails:
-    # whether a sibling fails depends on whether the gated subtree's __init__ imports the failing
-    # root, which varies by package and by how much of an extra is installed.
+    """Check every NEEDS_EXTRA entry against what importing that module actually does.
+
+    NEEDS_EXTRA is a declaration, and nothing else in the suite checks it against what happens. A
+    key naming the wrong root makes the gate skip a module in an environment where it imports fine,
+    or claim the extra is present where it is absent, and MIN_IMPORTED cannot see either because it
+    is a subtraction. So compute the gate's verdict the way the runner does, then import the module
+    for real and compare, per module rather than over the subtree.
+
+    The per-module form rests on one invariant: each entry's root is a root that module genuinely
+    needs, directly or through its own relative imports. That is what makes "root absent implies the
+    import fails" true. It is not the same as the module's own module-scope import list, and here it
+    is not equal to it: paftacular.mcp.server is keyed to mcp while its module-scope roots are mcp
+    and pydantic. The entry is sound anyway, because the mcp distribution requires pydantic, so mcp
+    present implies pydantic present and mcp absent makes the import fail.
+
+    The form breaks for one entry shared across several modules whose roots differ, because a
+    supported half-installed environment then makes that entry right for one module and wrong for
+    another. Keep one entry per module.
+
+    Do not assert that every gated module fails: whether a sibling fails depends on whether the
+    gated subtree's __init__ imports the failing root, which varies by package and by how much of an
+    extra is installed.
+    """
+    # Both halves of the mechanism can go inert without any assertion noticing. An empty mapping
+    # gates nothing, and an entry with no root reads as present in every environment.
+    assert NEEDS_EXTRA, "the gate maps no modules, so it can never skip or fail anything"
     for name, required in sorted(NEEDS_EXTRA.items()):
+        assert required, f"{name} is listed with no root to look for, so the gate reads as present everywhere"
         predicted_absent = importlib.util.find_spec(required) is None
         failures = []
         try:
