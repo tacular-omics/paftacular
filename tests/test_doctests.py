@@ -24,9 +24,17 @@ NEEDS_EXTRA = {
 MIN_IMPORTED = MIN_MODULES - len(NEEDS_EXTRA)
 
 
+def _walk_error(name: str) -> None:
+    # pkgutil.walk_packages catches ImportError and keeps going when no onerror is passed, so a
+    # subpackage whose __init__ breaks is still yielded while its submodules silently vanish. The
+    # MIN_MODULES floor below already catches that drop. This callback only adds the name of the
+    # broken subpackage to the failure, instead of a bare count.
+    raise AssertionError(f"walking into {name} failed, so its submodules were not seen")
+
+
 def _module_names():
     names = [paftacular.__name__]
-    names.extend(name for _finder, name, _ispkg in pkgutil.walk_packages(paftacular.__path__, prefix=f"{paftacular.__name__}."))
+    names.extend(name for _finder, name, _ispkg in pkgutil.walk_packages(paftacular.__path__, prefix=f"{paftacular.__name__}.", onerror=_walk_error))
     return names
 
 
