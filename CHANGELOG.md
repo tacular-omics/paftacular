@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Add executable parsing examples for all seven side-chain and satellite ion series.
+
 ### Fixed
 
 - The `ImportError` raised when `pysmiles` is missing now names the extra and the command
