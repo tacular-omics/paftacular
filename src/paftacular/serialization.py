@@ -114,7 +114,10 @@ def from_dict(data: Mapping[str, object]) -> PafAnnotation:
     values["mass_error"] = None if data["mass_error"] is None else _load(MassError, data["mass_error"])
     hints = get_type_hints(PafAnnotation)
     for name in ("analyte_reference", "is_auxiliary", "charge", "confidence", "resolved_sequence"):
-        values[name] = _coerce(data[name], hints[name])
+        try:
+            values[name] = _coerce(data[name], hints[name])
+        except ValueError as error:
+            raise PaftacularError(f"Invalid PafAnnotation.{name}: {error}") from error
     annotation = PafAnnotation(**values)
     # Validate textual fields without requiring optional chemistry dependencies.
     PafAnnotation.parse(annotation.serialize())
