@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Documentation
+
+- Add executable parsing examples for all seven side-chain and satellite ion series.
+
 ### Fixed
 
 - Interchange type errors now name the top-level annotation field that failed,

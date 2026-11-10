@@ -53,6 +53,29 @@ Basic Peptide Ions
    2
    5
 
+Side-chain and Satellite Ions
+-----------------------------
+
+The ``d``, ``v`` and ``w`` side-chain series and the ``da``, ``db``, ``wa`` and
+``wb`` satellite series use the same position syntax as the primary fragment ions.
+Their parsed series is available through ``ion_type.series``:
+
+.. testcode::
+
+   for text in ("d3", "v3", "w3", "da3", "db3", "wa3", "wb3"):
+       ann = pft.parse(text)
+       print(ann.ion_type.series)
+
+.. testoutput::
+
+   d
+   v
+   w
+   da
+   db
+   wa
+   wb
+
 Other Ion Types
 ---------------
 
