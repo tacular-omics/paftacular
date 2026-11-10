@@ -662,3 +662,26 @@ class TestInvalidAnnotations:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+@pytest.mark.parametrize(
+    ("text", "mass"),
+    [
+        ("IY-[Hex]", -25.977134),
+        ("IY-[Hex]^2", -24.969857),
+        ("y1{G}-[Hex]^2", -85.006243),
+        ("f{H2O}-H2O", -0.000549),
+    ],
+)
+def test_mz_raises_when_not_positive_but_get_mass_is_unchanged(text, mass):
+    annotation = parse(text)
+    with pytest.raises(PaftacularError, match="not greater than zero"):
+        annotation.mz()
+    assert annotation.get_mass() == pytest.approx(mass, abs=1e-6)
+
+
+def test_mz_positive_cases_are_unchanged():
+    assert parse("y1{G}").mz() == pytest.approx(76.0393, abs=1e-4)
+    negative_mode = parse("y5{PEPTI}[M-H]^-1")
+    assert negative_mode.charge == -1
+    assert negative_mode.mz() == pytest.approx(554.28315, abs=1e-5)
