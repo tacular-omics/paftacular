@@ -8,6 +8,14 @@
 
 ### Fixed
 
+- `PafAnnotation.formula()` now raises `PaftacularError` when every count in the composition is
+  negative, instead of writing the formula of the opposite, positive composition. Each count
+  went through `abs()`, so a pure loss such as `f{H2O}-H2O-H2O` (composition `H-2O-1`) named
+  `H2O`, a molecule it does not contain. `proforma_formula()` still writes the signed counts
+  (`H-2O-1`, `C-4H-6O-5`), and `comp()` and `get_mass()` are unchanged. The shared
+  `composition_to_formula_string` helper keeps its absolute values, because two other callers
+  pass a negative composition on purpose and supply the sign themselves.
+
 - Interchange type errors now name the top-level annotation field that failed,
   matching the context already provided for ion and modifier fields.
 
