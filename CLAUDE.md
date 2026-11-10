@@ -168,8 +168,12 @@ Scientific conventions:
   ordinary monoisotopic atoms when available and keep genuine deficits when sequence context
   is absent. `+iA` (average isotopomer) raises `PaftacularError` on mass and composition.
 - `formula()` raises `PaftacularError` when the composition mixes signs (for example an
-  unresolved `y5+i` or `y5-[Adenine]`). `comp()` returns the signed counts and
-  `proforma_formula()` writes negative counts (`C5H11N2O-1`).
+  unresolved `y5+i` or `y5-[Adenine]`), and when every count is negative, because an annotation
+  that is pure loss has no positive formula (`f{H2O}-H2O-H2O`). `comp()` returns the signed
+  counts and `proforma_formula()` writes negative counts (`C5H11N2O-1`). The check lives in
+  `formula()`, not in the shared `composition_to_formula_string`, which two other callers
+  (internal-fragment cleavage text and `lookup_reference`) pass a negative composition on
+  purpose.
 - Counter addition and unary plus discard negative entries. Accumulate with `update()` and
   preserve genuine negative counts from modifications.
 - Immonium ions use tacular's `"i"` fragment lookup key, not the internal `"by"` key.
