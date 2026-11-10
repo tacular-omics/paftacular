@@ -59,6 +59,7 @@ def test_proforma_formula_and_mass_of_an_all_negative_composition():
 
 
 def test_formula_of_a_positive_annotation_is_unchanged():
+    pytest.importorskip("peptacular")  # y5{PEPTI} needs a sequence mass
     assert p.parse("y5{PEPTI}").formula() == "C25H42N5O9"
 
 
