@@ -6,6 +6,10 @@ on:
     paths:
       - 'paper/**'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   paper:
     runs-on: ubuntu-latest
