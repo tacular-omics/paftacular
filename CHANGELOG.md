@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- Interchange errors name the rejected schema version or ion type and the supported values.
+
 - `PafAnnotation.formula()` now raises `PaftacularError` when every count in the composition is
   negative, instead of writing the formula of the opposite, positive composition. Each count
   went through `abs()`, so a pure loss such as `f{H2O}-H2O-H2O` (composition `H-2O-1`) named

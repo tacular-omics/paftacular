@@ -97,14 +97,14 @@ def from_dict(data: Mapping[str, object]) -> PafAnnotation:
     if not isinstance(data, Mapping) or set(data) != expected:
         raise PaftacularError(f"Annotation requires exactly these fields: {sorted(expected)}")
     if type(data["schema_version"]) is not int or data["schema_version"] != 1:
-        raise PaftacularError("Unsupported annotation schema_version")
+        raise PaftacularError(f"Unsupported annotation schema_version {data['schema_version']!r}. Expected integer 1")
     raw_ion = data["ion"]
     if not isinstance(raw_ion, Mapping):
         raise PaftacularError("Ion must be an object")
     ion = cast(Mapping[str, object], raw_ion)
     kind = ion.get("type")
     if not isinstance(kind, str) or kind not in _IONS:
-        raise PaftacularError("Unknown or missing ion type")
+        raise PaftacularError(f"Unknown or missing ion type {kind!r}. Expected one of: {', '.join(sorted(_IONS))}")
     values: dict[str, Any] = {"ion_type": _load(_IONS[kind], {key: value for key, value in ion.items() if key != "type"})}
     for name, cls in (("neutral_losses", NeutralLoss), ("isotopes", IsotopeSpecification), ("adducts", Adduct)):
         components = data[name]
