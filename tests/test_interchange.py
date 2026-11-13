@@ -95,6 +95,44 @@ def test_reject_invalid_interchange_structure(change):
         p.PafAnnotation.from_dict(data)
 
 
+@pytest.mark.parametrize("version", [2, True, "1", None])
+def test_invalid_schema_version_names_received_and_supported(version):
+    data = p.parse("y2").to_dict()
+    data["schema_version"] = version
+    with pytest.raises(p.PaftacularError) as error:
+        p.PafAnnotation.from_dict(data)
+    assert str(error.value) == f"Unsupported annotation schema_version {version!r}. Expected integer 1"
+
+
+@pytest.mark.parametrize("kind", ["Peptide", None, 42, []])
+def test_invalid_ion_type_names_received_and_supported(kind):
+    data = p.parse("y2").to_dict()
+    data["ion"]["type"] = kind
+    with pytest.raises(p.PaftacularError) as error:
+        p.PafAnnotation.from_dict(data)
+    message = str(error.value)
+    assert message.startswith(f"Unknown or missing ion type {kind!r}. Expected one of: ")
+    for name in (
+        "PeptideIon",
+        "InternalFragment",
+        "PrecursorIon",
+        "ImmoniumIon",
+        "ReferenceIon",
+        "ChemicalFormula",
+        "NamedCompound",
+        "SMILESCompound",
+        "UnknownIon",
+    ):
+        assert name in message
+
+
+def test_missing_ion_type_names_supported_values():
+    data = p.parse("y2").to_dict()
+    del data["ion"]["type"]
+    with pytest.raises(p.PaftacularError, match="Unknown or missing ion type None.*PeptideIon"):
+        p.PafAnnotation.from_dict(data)
+
+
 def test_structured_export_is_independent():
     annotation = p.parse("y2-H2O")
     before = annotation.to_dict()

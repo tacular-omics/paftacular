@@ -39,6 +39,37 @@ def test_smiles_retains_isotope():
     assert difference == pytest.approx(1.00335483507, rel=0, abs=1e-9)
 
 
+@pytest.mark.parametrize("text", ["f{H2O}-H2O-H2O", "f{C2H4}-[Hex]"])
+def test_formula_raises_for_an_all_negative_composition(text):
+    # formula() wrote every count through abs(), so an annotation that is pure loss named the
+    # direction it was taken from instead (#75). The signed counts are proforma_formula()'s job.
+    annotation = p.parse(text)
+    assert all(count < 0 for count in annotation.comp().values() if count != 0)
+    with pytest.raises(p.PaftacularError, match="proforma_formula"):
+        annotation.formula()
+
+
+def test_proforma_formula_and_mass_of_an_all_negative_composition():
+    water = p.parse("f{H2O}-H2O-H2O")
+    assert water.proforma_formula() == "H-2O-1"
+    assert water.get_mass() == pytest.approx(-18.011113263939066, rel=0, abs=1e-9)
+    hexose = p.parse("f{C2H4}-[Hex]")
+    assert hexose.proforma_formula() == "C-4H-6O-5"
+    assert hexose.get_mass() == pytest.approx(-134.02207245098904, rel=0, abs=1e-9)
+
+
+def test_formula_of_a_positive_annotation_is_unchanged():
+    pytest.importorskip("peptacular")  # y5{PEPTI} needs a sequence mass
+    assert p.parse("y5{PEPTI}").formula() == "C25H42N5O9"
+
+
+def test_formula_of_a_mixed_sign_composition_keeps_its_own_message():
+    # The all-negative refusal is separate from the existing mixed-sign one, which still comes
+    # from the shared helper and still names both signs.
+    with pytest.raises(p.PaftacularError, match="all positive or all negative"):
+        p.parse("y5-[Adenine]").formula()
+
+
 @pytest.mark.parametrize("text", ["y2{PE},b2{PT}", "m2:3{PE},y2{PT}", "y2{{Glycan:Hex}PE},b2{PT}"])
 def test_sequence_annotation_boundaries(text):
     annotations = p.parse_multi(text)

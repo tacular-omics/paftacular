@@ -636,8 +636,19 @@ class PafAnnotation:
         return from_dict(data)
 
     def formula(self, *, calculate_sequence: bool = True) -> str:
-        """Get the chemical formula string of the annotated ion"""
-        return composition_to_formula_string(self.comp(calculate_sequence=calculate_sequence))
+        """Get the chemical formula string of the annotated ion.
+
+        A composition that is negative in every element is a loss, not a molecule, so it has no
+        formula to write. ``proforma_formula()`` keeps the signed counts for that case.
+        """
+        comp = self.comp(calculate_sequence=calculate_sequence)
+        counts = [count for count in comp.values() if count != 0]
+        if counts and all(count < 0 for count in counts):
+            raise PaftacularError(
+                f"formula() of {self.serialize()!r} would be all negative: the annotation loses more than it contains, "
+                "so it has no positive formula. proforma_formula() writes the signed counts."
+            )
+        return composition_to_formula_string(comp)
 
     def proforma_formula(self, *, calculate_sequence: bool = True) -> str:
         """Get the ProForma-style chemical formula string of the annotated ion"""
