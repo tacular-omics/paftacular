@@ -534,13 +534,22 @@ class PafAnnotation:
 
         Peptide, internal and precursor ions need a sequence (embedded or from ``resolve()``).
         Without one only the ion offset is known, so this raises :class:`PaftacularError`.
+        It also raises when the computed m/z is not greater than zero, for example when a
+        neutral loss removes more mass than the ion contains.
         """
         if self.sequence is None and isinstance(self.ion_type, PeptideIon | InternalFragment | PrecursorIon):
             raise PaftacularError(
                 f"m/z of {self.serialize()!r} needs a sequence. Embed one ({{PEPTIDE}}) or call resolve() with the analyte. "
                 "get_mass() still returns the ion offset without a sequence."
             )
-        return self.get_mass(monoisotopic=monoisotopic) / abs(self.charge)
+        mz = self.get_mass(monoisotopic=monoisotopic) / abs(self.charge)
+        if mz <= 0:
+            raise PaftacularError(
+                f"m/z of {self.serialize()!r} is {mz:g}, which is not greater than zero. "
+                "The neutral losses remove more mass than the ion contains. "
+                "get_mass() still returns the (negative) mass."
+            )
+        return mz
 
     @reraise_as_paftacular
     def comp(self, *, calculate_sequence: bool = True) -> Counter[ElementInfo]:
