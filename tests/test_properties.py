@@ -207,7 +207,11 @@ def test_charge_adds_one_proton_per_charge(ion, losses, charge):
     mass = _quiet(charged.get_mass)
     step = -ELECTRON if isinstance(ion, ChemicalFormula) else PROTON
     assert mass - base == pytest.approx((charge - 1) * step, rel=0, abs=1e-9)
-    assume(mass > 0)  # mz() raises for a non-positive m/z; the mass relation above still holds
+    if mass <= 0:
+        # A non-positive mass has no m/z, so mz() raises while the mass relation above still holds
+        with pytest.raises(pft.PaftacularError, match="not greater than zero"):
+            _quiet(charged.mz)
+        return
     assert _quiet(charged.mz) * charge == pytest.approx(mass, rel=1e-12, abs=1e-9)
 
 

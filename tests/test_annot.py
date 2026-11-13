@@ -674,6 +674,8 @@ if __name__ == "__main__":
     ],
 )
 def test_mz_raises_when_not_positive_but_get_mass_is_unchanged(text, mass):
+    if "{" in text and not text.startswith("f{"):
+        pytest.importorskip("peptacular")  # a peptide ion needs a sequence mass
     annotation = parse(text)
     with pytest.raises(PaftacularError, match="not greater than zero"):
         annotation.mz()
@@ -681,6 +683,7 @@ def test_mz_raises_when_not_positive_but_get_mass_is_unchanged(text, mass):
 
 
 def test_mz_positive_cases_are_unchanged():
+    pytest.importorskip("peptacular")  # both cases need a sequence mass
     assert parse("y1{G}").mz() == pytest.approx(76.0393, abs=1e-4)
     negative_mode = parse("y5{PEPTI}[M-H]^-1")
     assert negative_mode.charge == -1
