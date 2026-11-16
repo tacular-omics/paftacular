@@ -6,6 +6,14 @@
 
 - Add executable parsing examples for all seven side-chain and satellite ion series.
 
+### Changed
+
+- `resolve()` and `PafAnnotation.resolve()` now cache the parse of the analyte (at most 256
+  distinct analyte strings, least recently used dropped first), so resolving every annotation of
+  a spectrum against one analyte parses it once instead of once per annotation. Results,
+  warnings and errors are unchanged. `resolve()` never edits the shared parse: fragments are
+  taken from a copy made by peptacular's `slice()`, and the precursor branch only serializes it.
+
 ### Fixed
 
 - `resolve()` and `PafAnnotation.resolve()` now raise `TypeError` for an `analytes` that is
