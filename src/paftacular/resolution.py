@@ -42,6 +42,10 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
     Mapping keys are mzPAF analyte references. An omitted reference selects 1.
     The returned annotation retains context in to_dict(), but not in mzPAF text.
     """
+    if not isinstance(annotation, PafAnnotation):
+        raise TypeError(f"Expected a PafAnnotation, got {type(annotation).__name__}")
+    if not isinstance(analytes, str | Mapping):
+        raise TypeError(f"Expected analytes as a ProForma string or a Mapping[int, str], got {type(analytes).__name__}")
     _require_peptacular()
     ion = annotation.ion_type
     if not isinstance(ion, PeptideIon | InternalFragment | PrecursorIon):
