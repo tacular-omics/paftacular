@@ -617,7 +617,10 @@ class PafAnnotation:
         return None
 
     def resolve(self, analytes: str | Mapping[int, str]) -> PafAnnotation:
-        """Resolve this peptide, internal, or precursor ion against analyte context."""
+        """Resolve this peptide, internal, or precursor ion against analyte context.
+
+        Raises TypeError when analytes is neither a ProForma string nor a Mapping.
+        """
         from .resolution import resolve
 
         return resolve(self, analytes)

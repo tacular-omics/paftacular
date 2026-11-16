@@ -8,13 +8,8 @@
 
 ### Fixed
 
-- `resolve()` and `PafAnnotation.resolve()` now raise `TypeError` for an `analytes` that is neither
-  a `str` nor a `Mapping` (`Expected analytes as a ProForma string or a Mapping[int, str], got
-  list`) and for a first argument that is not a `PafAnnotation`, in the wording `parse()` uses.
-  A list or tuple used to be indexed by the one-based analyte reference, so `["PEPTIDEK",
-  "SAMPLERR"]` silently resolved against the second analyte, and `5` or `None` raised a bare
-  `TypeError: 'int' object is not subscriptable`. A reference missing from a `Mapping` still
-  raises `PaftacularError`.
+- `resolve()` and `PafAnnotation.resolve()` now raise `TypeError` for an `analytes` that is
+  neither a `str` nor a `Mapping`, and for a first argument that is not a `PafAnnotation`.
 
 - Interchange errors name the rejected schema version or ion type and the supported values.
 

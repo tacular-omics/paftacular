@@ -59,6 +59,20 @@ def test_core_operations_need_no_extras():
     assert [result.ok for result in p.iter_parse(["y2", "bad"])] == [True, False]
 
 
+def test_resolve_reports_a_wrong_type_without_peptacular(monkeypatch):
+    # peptacular is installed in some environments and not others, so simulate its absence and
+    # check the simulation bites before reading anything into the TypeErrors below
+    monkeypatch.setattr("paftacular.annotation.pt", None)
+    with pytest.raises(ImportError, match=r"paftacular\[peptacular\]"):
+        p.parse("y3").resolve("PEPTIDEK")
+    with pytest.raises(TypeError, match=r"Expected analytes as a ProForma string or a Mapping\[int, str\], got list"):
+        p.parse("y3").resolve(["PEPTIDEK"])
+    with pytest.raises(TypeError, match="Expected analytes as a ProForma string or a Mapping"):
+        p.resolve(p.parse("y3"), 5)
+    with pytest.raises(TypeError, match="Expected a PafAnnotation, got int"):
+        p.resolve(5, "PEPTIDEK")
+
+
 def test_import_errors_name_the_extra_and_the_command():
     sites = []
     raises = 0

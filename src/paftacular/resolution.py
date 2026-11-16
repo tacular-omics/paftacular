@@ -41,6 +41,8 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
 
     Mapping keys are mzPAF analyte references. An omitted reference selects 1.
     The returned annotation retains context in to_dict(), but not in mzPAF text.
+    A wrong type raises TypeError, before peptacular is required: annotation must be a
+    PafAnnotation, and analytes a ProForma string or a Mapping.
     """
     if not isinstance(annotation, PafAnnotation):
         raise TypeError(f"Expected a PafAnnotation, got {type(annotation).__name__}")
