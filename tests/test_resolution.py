@@ -107,3 +107,31 @@ def test_resolving_an_embedded_sequence_keeps_its_own_modification_silently():
     assert resolved.mz() == pytest.approx(307.068964, rel=0, abs=1e-6)
     assert labile.resolved_sequence == "{Glycan:HexNAc}PE"
     assert labile.mz() == pytest.approx(227.102633, rel=0, abs=1e-6)
+
+
+@pytest.mark.parametrize("analytes", [["PEPTIDEK", "SAMPLERR"], ("PEPTIDEK", "SAMPLERR"), ["PEPTIDEK"], [], 5, None, b"PEPTIDEK"])
+def test_resolve_rejects_analytes_that_are_not_a_str_or_mapping(analytes):
+    expected = f"Expected analytes as a ProForma string or a Mapping\\[int, str\\], got {type(analytes).__name__}"
+    with pytest.raises(TypeError, match=expected):
+        p.resolve(p.parse("y3"), analytes)
+    with pytest.raises(TypeError, match=expected):
+        p.parse("y3").resolve(analytes)
+
+
+@pytest.mark.parametrize("annotation", [5, None, "y3", ["y3"]])
+def test_resolve_rejects_a_first_argument_that_is_not_an_annotation(annotation):
+    with pytest.raises(TypeError, match=f"Expected a PafAnnotation, got {type(annotation).__name__}"):
+        p.resolve(annotation, "PEPTIDE")
+
+
+def test_resolve_str_and_mapping_results_are_unchanged():
+    annotation = p.parse("y3")
+    from_str = p.resolve(annotation, "PEPTIDEK")
+    from_mapping = p.resolve(annotation, {1: "PEPTIDEK", 2: "SAMPLERR"})
+    assert from_str.sequence == from_mapping.sequence == "DEK"
+    assert from_mapping.get_mass() == pytest.approx(391.18234, abs=1e-5)
+
+
+def test_resolve_missing_mapping_reference_still_raises_paftacular_error():
+    with pytest.raises(p.PaftacularError, match="Missing analyte reference 1"):
+        p.resolve(p.parse("y3"), {2: "SAMPLERR"})
