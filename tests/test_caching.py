@@ -92,3 +92,15 @@ def test_eviction_is_thread_safe():
     assert errors == []
     assert len(parser._LOSS_CACHE) <= MAX_CACHE_SIZE
     assert len(parser._ION_CACHE) <= MAX_CACHE_SIZE
+
+
+def test_clear_caches_empties_the_analyte_parse_cache():
+    """_clear_caches() is the package's one clear-all, so it must reach resolution's cache too."""
+    pytest.importorskip("peptacular")
+    from paftacular import resolution
+
+    resolution._parse_analyte.cache_clear()
+    pft.parse("y3").resolve("PEPTIDEK")
+    assert resolution._parse_analyte.cache_info().currsize == 1
+    parser._clear_caches()
+    assert resolution._parse_analyte.cache_info().currsize == 0

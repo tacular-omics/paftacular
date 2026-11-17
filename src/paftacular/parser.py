@@ -165,11 +165,14 @@ _MASS_ERROR_CACHE: _BoundedCache[MassError] = _BoundedCache(_mass_error)
 
 
 def _clear_caches() -> None:
-    """Empty every parser cache (for tests and memory measurements)."""
+    """Empty every parser cache and the analyte parse cache (for tests and memory measurements)."""
+    from .resolution import _parse_analyte  # imported here, since resolution imports no parser name
+
     with _CACHE_LOCK:
         _ION_CACHE.clear()
     for cache in (_LOSS_CACHE, _ISOTOPE_CACHE, _ADDUCT_CACHE, _MASS_ERROR_CACHE):
         cache.clear()
+    _parse_analyte.cache_clear()
 
 
 def _build_annotation(match: re.Match[str]) -> PafAnnotation:

@@ -215,7 +215,11 @@ Caching:
   shares one immutable component. `parser._clear_caches()` empties them (tests use it). Never
   mutate a cached component: `SMILESCompound.composition` is a `cached_property` on a shared
   object. `conversion.py` caches per-ion-type plans, peptide ions and loss units with
-  `lru_cache`. `Serializable.__reduce__` rebuilds through the constructor for pickle and copy.
+  `lru_cache`, and `resolution._parse_analyte` caches the analyte parse (`lru_cache`, 256
+  entries) so resolving a spectrum against one analyte parses it once. `_clear_caches()`
+  empties that one as well. Nothing may edit the shared parse: a fragment comes from the copy
+  peptacular's `slice()` makes, and the precursor branch only serializes it.
+  `Serializable.__reduce__` rebuilds through the constructor for pickle and copy.
   Measure with `just benchmark` before expanding caching.
 
 MCP (`paftacular[mcp]`, console script `paftacular-mcp`, also `python -m paftacular.mcp`):
