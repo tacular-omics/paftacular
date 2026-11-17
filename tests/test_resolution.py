@@ -168,3 +168,22 @@ def test_resolve_twice_parses_the_analyte_once_and_agrees(monkeypatch, text, ana
     assert second.mz() == first.mz()
     # nothing resolve() did edited the shared parse
     assert resolution._parse_analyte(analyte).serialize() == shared_before
+
+
+def test_resolving_leaves_the_cached_analyte_equal_to_a_fresh_parse():
+    """One parse is shared by every resolve, so nothing resolve() does may edit that object."""
+    from paftacular import resolution
+
+    analyte = "{Glycan:HexNAc}[Phospho]?[TMT6plex]-PEPTIDEK"
+    resolution._parse_analyte.cache_clear()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # y8 is the full-length fragment, whose slice spans the whole analyte, and p is the one
+        # branch that hands the shared object itself to serialize()
+        for text in ("y8", "b2", "m2:4", "p", "p^2"):
+            p.parse(text).resolve(analyte)
+    info = resolution._parse_analyte.cache_info()
+    assert (info.currsize, info.misses, info.hits) == (1, 1, 4), info
+    fresh = pt.parse(analyte)
+    assert resolution._parse_analyte(analyte) == fresh
+    assert resolution._parse_analyte(analyte).serialize() == fresh.serialize()
