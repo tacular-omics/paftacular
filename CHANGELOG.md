@@ -8,15 +8,27 @@
 
 ### Changed
 
+- **Breaking:** `resolve()` and `PafAnnotation.resolve()` now raise `TypeError` for an
+  `analytes` that is neither a `str` nor a `Mapping`, and for a first argument that is not a
+  `PafAnnotation`. Two calls that used to work do not any more.
+
+- An `analytes` that is indexed by the analyte reference but is not a `Mapping` used to be
+  accepted, because the reference was only ever used to subscript it. So
+  `resolve(parse("b2"), ["x", "PEPTIDE"])` took the default reference 1, resolved against
+  `"PEPTIDE"` and gave the resolved sequence `PE`. A list, a tuple and a `pandas.Series` now
+  raise `TypeError` instead. Pass a `Mapping[int, str]` keyed by the mzPAF analyte reference,
+  which is `{1: "PEPTIDE"}` for that example.
+
+- The exception class changed for `bytes`. `resolve(parse("b2"), b"PEPTIDE")` used to raise
+  `PaftacularError`, which is a `ValueError`, so `except ValueError` and `except PaftacularError`
+  both caught it. It now raises `TypeError`, which neither of them catches.
+
 - `resolve()` and `PafAnnotation.resolve()` now cache the parse of the analyte (at most 256
   distinct analyte strings, least recently used dropped first), so resolving every annotation of
   a spectrum against one analyte parses it once instead of once per annotation. Results,
   warnings and errors are unchanged.
 
 ### Fixed
-
-- `resolve()` and `PafAnnotation.resolve()` now raise `TypeError` for an `analytes` that is
-  neither a `str` nor a `Mapping`, and for a first argument that is not a `PafAnnotation`.
 
 - Interchange errors name the rejected schema version or ion type and the supported values.
 
