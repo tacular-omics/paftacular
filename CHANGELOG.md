@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.2.0] (2026-11-16)
+
 ### Documentation
 
 - Add executable parsing examples for all seven side-chain and satellite ion series.
