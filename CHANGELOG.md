@@ -11,8 +11,7 @@
 - `resolve()` and `PafAnnotation.resolve()` now cache the parse of the analyte (at most 256
   distinct analyte strings, least recently used dropped first), so resolving every annotation of
   a spectrum against one analyte parses it once instead of once per annotation. Results,
-  warnings and errors are unchanged. `resolve()` never edits the shared parse: fragments are
-  taken from a copy made by peptacular's `slice()`, and the precursor branch only serializes it.
+  warnings and errors are unchanged.
 
 ### Fixed
 
@@ -25,23 +24,20 @@
   negative, instead of writing the formula of the opposite, positive composition. Each count
   went through `abs()`, so a pure loss such as `f{H2O}-H2O-H2O` (composition `H-2O-1`) named
   `H2O`, a molecule it does not contain. `proforma_formula()` still writes the signed counts
-  (`H-2O-1`, `C-4H-6O-5`), and `comp()` and `get_mass()` are unchanged. The shared
-  `composition_to_formula_string` helper keeps its absolute values, because two other callers
-  pass a negative composition on purpose and supply the sign themselves.
+  (`H-2O-1`, `C-4H-6O-5`), and `comp()` and `get_mass()` are unchanged.
 
 - `PafAnnotation.mz()` now raises `PaftacularError` when the computed m/z is not greater than
   zero, for example when a neutral loss removes more mass than the ion contains
   (`IY-[Hex]`) or an ion of no atoms loses its remaining mass (`f{H2O}-H2O`). It used to return
-  a negative value that cannot be matched against a spectrum. `get_mass()`, `comp()` and
-  `formula()` are unchanged, so they still return negative masses where that is correct.
+  a negative value that cannot be matched against a spectrum. `get_mass()` and `comp()` are
+  unchanged, so they still report the negative mass and the signed counts.
 
 - Interchange type errors now name the top-level annotation field that failed,
   matching the context already provided for ion and modifier fields.
 
 - The `ImportError` raised when `pysmiles` is missing now names the extra and the command
   that installs it (`pip install paftacular[smiles]`) rather than `pip install pysmiles`,
-  which matches the four other optional-dependency messages. `tests/test_installation.py`
-  now asserts that every `ImportError` in the package names an extra and an install command.
+  which matches the four other optional-dependency messages.
 
 ## [2.1.0] (2026-11-06)
 
