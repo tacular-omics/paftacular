@@ -3,6 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Mapping
 from dataclasses import replace
+from functools import lru_cache
 from pathlib import Path
 
 from .annotation import PafAnnotation, _require_peptacular, pt
@@ -11,6 +12,22 @@ from .constants import IonSeries
 from .errors import PaftacularError, reraise_as_paftacular
 
 _PACKAGE_DIR = Path(__file__).parent
+
+# Bound for the analyte parse cache: 256 entries, the size of conversion._parent, the cache
+# that plays the same role there (one parsed parent sequence shared by many fragments).
+_ANALYTE_CACHE_SIZE = 256
+
+
+@lru_cache(maxsize=_ANALYTE_CACHE_SIZE)
+def _parse_analyte(source: str) -> pt.ProFormaAnnotation:
+    """Parse an analyte once, so annotating one spectrum does not parse it once per peak.
+
+    The result is shared by every caller, and ProFormaAnnotation is mutable. resolve() never
+    edits it: peptacular's slice() works on a copy, so _drop_unassignable_mods only ever
+    receives a fresh slice, and the precursor branch only serializes the shared object.
+    Only successful parses are cached, so an invalid analyte fails every time.
+    """
+    return pt.parse(source)
 
 
 def _drop_unassignable_mods(fragment: pt.ProFormaAnnotation, *, warn: bool = True) -> pt.ProFormaAnnotation:
@@ -41,6 +58,8 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
 
     Mapping keys are mzPAF analyte references. An omitted reference selects 1.
     The returned annotation retains context in to_dict(), but not in mzPAF text.
+    Analytes are parsed once and cached (at most 256 distinct strings), so resolving every
+    peak of a spectrum against one analyte parses it once.
     A wrong type raises TypeError, before peptacular is required: annotation must be a
     PafAnnotation, and analytes a ProForma string or a Mapping.
     """
@@ -63,7 +82,7 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
     if not isinstance(source, str) or not source:
         raise PaftacularError("Analyte must be a nonempty ProForma string")
     try:
-        analyte = pt.parse(source)
+        analyte = _parse_analyte(source)
     except ValueError as error:
         raise PaftacularError(f"Invalid analyte {source!r}: {error}") from error
     length = len(analyte.sequence)
@@ -81,6 +100,8 @@ def resolve(annotation: PafAnnotation, analytes: str | Mapping[int, str]) -> Paf
             raise PaftacularError("An internal fragment must exclude both analyte termini")
         fragment = _drop_unassignable_mods(analyte.slice(ion.start_position - 1, ion.end_position), warn=warn_dropped)
     else:
+        # The one place the shared parse is not sliced. serialize() only reads it and
+        # _drop_unassignable_mods is not called here, so the cached object stays untouched.
         fragment = analyte
     sequence = fragment.serialize(exclude_charge=True)
     if annotation.sequence is not None:

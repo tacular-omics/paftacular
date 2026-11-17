@@ -135,3 +135,36 @@ def test_resolve_str_and_mapping_results_are_unchanged():
 def test_resolve_missing_mapping_reference_still_raises_paftacular_error():
     with pytest.raises(p.PaftacularError, match="Missing analyte reference 1"):
         p.resolve(p.parse("y3"), {2: "SAMPLERR"})
+
+
+@pytest.mark.parametrize(
+    ("text", "analyte"),
+    [
+        ("y3^2", "PEPTIDEK/2"),
+        ("m2:4", "PEM[Oxidation]TIDEK"),
+        ("p^2", "PEPTIDEK/2"),
+        ("b2", "[Phospho]?{Glycan:HexNAc}PEPTIDEK"),
+        ("p", "[Phospho]?{Glycan:HexNAc}PEPTIDEK"),
+    ],
+)
+def test_resolve_twice_parses_the_analyte_once_and_agrees(monkeypatch, text, analyte):
+    """The analyte parse is cached and shared, so a second resolve must match the first."""
+    from paftacular import resolution
+
+    resolution._parse_analyte.cache_clear()
+    parses = []
+    real_parse = resolution.pt.parse
+    monkeypatch.setattr(resolution.pt, "parse", lambda source, *a, **k: parses.append(source) or real_parse(source, *a, **k))
+    annotation = p.parse(text)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        shared_before = resolution._parse_analyte(analyte).serialize()
+        first = annotation.resolve(analyte)
+        second = annotation.resolve(analyte)
+    # counted before mz(), which parses the fragment text itself
+    assert parses == [analyte]
+    assert second == first
+    assert second.resolved_sequence == first.resolved_sequence
+    assert second.mz() == first.mz()
+    # nothing resolve() did edited the shared parse
+    assert resolution._parse_analyte(analyte).serialize() == shared_before
