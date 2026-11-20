@@ -224,11 +224,29 @@ def test_adduct_mass_independent_of_charge_except_electrons(ion, ion_adducts, ch
     assert _quiet(charged.get_mass) - base == pytest.approx(-(charge - 1) * ELECTRON, rel=0, abs=1e-9)
 
 
+@example(ion=ReferenceIon(name="sidechain_G"), count=-3, charge=1)
 @given(computable_ions, st.integers(-3, 3).filter(bool), st.integers(1, 4))
 def test_generic_isotope_shifts_mz(ion, count, charge):
+    """mzPAF 4.6: the generic isotope component "MUST be '+ni' or '-ni' where n is the isotope
+    number above or below the monoisotope".
+
+    A negative n is in the grammar, but the monoisotope is the lightest isotopologue, so a
+    shift far enough below it leaves the ion no positive mass. mz() refuses that instead of
+    returning a value no spectrum can hold, while the mass relation holds either way. The
+    explicit example is the only reference molecule light enough to reach it: Appendix B
+    lists sidechain_G as H1, 1.00782, so the protonated ion is 2.0151 and -3i puts it at
+    -0.994963. It is written out so the case runs without the .hypothesis database.
+    """
     plain = PafAnnotation(ion_type=ion, charge=charge)
     shifted = dataclasses.replace(plain, isotopes=(IsotopeSpecification(count=count),))
     base = _mass_or_skip(plain)
+    mass = _quiet(shifted.get_mass)
+    assert mass - base == pytest.approx(count * C13_SHIFT, rel=0, abs=1e-9)
+    if mass <= 0:
+        # A non-positive mass has no m/z, so mz() raises while the mass relation above still holds
+        with pytest.raises(pft.PaftacularError, match="not greater than zero"):
+            _quiet(shifted.mz)
+        return
     assert _quiet(shifted.mz) - base / charge == pytest.approx(count * C13_SHIFT / charge, rel=0, abs=1e-9)
 
 

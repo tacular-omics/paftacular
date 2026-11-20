@@ -535,7 +535,8 @@ class PafAnnotation:
         Peptide, internal and precursor ions need a sequence (embedded or from ``resolve()``).
         Without one only the ion offset is known, so this raises :class:`PaftacularError`.
         It also raises when the computed m/z is not greater than zero, for example when a
-        neutral loss removes more mass than the ion contains.
+        neutral loss removes more mass than the ion contains, or when an isotope shift below
+        the monoisotope leaves no positive mass.
         """
         if self.sequence is None and isinstance(self.ion_type, PeptideIon | InternalFragment | PrecursorIon):
             raise PaftacularError(
@@ -544,10 +545,18 @@ class PafAnnotation:
             )
         mz = self.get_mass(monoisotopic=monoisotopic) / abs(self.charge)
         if mz <= 0:
+            # Name the component that took the mass away. Blaming neutral losses when the
+            # annotation has none sends the reader looking for something that is not there.
+            if self.neutral_losses and self.isotopes:
+                cause = "The neutral losses and the isotope shift leave no positive mass."
+            elif self.neutral_losses:
+                cause = "The neutral losses remove more mass than the ion contains."
+            elif self.isotopes:
+                cause = "The isotope shift leaves no positive mass."
+            else:
+                cause = "The ion has no positive mass of its own."
             raise PaftacularError(
-                f"m/z of {self.serialize()!r} is {mz:g}, which is not greater than zero. "
-                "The neutral losses remove more mass than the ion contains. "
-                "get_mass() still returns the (negative) mass."
+                f"m/z of {self.serialize()!r} is {mz:g}, which is not greater than zero. {cause} get_mass() still returns the (negative) mass."
             )
         return mz
 

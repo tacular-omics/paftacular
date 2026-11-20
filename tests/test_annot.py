@@ -682,6 +682,23 @@ def test_mz_raises_when_not_positive_but_get_mass_is_unchanged(text, mass):
     assert annotation.get_mass() == pytest.approx(mass, abs=1e-6)
 
 
+@pytest.mark.parametrize(
+    ("text", "cause"),
+    [
+        # mzPAF 4.6 allows an isotope below the monoisotope, which for a 2 Da ion leaves nothing
+        ("r[sidechain_G]-3i", "The isotope shift leaves no positive mass."),
+        ("IY-[Hex]", "The neutral losses remove more mass than the ion contains."),
+        ("r[sidechain_G]-H-3i", "The neutral losses and the isotope shift leave no positive mass."),
+    ],
+)
+def test_mz_names_the_component_that_took_the_mass(text, cause):
+    """The message must not blame neutral losses when the annotation carries none."""
+    annotation = parse(text)
+    with pytest.raises(PaftacularError, match="not greater than zero") as error:
+        annotation.mz()
+    assert cause in str(error.value), str(error.value)
+
+
 def test_mz_positive_cases_are_unchanged():
     pytest.importorskip("peptacular")  # both cases need a sequence mass
     assert parse("y1{G}").mz() == pytest.approx(76.0393, abs=1e-4)
