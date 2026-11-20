@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The `PaftacularError` that `PafAnnotation.mz()` raises for a non-positive m/z blamed neutral
+  losses in every case, including annotations that have none. It now names what took the mass
+  away: the neutral losses, an isotope shift below the monoisotope, or both. No computed value
+  changes.
+
 ## [2.2.0] (2026-11-16)
 
 ### Documentation
